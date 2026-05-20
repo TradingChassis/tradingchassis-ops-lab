@@ -1,4 +1,4 @@
-"""Backtest lifecycle skeleton orchestration for Slice 4."""
+"""Backtest lifecycle orchestration for Slice 5 Nautilus smoke runs."""
 
 from __future__ import annotations
 
@@ -7,7 +7,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from ops_lab.reports.render import render_backtest_skeleton_report
+from ops_lab.engines.nautilus.backtest import run_nautilus_backtest_smoke
+from ops_lab.reports.render import render_backtest_nautilus_smoke_report
 from ops_lab.runs.artifacts import initialize_run_artifacts
 from ops_lab.runs.hashing import compute_config_sha256
 from ops_lab.runs.journal import append_journal_event
@@ -47,15 +48,26 @@ def _build_lifecycle_event(
     return payload
 
 
-def _write_metrics_placeholder(path: Path, *, spec: RunSpec) -> None:
+def _write_smoke_metrics(
+    path: Path,
+    *,
+    spec: RunSpec,
+    input_candles_count: int,
+    bars_processed: int,
+    engine_duration_ms: int,
+) -> None:
     payload = {
         "schema_version": "v1",
         "run_id": spec.run_id,
         "mode": spec.mode,
-        "engine": spec.engine,
+        "engine": "nautilus",
         "status": "completed",
-        "is_placeholder": True,
-        "message": "Slice 4 skeleton metrics; no strategy/backtest execution performed.",
+        "is_placeholder": False,
+        "engine_executed": True,
+        "dataset": spec.data.dataset,
+        "input_candles_count": input_candles_count,
+        "bars_processed": bars_processed,
+        "engine_duration_ms": engine_duration_ms,
         "metrics": {},
     }
     path.write_text(
@@ -64,8 +76,8 @@ def _write_metrics_placeholder(path: Path, *, spec: RunSpec) -> None:
     )
 
 
-def run_backtest_skeleton(spec_path: Path) -> tuple[Path, str]:
-    """Run Slice 4 backtest lifecycle skeleton and persist artifacts."""
+def run_backtest_lifecycle(spec_path: Path) -> tuple[Path, str]:
+    """Run Slice 5 Nautilus smoke backtest lifecycle and persist artifacts."""
     spec = load_run_spec(spec_path)
     if spec.mode != "backtest":
         raise InvalidBacktestModeError(
@@ -87,8 +99,17 @@ def run_backtest_skeleton(spec_path: Path) -> tuple[Path, str]:
     )
     metadata["status"] = "running"
     metadata["started_at_utc"] = _utc_now_iso8601()
-    metadata["lifecycle"] = "backtest_skeleton"
-    metadata["is_placeholder"] = True
+    metadata["lifecycle"] = "backtest_nautilus_smoke"
+    metadata["is_placeholder"] = False
+    engine_started_at = _utc_now_iso8601()
+    metadata["engine_execution"] = {
+        "status": "running",
+        "engine": "nautilus",
+        "nautilus_version": None,
+        "started_at_utc": engine_started_at,
+        "completed_at_utc": None,
+        "error": None,
+    }
     write_metadata(artifacts_dir / "metadata.json", metadata)
 
     journal_path = artifacts_dir / "journal.jsonl"
@@ -110,9 +131,42 @@ def run_backtest_skeleton(spec_path: Path) -> tuple[Path, str]:
             spec=spec,
             config_sha256=config_sha256,
             artifacts_dir=artifacts_dir,
-            extra_fields={"note": "skeleton lifecycle only; no engine execution"},
+            extra_fields={"note": "nautilus engine smoke run started"},
         ),
     )
+
+    try:
+        smoke_result = run_nautilus_backtest_smoke(
+            dataset=spec.data.dataset,
+            venue=spec.venue,
+            instrument=spec.instrument,
+        )
+    except Exception as exc:
+        failed_at = _utc_now_iso8601()
+        metadata["status"] = "failed"
+        metadata["completed_at_utc"] = failed_at
+        metadata["engine_execution"] = {
+            "status": "failed",
+            "engine": "nautilus",
+            "nautilus_version": None,
+            "started_at_utc": engine_started_at,
+            "completed_at_utc": failed_at,
+            "error": str(exc),
+        }
+        write_metadata(artifacts_dir / "metadata.json", metadata)
+        append_journal_event(
+            journal_path,
+            _build_lifecycle_event(
+                event="run_failed",
+                status="failed",
+                spec=spec,
+                config_sha256=config_sha256,
+                artifacts_dir=artifacts_dir,
+                extra_fields={"error": str(exc)},
+            ),
+        )
+        raise
+
     append_journal_event(
         journal_path,
         _build_lifecycle_event(
@@ -121,24 +175,44 @@ def run_backtest_skeleton(spec_path: Path) -> tuple[Path, str]:
             spec=spec,
             config_sha256=config_sha256,
             artifacts_dir=artifacts_dir,
-            extra_fields={"result": "placeholder"},
+            extra_fields={
+                "result": "engine_smoke_completed",
+                "input_candles_count": smoke_result.input_candles_count,
+                "bars_processed": smoke_result.bars_processed,
+            },
         ),
     )
 
-    _write_metrics_placeholder(artifacts_dir / "metrics.json", spec=spec)
+    _write_smoke_metrics(
+        artifacts_dir / "metrics.json",
+        spec=spec,
+        input_candles_count=smoke_result.input_candles_count,
+        bars_processed=smoke_result.bars_processed,
+        engine_duration_ms=smoke_result.engine_duration_ms,
+    )
     (artifacts_dir / "report.md").write_text(
-        render_backtest_skeleton_report(
+        render_backtest_nautilus_smoke_report(
             run_id=spec.run_id,
-            mode=spec.mode,
-            engine=spec.engine,
+            dataset=spec.data.dataset,
             status="completed",
-            config_sha256=config_sha256,
+            input_candles_count=smoke_result.input_candles_count,
+            bars_processed=smoke_result.bars_processed,
+            engine_duration_ms=smoke_result.engine_duration_ms,
         ),
         encoding="utf-8",
     )
 
+    completed_at = _utc_now_iso8601()
     metadata["status"] = "completed"
-    metadata["completed_at_utc"] = _utc_now_iso8601()
+    metadata["completed_at_utc"] = completed_at
+    metadata["engine_execution"] = {
+        "status": "completed",
+        "engine": "nautilus",
+        "nautilus_version": smoke_result.nautilus_version,
+        "started_at_utc": engine_started_at,
+        "completed_at_utc": completed_at,
+        "error": None,
+    }
     write_metadata(artifacts_dir / "metadata.json", metadata)
 
     append_journal_event(

@@ -12,6 +12,8 @@ dependencies = [
   "typer",
   "pydantic",
   "PyYAML",
+  "nautilus_trader==1.227.0",
+  "pandas==2.3.3",
 ]
 
 [project.optional-dependencies]

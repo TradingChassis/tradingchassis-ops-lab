@@ -7,6 +7,8 @@ import yaml
 from typer.testing import CliRunner
 
 from ops_lab.cli import app
+from ops_lab.data.prepare import prepare_dataset
+from ops_lab.engines.nautilus.backtest import NautilusSmokeBacktestResult
 
 runner = CliRunner()
 
@@ -100,10 +102,11 @@ def test_tc_run_init_fails_for_duplicate_run_id(tmp_path: Path, monkeypatch) -> 
 
 
 def test_tc_run_backtest_creates_lifecycle_artifacts(tmp_path: Path, monkeypatch) -> None:
-    """Backtest skeleton command creates final lifecycle artifact set."""
+    """Backtest command creates final Slice 5 smoke lifecycle artifact set."""
     monkeypatch.chdir(tmp_path)
+    prepare_dataset(dataset="btcusdt-sample", data_root=Path("data"))
     spec_path = tmp_path / "backtest.yaml"
-    _write_valid_spec(spec_path, run_id="slice4-backtest-run")
+    _write_valid_spec(spec_path, run_id="slice5-backtest-run")
 
     result = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
     assert result.exit_code == 0
@@ -111,7 +114,7 @@ def test_tc_run_backtest_creates_lifecycle_artifacts(tmp_path: Path, monkeypatch
     assert "config_sha256=" in result.stdout
     assert "status=completed" in result.stdout
 
-    run_dir = tmp_path / "artifacts" / "runs" / "slice4-backtest-run"
+    run_dir = tmp_path / "artifacts" / "runs" / "slice5-backtest-run"
     assert run_dir.is_dir()
     assert (run_dir / "run_spec.yaml").is_file()
     assert (run_dir / "metadata.json").is_file()
@@ -123,8 +126,12 @@ def test_tc_run_backtest_creates_lifecycle_artifacts(tmp_path: Path, monkeypatch
     assert metadata["status"] == "completed"
     assert metadata["started_at_utc"]
     assert metadata["completed_at_utc"]
-    assert metadata["lifecycle"] == "backtest_skeleton"
-    assert metadata["is_placeholder"] is True
+    assert metadata["lifecycle"] == "backtest_nautilus_smoke"
+    assert metadata["is_placeholder"] is False
+    assert metadata["engine_execution"]["status"] == "completed"
+    assert metadata["engine_execution"]["engine"] == "nautilus"
+    assert metadata["engine_execution"]["nautilus_version"] == "1.227.0"
+    assert metadata["engine_execution"]["error"] is None
 
     journal_lines = (run_dir / "journal.jsonl").read_text(encoding="utf-8").splitlines()
     assert len(journal_lines) == 4
@@ -137,22 +144,44 @@ def test_tc_run_backtest_creates_lifecycle_artifacts(tmp_path: Path, monkeypatch
     ]
     assert journal[-1]["status"] == "completed"
     assert all(entry["event"] != "run_initialized" for entry in journal)
+    assert journal[2]["result"] == "engine_smoke_completed"
+    assert journal[2]["input_candles_count"] == 20
+    assert journal[2]["bars_processed"] == 20
 
     metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
-    assert metrics["is_placeholder"] is True
+    assert metrics["engine_executed"] is True
+    assert metrics["is_placeholder"] is False
+    assert metrics["input_candles_count"] == 20
+    assert metrics["bars_processed"] == 20
+    assert isinstance(metrics["engine_duration_ms"], int)
     assert metrics["metrics"] == {}
 
     report = (run_dir / "report.md").read_text(encoding="utf-8")
-    assert "Slice 4 backtest lifecycle skeleton" in report
-    assert "No NautilusTrader backtest was executed" in report
-    assert "No orders, fills, strategy PnL, or trading performance metrics were produced" in report
+    assert "minimal NautilusTrader engine smoke backtest" in report
+    assert "not a validated strategy performance report" in report
+    assert "No profitability claims are made" in report
+    assert "No orders, fills, or PnL metrics are produced" in report
+    assert "Sharpe" not in report
+
+
+def test_tc_run_backtest_fails_when_prepared_dataset_is_missing(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Backtest command fails clearly before data preparation."""
+    monkeypatch.chdir(tmp_path)
+    spec_path = tmp_path / "missing-data.yaml"
+    _write_valid_spec(spec_path, run_id="slice5-missing-dataset")
+
+    result = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
+    assert result.exit_code != 0
+    assert "Run tc data prepare --dataset btcusdt-sample first." in result.stderr
 
 
 def test_tc_run_backtest_fails_for_paper_mode(tmp_path: Path, monkeypatch) -> None:
     """Backtest command rejects specs that are not mode=backtest."""
     monkeypatch.chdir(tmp_path)
     spec_path = tmp_path / "paper.yaml"
-    _write_valid_spec(spec_path, run_id="slice4-paper-run", mode="paper")
+    _write_valid_spec(spec_path, run_id="slice5-paper-run", mode="paper")
 
     result = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
     assert result.exit_code != 0
@@ -163,7 +192,19 @@ def test_tc_run_backtest_fails_for_duplicate_run_id(tmp_path: Path, monkeypatch)
     """Backtest command fails cleanly when run artifacts already exist."""
     monkeypatch.chdir(tmp_path)
     spec_path = tmp_path / "dup.yaml"
-    _write_valid_spec(spec_path, run_id="slice4-backtest-duplicate")
+    _write_valid_spec(spec_path, run_id="slice5-backtest-duplicate")
+
+    def _fake_smoke(**kwargs):
+        del kwargs
+        return NautilusSmokeBacktestResult(
+            dataset="btcusdt-sample",
+            input_candles_count=20,
+            bars_processed=20,
+            engine_duration_ms=1,
+            nautilus_version="1.227.0",
+        )
+
+    monkeypatch.setattr("ops_lab.runs.backtest.run_nautilus_backtest_smoke", _fake_smoke)
 
     first = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
     second = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
@@ -171,6 +212,40 @@ def test_tc_run_backtest_fails_for_duplicate_run_id(tmp_path: Path, monkeypatch)
     assert first.exit_code == 0
     assert second.exit_code != 0
     assert "Run artifacts already exist" in second.stderr
+
+
+def test_tc_run_backtest_failure_writes_failed_metadata(tmp_path: Path, monkeypatch) -> None:
+    """Backtest command marks run failed and appends run_failed journal event."""
+    monkeypatch.chdir(tmp_path)
+    prepare_dataset(dataset="btcusdt-sample", data_root=Path("data"))
+    spec_path = tmp_path / "failure.yaml"
+    _write_valid_spec(spec_path, run_id="slice5-backtest-failure")
+
+    def _raise_smoke_failure(**kwargs):
+        del kwargs
+        raise RuntimeError("forced smoke failure")
+
+    monkeypatch.setattr("ops_lab.runs.backtest.run_nautilus_backtest_smoke", _raise_smoke_failure)
+    result = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
+    assert result.exit_code != 0
+
+    run_dir = tmp_path / "artifacts" / "runs" / "slice5-backtest-failure"
+    assert run_dir.is_dir()
+
+    metadata = json.loads((run_dir / "metadata.json").read_text(encoding="utf-8"))
+    assert metadata["status"] == "failed"
+    assert metadata["lifecycle"] == "backtest_nautilus_smoke"
+    assert metadata["engine_execution"]["status"] == "failed"
+    assert "forced smoke failure" in metadata["engine_execution"]["error"]
+    assert metadata["engine_execution"]["completed_at_utc"]
+
+    journal_lines = (run_dir / "journal.jsonl").read_text(encoding="utf-8").splitlines()
+    journal = [json.loads(line) for line in journal_lines]
+    assert [entry["event"] for entry in journal] == [
+        "run_started",
+        "backtest_started",
+        "run_failed",
+    ]
 
 
 def test_tc_data_prepare_succeeds_and_is_idempotent(tmp_path: Path, monkeypatch) -> None:

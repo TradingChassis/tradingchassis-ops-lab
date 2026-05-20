@@ -1,4 +1,1 @@
-"""Nautilus engine placeholders for future slices.
-
-Slice 1 intentionally avoids importing or integrating NautilusTrader.
-"""
+"""Nautilus engine support for minimal Slice 5 smoke execution."""
