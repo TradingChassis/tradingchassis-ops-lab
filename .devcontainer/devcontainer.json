@@ -1,0 +1,17 @@
+{
+  "name": "TradingChassis Core Runtime Dev",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+
+  "workspaceFolder": "/workspaces/core-runtime",
+  "remoteUser": "root",
+  "runArgs": ["--security-opt=label=disable"],
+  "containerEnv": {
+    "SHELL": "/bin/bash"
+  },
+
+  // "postCreateCommand": "./scripts/post-create.sh"
+
+}
