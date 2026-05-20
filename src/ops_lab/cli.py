@@ -13,6 +13,13 @@ from ops_lab.data.fingerprint import (
     write_fingerprint,
 )
 from ops_lab.data.prepare import UnsupportedDatasetError, prepare_dataset
+from ops_lab.drills import (
+    DrillArtifactsError,
+    DrillValidationError,
+    execute_reconciliation_mismatch_drill,
+    execute_restart_recovery_drill,
+    execute_stale_market_data_drill,
+)
 from ops_lab.observability.metrics import (
     RunObservabilityError,
     export_run_metrics,
@@ -39,12 +46,14 @@ data_app = typer.Typer(help="Local dataset preparation and fingerprint commands.
 metrics_app = typer.Typer(help="Run artifact metrics export commands.")
 kill_app = typer.Typer(help="File-based kill switch safety commands.")
 reconcile_app = typer.Typer(help="File-based reconciliation commands.")
+drill_app = typer.Typer(help="Deterministic local failure drills.")
 app.add_typer(spec_app, name="spec")
 app.add_typer(run_app, name="run")
 app.add_typer(data_app, name="data")
 app.add_typer(metrics_app, name="metrics")
 app.add_typer(kill_app, name="kill")
 app.add_typer(reconcile_app, name="reconcile")
+app.add_typer(drill_app, name="drill")
 
 
 @app.callback()
@@ -393,3 +402,87 @@ def reconcile_check(
 
     if result["status"] in {"mismatch", "unknown"}:
         raise typer.Exit(1)
+
+
+@drill_app.command("stale-market-data")
+def drill_stale_market_data(
+    run_id: str = typer.Option(..., "--run-id", help="Run ID for drill output."),
+    artifacts_root: Path = typer.Option(
+        Path("artifacts/runs"),
+        "--artifacts-root",
+        help="Root directory containing run artifact subdirectories.",
+    ),
+) -> None:
+    """Run deterministic stale market data warning drill."""
+    try:
+        result = execute_stale_market_data_drill(run_id=run_id, artifacts_root=artifacts_root)
+    except (DrillValidationError, DrillArtifactsError) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+
+    report = result["report"]
+    report_path = Path(result["report_path"])
+    typer.echo(f"run_id={report['run_id']}")
+    typer.echo(f"drill_name={report['drill_name']}")
+    typer.echo(f"outcome={report['outcome']}")
+    typer.echo("status=completed")
+    typer.echo(f"report_path={report_path.resolve()}")
+
+
+@drill_app.command("reconciliation-mismatch")
+def drill_reconciliation_mismatch(
+    run_id: str = typer.Option(..., "--run-id", help="Run ID for drill output."),
+    artifacts_root: Path = typer.Option(
+        Path("artifacts/runs"),
+        "--artifacts-root",
+        help="Root directory containing run artifact subdirectories.",
+    ),
+) -> None:
+    """Run deterministic reconciliation mismatch drill."""
+    try:
+        result = execute_reconciliation_mismatch_drill(run_id=run_id, artifacts_root=artifacts_root)
+    except (DrillValidationError, DrillArtifactsError) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+
+    report = result["report"]
+    report_path = Path(result["report_path"])
+    typer.echo(f"run_id={report['run_id']}")
+    typer.echo(f"drill_name={report['drill_name']}")
+    typer.echo(f"outcome={report['outcome']}")
+    typer.echo("status=completed")
+    typer.echo(f"report_path={report_path.resolve()}")
+    typer.secho(
+        (
+            "Expected non-zero exit: reconciliation mismatch drill intentionally "
+            "demonstrates mismatch."
+        ),
+        fg=typer.colors.YELLOW,
+        err=True,
+    )
+    raise typer.Exit(1)
+
+
+@drill_app.command("restart-recovery")
+def drill_restart_recovery(
+    run_id: str = typer.Option(..., "--run-id", help="Run ID for drill output."),
+    artifacts_root: Path = typer.Option(
+        Path("artifacts/runs"),
+        "--artifacts-root",
+        help="Root directory containing run artifact subdirectories.",
+    ),
+) -> None:
+    """Run deterministic artifact-based restart recovery rehearsal."""
+    try:
+        result = execute_restart_recovery_drill(run_id=run_id, artifacts_root=artifacts_root)
+    except (DrillValidationError, DrillArtifactsError) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+
+    report = result["report"]
+    report_path = Path(result["report_path"])
+    typer.echo(f"run_id={report['run_id']}")
+    typer.echo(f"drill_name={report['drill_name']}")
+    typer.echo(f"outcome={report['outcome']}")
+    typer.echo("status=completed")
+    typer.echo(f"report_path={report_path.resolve()}")

@@ -945,3 +945,109 @@ def test_tc_reconcile_check_appends_journal_when_present(tmp_path: Path, monkeyp
     assert len(lines) == 2
     payload = json.loads(lines[-1])
     assert payload["event"] == "reconciliation_checked"
+
+
+def _write_minimal_run_artifacts_for_drill(tmp_path: Path, run_id: str, with_journal: bool) -> Path:
+    run_dir = tmp_path / "artifacts" / "runs" / run_id
+    run_dir.mkdir(parents=True)
+    (run_dir / "run_spec.yaml").write_text("spec_version: v1\n", encoding="utf-8")
+    (run_dir / "metadata.json").write_text(
+        json.dumps(
+            {
+                "run_id": run_id,
+                "mode": "paper",
+                "engine": "nautilus",
+                "venue": "binance_testnet",
+                "instrument": "BTCUSDT",
+                "status": "completed",
+                "created_at_utc": "2026-05-20T19:00:00Z",
+                "data": {"dataset": "btcusdt-sample"},
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (run_dir / "metrics.json").write_text(
+        json.dumps(
+            {"is_placeholder": True, "engine_executed": False},
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    if with_journal:
+        (run_dir / "journal.jsonl").write_text('{"event":"run_started"}\n', encoding="utf-8")
+    return run_dir
+
+
+def test_tc_drill_stale_market_data_succeeds(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    run_id = "slice10-cli-stale"
+    _write_minimal_run_artifacts_for_drill(tmp_path, run_id=run_id, with_journal=True)
+
+    result = runner.invoke(app, ["drill", "stale-market-data", "--run-id", run_id])
+    assert result.exit_code == 0
+    assert f"run_id={run_id}" in result.stdout
+    assert "drill_name=stale_market_data" in result.stdout
+    assert "outcome=expected_warning" in result.stdout
+    assert "status=completed" in result.stdout
+
+    report_path = tmp_path / "artifacts" / "runs" / run_id / "drills" / "stale_market_data.json"
+    assert report_path.is_file()
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["outcome"] == "expected_warning"
+
+
+def test_tc_drill_reconciliation_mismatch_exits_non_zero_by_design(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    run_id = "slice10-cli-mismatch"
+    _write_minimal_run_artifacts_for_drill(tmp_path, run_id=run_id, with_journal=True)
+
+    result = runner.invoke(app, ["drill", "reconciliation-mismatch", "--run-id", run_id])
+    assert result.exit_code != 0
+    assert f"run_id={run_id}" in result.stdout
+    assert "drill_name=reconciliation_mismatch" in result.stdout
+    assert "outcome=expected_mismatch" in result.stdout
+    assert "status=completed" in result.stdout
+    assert "Expected non-zero exit" in result.stderr
+
+    report_path = (
+        tmp_path / "artifacts" / "runs" / run_id / "drills" / "reconciliation_mismatch.json"
+    )
+    assert report_path.is_file()
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert report["outcome"] == "expected_mismatch"
+
+
+def test_tc_drill_restart_recovery_succeeds(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    run_id = "slice10-cli-restart"
+    _write_minimal_run_artifacts_for_drill(tmp_path, run_id=run_id, with_journal=False)
+
+    result = runner.invoke(app, ["drill", "restart-recovery", "--run-id", run_id])
+    assert result.exit_code == 0
+    assert f"run_id={run_id}" in result.stdout
+    assert "drill_name=restart_recovery" in result.stdout
+    assert "outcome=simulated_recovery_ok" in result.stdout
+    assert "status=completed" in result.stdout
+
+    report_path = tmp_path / "artifacts" / "runs" / run_id / "drills" / "restart_recovery.json"
+    assert report_path.is_file()
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert (
+        report["statement"]
+        == "no process restart performed; this is artifact-based recovery rehearsal"
+    )
+
+
+def test_tc_drill_missing_run_directory_fails(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    run_id = "slice10-cli-missing"
+    result = runner.invoke(app, ["drill", "stale-market-data", "--run-id", run_id])
+    assert result.exit_code != 0
+    assert "Run artifacts directory not found" in result.stderr
