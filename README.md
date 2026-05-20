@@ -59,3 +59,13 @@ tc data fingerprint --dataset btcusdt-sample
 ```
 
 Use the printed `dataset_sha256` value as the `data.fingerprint` field in your run spec.
+
+## Slice 4 backtest lifecycle skeleton
+
+Run the backtest lifecycle skeleton from a validated spec:
+
+```bash
+tc run backtest --spec examples/configs/btcusdt_backtest.yaml
+```
+
+This command currently executes only the operational lifecycle skeleton and writes placeholder artifacts. It does not execute a real NautilusTrader backtest.

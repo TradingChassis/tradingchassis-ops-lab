@@ -1,5 +1,6 @@
-"""CLI tests for core commands and Slice 2 workflows."""
+"""CLI tests for core commands and run/data workflows."""
 
+import json
 from pathlib import Path
 
 import yaml
@@ -23,11 +24,15 @@ def test_tc_version_outputs_package_version() -> None:
     assert "0.1.0" in result.stdout
 
 
-def _write_valid_spec(path: Path, run_id: str = "slice2-cli-run") -> None:
+def _write_valid_spec(
+    path: Path,
+    run_id: str = "slice2-cli-run",
+    mode: str = "backtest",
+) -> None:
     spec = {
         "spec_version": "v1",
         "run_id": run_id,
-        "mode": "backtest",
+        "mode": mode,
         "engine": "nautilus",
         "venue": "binance",
         "instrument": "BTCUSDT",
@@ -89,6 +94,80 @@ def test_tc_run_init_fails_for_duplicate_run_id(tmp_path: Path, monkeypatch) -> 
 
     first = runner.invoke(app, ["run", "init", "--spec", str(spec_path)])
     second = runner.invoke(app, ["run", "init", "--spec", str(spec_path)])
+    assert first.exit_code == 0
+    assert second.exit_code != 0
+    assert "Run artifacts already exist" in second.stderr
+
+
+def test_tc_run_backtest_creates_lifecycle_artifacts(tmp_path: Path, monkeypatch) -> None:
+    """Backtest skeleton command creates final lifecycle artifact set."""
+    monkeypatch.chdir(tmp_path)
+    spec_path = tmp_path / "backtest.yaml"
+    _write_valid_spec(spec_path, run_id="slice4-backtest-run")
+
+    result = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
+    assert result.exit_code == 0
+    assert "Backtest lifecycle artifacts at" in result.stdout
+    assert "config_sha256=" in result.stdout
+    assert "status=completed" in result.stdout
+
+    run_dir = tmp_path / "artifacts" / "runs" / "slice4-backtest-run"
+    assert run_dir.is_dir()
+    assert (run_dir / "run_spec.yaml").is_file()
+    assert (run_dir / "metadata.json").is_file()
+    assert (run_dir / "journal.jsonl").is_file()
+    assert (run_dir / "metrics.json").is_file()
+    assert (run_dir / "report.md").is_file()
+
+    metadata = json.loads((run_dir / "metadata.json").read_text(encoding="utf-8"))
+    assert metadata["status"] == "completed"
+    assert metadata["started_at_utc"]
+    assert metadata["completed_at_utc"]
+    assert metadata["lifecycle"] == "backtest_skeleton"
+    assert metadata["is_placeholder"] is True
+
+    journal_lines = (run_dir / "journal.jsonl").read_text(encoding="utf-8").splitlines()
+    assert len(journal_lines) == 4
+    journal = [json.loads(line) for line in journal_lines]
+    assert [entry["event"] for entry in journal] == [
+        "run_started",
+        "backtest_started",
+        "backtest_completed",
+        "run_completed",
+    ]
+    assert journal[-1]["status"] == "completed"
+    assert all(entry["event"] != "run_initialized" for entry in journal)
+
+    metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
+    assert metrics["is_placeholder"] is True
+    assert metrics["metrics"] == {}
+
+    report = (run_dir / "report.md").read_text(encoding="utf-8")
+    assert "Slice 4 backtest lifecycle skeleton" in report
+    assert "No NautilusTrader backtest was executed" in report
+    assert "No orders, fills, strategy PnL, or trading performance metrics were produced" in report
+
+
+def test_tc_run_backtest_fails_for_paper_mode(tmp_path: Path, monkeypatch) -> None:
+    """Backtest command rejects specs that are not mode=backtest."""
+    monkeypatch.chdir(tmp_path)
+    spec_path = tmp_path / "paper.yaml"
+    _write_valid_spec(spec_path, run_id="slice4-paper-run", mode="paper")
+
+    result = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
+    assert result.exit_code != 0
+    assert "Spec mode must be backtest" in result.stderr
+
+
+def test_tc_run_backtest_fails_for_duplicate_run_id(tmp_path: Path, monkeypatch) -> None:
+    """Backtest command fails cleanly when run artifacts already exist."""
+    monkeypatch.chdir(tmp_path)
+    spec_path = tmp_path / "dup.yaml"
+    _write_valid_spec(spec_path, run_id="slice4-backtest-duplicate")
+
+    first = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
+    second = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
+
     assert first.exit_code == 0
     assert second.exit_code != 0
     assert "Run artifacts already exist" in second.stderr

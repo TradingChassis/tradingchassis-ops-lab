@@ -13,6 +13,7 @@ from ops_lab.data.fingerprint import (
 )
 from ops_lab.data.prepare import UnsupportedDatasetError, prepare_dataset
 from ops_lab.runs.artifacts import RunArtifactsAlreadyExistError, initialize_run_artifacts
+from ops_lab.runs.backtest import InvalidBacktestModeError, run_backtest_skeleton
 from ops_lab.runs.hashing import compute_config_sha256
 from ops_lab.runs.journal import append_journal_event, build_run_initialized_event
 from ops_lab.runs.metadata import build_initial_metadata, write_metadata
@@ -86,6 +87,23 @@ def run_init(spec: Path = typer.Option(..., "--spec", help="Path to run spec YAM
 
     typer.echo(f"Initialized run artifacts at {artifacts_dir.resolve()}")
     typer.echo(f"config_sha256={config_sha256}")
+
+
+@run_app.command("backtest")
+def run_backtest(spec: Path = typer.Option(..., "--spec", help="Path to run spec YAML.")) -> None:
+    """Run a backtest lifecycle skeleton and persist lifecycle artifacts."""
+    try:
+        artifacts_dir, config_sha256 = run_backtest_skeleton(spec)
+    except (RunSpecLoadError, InvalidBacktestModeError) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+    except RunArtifactsAlreadyExistError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+
+    typer.echo(f"Backtest lifecycle artifacts at {artifacts_dir.resolve()}")
+    typer.echo(f"config_sha256={config_sha256}")
+    typer.echo("status=completed")
 
 
 def _resolve_data_root() -> Path:
