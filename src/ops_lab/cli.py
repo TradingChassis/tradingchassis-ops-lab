@@ -1,5 +1,6 @@
 """CLI entry point for ops_lab."""
 
+import json
 import os
 from pathlib import Path
 
@@ -23,16 +24,24 @@ from ops_lab.runs.journal import append_journal_event, build_run_initialized_eve
 from ops_lab.runs.metadata import build_initial_metadata, write_metadata
 from ops_lab.runs.paper import InvalidPaperModeError, run_paper_lifecycle
 from ops_lab.runs.spec import RunSpecLoadError, load_run_spec
+from ops_lab.safety.kill_switch import (
+    KillSwitchError,
+    activate_kill_switch,
+    clear_kill_switch,
+    get_kill_switch_status,
+)
 
 app = typer.Typer(help="ops-lab command line interface.")
 spec_app = typer.Typer(help="Run spec validation commands.")
 run_app = typer.Typer(help="Run initialization commands.")
 data_app = typer.Typer(help="Local dataset preparation and fingerprint commands.")
 metrics_app = typer.Typer(help="Run artifact metrics export commands.")
+kill_app = typer.Typer(help="File-based kill switch safety commands.")
 app.add_typer(spec_app, name="spec")
 app.add_typer(run_app, name="run")
 app.add_typer(data_app, name="data")
 app.add_typer(metrics_app, name="metrics")
+app.add_typer(kill_app, name="kill")
 
 
 @app.callback()
@@ -143,6 +152,20 @@ def _resolve_data_root() -> Path:
     return Path("data")
 
 
+def _resolve_runtime_root() -> Path:
+    configured = os.environ.get("OPS_LAB_RUNTIME_ROOT")
+    if configured:
+        return Path(configured)
+    return Path("runtime/kill_switch")
+
+
+def _resolve_artifacts_root() -> Path:
+    configured = os.environ.get("OPS_LAB_ARTIFACTS_ROOT")
+    if configured:
+        return Path(configured)
+    return Path("artifacts/runs")
+
+
 @data_app.command("prepare")
 def data_prepare(
     dataset: str = typer.Option(..., "--dataset", help="Dataset name to prepare."),
@@ -223,3 +246,109 @@ def metrics_export(
         raise typer.Exit(1) from exc
 
     typer.echo(f"Exported metrics to {output.resolve()}")
+
+
+@kill_app.command("activate")
+def kill_activate(
+    run_id: str = typer.Option(..., "--run-id", help="Run ID to activate kill switch for."),
+    reason: str = typer.Option(..., "--reason", help="Operator reason for activation."),
+    actor: str | None = typer.Option(None, "--actor", help="Optional operator identity."),
+) -> None:
+    """Activate file-based kill switch state for a run."""
+    runtime_root = _resolve_runtime_root()
+    artifacts_root = _resolve_artifacts_root()
+    try:
+        state = activate_kill_switch(
+            run_id=run_id,
+            reason=reason,
+            actor=actor,
+            runtime_root=runtime_root,
+            artifacts_root=artifacts_root,
+        )
+    except KillSwitchError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+
+    typer.echo(f"run_id={state.run_id}")
+    typer.echo("state=active")
+    typer.echo("event=kill_activated")
+    typer.echo(f"reason={state.last_reason}")
+    typer.echo(f"actor={state.last_actor}")
+    typer.echo(f"state_path={(runtime_root / f'{state.run_id}.state.json').resolve()}")
+
+
+@kill_app.command("status")
+def kill_status(
+    run_id: str = typer.Option(..., "--run-id", help="Run ID to inspect kill switch status for."),
+    as_json: bool = typer.Option(
+        False,
+        "--json",
+        help="Print kill switch status as JSON.",
+    ),
+) -> None:
+    """Show kill switch status for one run."""
+    runtime_root = _resolve_runtime_root()
+    try:
+        status = get_kill_switch_status(run_id=run_id, runtime_root=runtime_root)
+    except KillSwitchError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+
+    if as_json:
+        payload: dict[str, str | None]
+        if status.state == "absent":
+            payload = {
+                "schema_version": "v1",
+                "run_id": status.run_id,
+                "state": "absent",
+            }
+        else:
+            payload = {
+                "schema_version": status.schema_version,
+                "run_id": status.run_id,
+                "state": status.state,
+                "updated_at_utc": status.updated_at_utc,
+                "last_event_id": status.last_event_id,
+                "last_reason": status.last_reason,
+                "last_actor": status.last_actor,
+                "active_since_utc": status.active_since_utc,
+                "cleared_at_utc": status.cleared_at_utc,
+            }
+        typer.echo(json.dumps(payload, indent=2, sort_keys=True))
+        return
+
+    typer.echo(f"run_id={status.run_id}")
+    typer.echo(f"state={status.state}")
+    if status.state != "absent":
+        typer.echo(f"updated_at_utc={status.updated_at_utc}")
+        typer.echo(f"last_reason={status.last_reason}")
+        typer.echo(f"last_actor={status.last_actor}")
+
+
+@kill_app.command("clear")
+def kill_clear(
+    run_id: str = typer.Option(..., "--run-id", help="Run ID to clear kill switch for."),
+    reason: str = typer.Option(..., "--reason", help="Operator reason for clear."),
+    actor: str | None = typer.Option(None, "--actor", help="Optional operator identity."),
+) -> None:
+    """Clear file-based kill switch state for a run."""
+    runtime_root = _resolve_runtime_root()
+    artifacts_root = _resolve_artifacts_root()
+    try:
+        state = clear_kill_switch(
+            run_id=run_id,
+            reason=reason,
+            actor=actor,
+            runtime_root=runtime_root,
+            artifacts_root=artifacts_root,
+        )
+    except KillSwitchError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+
+    typer.echo(f"run_id={state.run_id}")
+    typer.echo("state=cleared")
+    typer.echo("event=kill_cleared")
+    typer.echo(f"reason={state.last_reason}")
+    typer.echo(f"actor={state.last_actor}")
+    typer.echo(f"state_path={(runtime_root / f'{state.run_id}.state.json').resolve()}")

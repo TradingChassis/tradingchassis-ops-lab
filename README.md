@@ -97,3 +97,16 @@ tc metrics export --run-id <run_id> --output artifacts/runs/<run_id>/metrics.pro
 
 Slice 7 observability is artifact-driven and local-only.
 It does not start a monitoring daemon or long-running metrics exporter.
+
+## Slice 8 file-based kill switch
+
+Use the minimal kill switch safety signal commands:
+
+```bash
+tc kill activate --run-id <run_id> --reason "manual stop"
+tc kill status --run-id <run_id>
+tc kill clear --run-id <run_id> --reason "manual reset"
+```
+
+This is a file-based operational safety signal for local workflows.
+It does not cancel orders, flatten positions, or connect to exchanges.

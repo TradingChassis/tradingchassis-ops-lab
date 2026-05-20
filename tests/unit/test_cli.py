@@ -555,3 +555,101 @@ def test_tc_metrics_export_fails_for_invalid_run_id(tmp_path: Path, monkeypatch)
     )
     assert result.exit_code != 0
     assert "Run artifacts directory not found" in result.stderr
+
+
+def test_tc_kill_activate_writes_runtime_files(tmp_path: Path, monkeypatch) -> None:
+    """Kill activate command writes state and events files."""
+    runtime_root = tmp_path / "runtime" / "kill_switch"
+    monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
+    monkeypatch.setenv("USER", "slice8-operator")
+    run_id = "slice8-cli-activate"
+
+    result = runner.invoke(
+        app,
+        ["kill", "activate", "--run-id", run_id, "--reason", "manual stop"],
+    )
+    assert result.exit_code == 0
+    assert f"run_id={run_id}" in result.stdout
+    assert "state=active" in result.stdout
+    assert "event=kill_activated" in result.stdout
+    assert "reason=manual stop" in result.stdout
+    assert "actor=slice8-operator" in result.stdout
+    assert (runtime_root / f"{run_id}.state.json").is_file()
+    assert (runtime_root / f"{run_id}.events.jsonl").is_file()
+
+
+def test_tc_kill_status_absent_exits_zero(tmp_path: Path, monkeypatch) -> None:
+    """Kill status reports absent when state file does not exist."""
+    runtime_root = tmp_path / "runtime" / "kill_switch"
+    monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
+    run_id = "slice8-cli-status-absent"
+
+    result = runner.invoke(app, ["kill", "status", "--run-id", run_id])
+    assert result.exit_code == 0
+    assert f"run_id={run_id}" in result.stdout
+    assert "state=absent" in result.stdout
+
+
+def test_tc_kill_status_json_outputs_payload(tmp_path: Path, monkeypatch) -> None:
+    """Kill status --json outputs valid JSON payload."""
+    runtime_root = tmp_path / "runtime" / "kill_switch"
+    monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
+    run_id = "slice8-cli-status-json"
+    runner.invoke(
+        app,
+        ["kill", "activate", "--run-id", run_id, "--reason", "manual stop"],
+    )
+
+    result = runner.invoke(app, ["kill", "status", "--run-id", run_id, "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout)
+    assert payload["schema_version"] == "v1"
+    assert payload["run_id"] == run_id
+    assert payload["state"] == "active"
+
+
+def test_tc_kill_clear_writes_cleared_state(tmp_path: Path, monkeypatch) -> None:
+    """Kill clear command appends clear event and writes cleared state."""
+    runtime_root = tmp_path / "runtime" / "kill_switch"
+    monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
+    run_id = "slice8-cli-clear"
+    runner.invoke(app, ["kill", "activate", "--run-id", run_id, "--reason", "manual stop"])
+
+    result = runner.invoke(
+        app,
+        ["kill", "clear", "--run-id", run_id, "--reason", "manual reset"],
+    )
+    assert result.exit_code == 0
+    assert f"run_id={run_id}" in result.stdout
+    assert "state=cleared" in result.stdout
+    assert "event=kill_cleared" in result.stdout
+    assert "reason=manual reset" in result.stdout
+
+    state_payload = json.loads((runtime_root / f"{run_id}.state.json").read_text(encoding="utf-8"))
+    assert state_payload["state"] == "cleared"
+
+
+def test_tc_kill_activate_fails_for_empty_reason(tmp_path: Path, monkeypatch) -> None:
+    """Kill activate command fails cleanly for whitespace-only reason."""
+    runtime_root = tmp_path / "runtime" / "kill_switch"
+    monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
+
+    result = runner.invoke(
+        app,
+        ["kill", "activate", "--run-id", "slice8-cli-empty-reason", "--reason", "   "],
+    )
+    assert result.exit_code != 0
+    assert "reason must be non-empty" in result.stderr
+
+
+def test_tc_kill_status_fails_for_malformed_state_file(tmp_path: Path, monkeypatch) -> None:
+    """Kill status returns non-zero for malformed state file JSON."""
+    runtime_root = tmp_path / "runtime" / "kill_switch"
+    monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
+    run_id = "slice8-cli-malformed"
+    runtime_root.mkdir(parents=True)
+    (runtime_root / f"{run_id}.state.json").write_text("{bad json", encoding="utf-8")
+
+    result = runner.invoke(app, ["kill", "status", "--run-id", run_id])
+    assert result.exit_code != 0
+    assert "Malformed JSON in kill switch state file" in result.stderr
