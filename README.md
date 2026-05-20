@@ -122,3 +122,16 @@ tc reconcile check --run-id <run_id> --expected <path> --observed <path>
 Slice 9 reconciliation is file-based and local-only.
 It does not connect to exchanges, does not use API keys/secrets, and has no trading side effects.
 It writes `reconciliation_result.json` into the run artifact directory and is report-only (no automatic kill switch activation).
+
+## Slice 10 deterministic failure drills
+
+Run deterministic local failure drills against existing run artifacts:
+
+```bash
+tc drill stale-market-data --run-id <run_id>
+tc drill reconciliation-mismatch --run-id <run_id>
+tc drill restart-recovery --run-id <run_id>
+```
+
+Each drill writes a report under `artifacts/runs/<run_id>/drills/`.
+These drills are local and file-based only: no exchange connectivity, no live market data, and no real restart orchestration.
