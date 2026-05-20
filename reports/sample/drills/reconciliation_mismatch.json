@@ -1,0 +1,13 @@
+{
+  "run_id": "2026-05-20-btcusdt-backtest-001",
+  "drill": "reconciliation-mismatch",
+  "status": "completed",
+  "outcome": "expected_mismatch",
+  "summary": {
+    "ok": 2,
+    "warning": 0,
+    "mismatch": 1,
+    "unknown": 0
+  },
+  "note": "command exits non-zero by design for mismatch scenario"
+}

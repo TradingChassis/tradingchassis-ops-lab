@@ -1,0 +1,11 @@
+{
+  "run_id": "2026-05-20-btcusdt-paper-001",
+  "mode": "paper",
+  "duration_seconds": 3.0,
+  "paper": {
+    "heartbeat_total": 3
+  },
+  "journal": {
+    "event_total": 6
+  }
+}

@@ -1,0 +1,9 @@
+# Representative metrics export for sample backtest run.
+ops_lab_run_info{run_id="2026-05-20-btcusdt-backtest-001",mode="backtest"} 1
+ops_lab_run_duration_seconds{run_id="2026-05-20-btcusdt-backtest-001"} 2
+ops_lab_backtest_engine_duration_seconds{run_id="2026-05-20-btcusdt-backtest-001"} 1.7
+ops_lab_backtest_input_candles_total{run_id="2026-05-20-btcusdt-backtest-001"} 60
+ops_lab_backtest_bars_processed_total{run_id="2026-05-20-btcusdt-backtest-001"} 60
+ops_lab_journal_event_total{run_id="2026-05-20-btcusdt-backtest-001",event="run_initialized"} 1
+ops_lab_journal_event_total{run_id="2026-05-20-btcusdt-backtest-001",event="backtest_started"} 1
+ops_lab_journal_event_total{run_id="2026-05-20-btcusdt-backtest-001",event="backtest_completed"} 1

@@ -18,6 +18,14 @@
   - forced reconciliation mismatch
   - restart/recovery
 
+Implemented in current repository scope:
+- Local data prepare/fingerprint workflow
+- Spec-driven backtest smoke run and paper lifecycle skeleton
+- Artifact-driven metrics export
+- File-based kill switch workflow
+- File-based reconciliation checks
+- Deterministic failure drills with runbooks
+
 ## Out of scope (v1)
 
 - Building a custom trading engine
@@ -29,6 +37,8 @@
 - Generic Kubernetes platform work
 - Full production observability stack hardening
 
+Future work beyond v1 may expand depth, but this repository intentionally keeps the current implementation local, reproducible, and non-production.
+
 ## Definition of Done (v1)
 
-v1 is complete when a user can run one NautilusTrader backtest and one paper trading workflow from versioned specs, inspect artifacts/reports, observe basic metrics, trigger safety/reconciliation behavior, and read reports/runbooks for three failure scenarios.
+v1 is complete when a user can run one NautilusTrader backtest smoke workflow and one paper lifecycle skeleton workflow from versioned specs, inspect artifacts/reports, export metrics, exercise file-based safety/reconciliation behavior, and run/read three deterministic failure drills and runbooks.

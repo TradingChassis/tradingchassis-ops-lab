@@ -1,0 +1,15 @@
+{
+  "run_id": "2026-05-20-btcusdt-backtest-001",
+  "status": "ok",
+  "summary": {
+    "ok": 3,
+    "warning": 0,
+    "mismatch": 0,
+    "unknown": 0
+  },
+  "checks": {
+    "position": "ok",
+    "open_orders": "ok",
+    "freshness": "ok"
+  }
+}

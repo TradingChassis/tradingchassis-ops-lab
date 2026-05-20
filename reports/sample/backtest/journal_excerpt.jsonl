@@ -1,0 +1,3 @@
+{"event":"run_initialized","ts_utc":"2026-05-20T19:00:00Z","run_id":"2026-05-20-btcusdt-backtest-001","status":"started"}
+{"event":"backtest_started","ts_utc":"2026-05-20T19:00:01Z","run_id":"2026-05-20-btcusdt-backtest-001","engine":"nautilus"}
+{"event":"backtest_completed","ts_utc":"2026-05-20T19:00:03Z","run_id":"2026-05-20-btcusdt-backtest-001","status":"completed"}

@@ -1,0 +1,13 @@
+{
+  "run_id": "2026-05-20-btcusdt-backtest-001",
+  "drill": "stale-market-data",
+  "status": "completed",
+  "outcome": "expected_warning",
+  "summary": {
+    "ok": 2,
+    "warning": 1,
+    "mismatch": 0,
+    "unknown": 0
+  },
+  "note": "deterministic local stale-data rehearsal; no live feed checks performed"
+}

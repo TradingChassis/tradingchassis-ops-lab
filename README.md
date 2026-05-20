@@ -2,105 +2,112 @@
 
 ## What this is
 
-`ops-lab` is a small, operations-focused run lab around NautilusTrader.
-It is designed to demonstrate reproducible backtest and paper trading workflows with clear run specs, run metadata, hashes, artifacts, and operational checks.
+`ops-lab` is a local operations lab around NautilusTrader.
+It demonstrates a reproducible v1 run model with spec-driven backtest and paper workflows, deterministic local data preparation, artifact-first observability, and file-based operational controls.
 
-In under 60 seconds: this repository focuses on running and inspecting trading workflows reliably, not on inventing a new trading engine or proving strategy performance.
+The backtest path is a smoke backtest for lifecycle and artifact validation, not a strategy performance report.
+The paper path is a lifecycle skeleton with no exchange or testnet connectivity.
 
 ## What this is not
 
-- A custom trading engine
-- A strategy library
-- A quant research platform
 - A trading bot
-- A production-grade live trading system
-- A low-latency execution gateway
+- A strategy research platform
+- A production trading system
 - A profitability claim
-- A generic Kubernetes showcase
+- A live exchange integration
+- A custom trading engine
 
-## v1 scope
+## v1 demo flow
 
-- One engine: NautilusTrader
-- One example instrument: BTCUSDT
-- One intentionally simple toy strategy
-- Two run modes: backtest and paper
-- Local-first execution
-- Docker Compose for Prometheus/Grafana in a later slice
-- Optional Kubernetes manifests only as a final extension
-- Three failure drills:
-  1. stale market data
-  2. forced reconciliation mismatch
-  3. restart/recovery
+Use one local run to demonstrate data prep, run lifecycle, observability export, file-based safety/reconciliation, and deterministic drills.
 
-## Planned v1 artifacts
+1. Prepare and fingerprint dataset
+2. Run one smoke backtest and one paper lifecycle skeleton
+3. Export metrics from artifacts
+4. Toggle kill switch state
+5. Run reconciliation check
+6. Run deterministic failure drills
 
-- Versioned run specs
-- Run metadata (including config/data/code hashes)
-- Structured artifact layout
-- Operational journal
-- Basic reports
-- Observability hooks
-- Reconciliation checks
-- Kill switch behavior
-- Runbooks for the three failure drills
+Build history note: slices 0-10 established the foundations; this slice focuses on portfolio readability and curated evidence.
 
-## Current status
+## Operational features demonstrated
 
-Slice 0 is complete when documentation is in place only.
-No implementation logic is included yet, and no claims are made that execution workflows already exist.
+- Run spec validation and deterministic run identity (`run_id`)
+- Local dataset preparation and deterministic fingerprinting
+- Nautilus-backed smoke backtest artifact lifecycle
+- Paper-mode lifecycle skeleton artifact lifecycle (no connectivity)
+- Artifact-driven metrics export for Prometheus text format
+- File-based kill switch signal (`activate` / `status` / `clear`)
+- File-based reconciliation checks from deterministic fixtures
+- Deterministic failure drills with runbooks
 
-## Slice 3 local data workflow
+## Artifacts produced
 
-Prepare the local synthetic sample dataset and compute its deterministic fingerprint:
+Primary run artifacts are written under `artifacts/runs/<run_id>/`:
+
+- `run_spec.yaml`
+- `metadata.json`
+- `journal.jsonl`
+- `metrics.json`
+- `report.md`
+- `reconciliation_result.json` (after reconciliation/drill flows)
+- `drills/*.json` (after drill commands)
+- `metrics.prom` (when exporting to file)
+
+Additional local outputs:
+
+- Prepared dataset under `data/datasets/btcusdt-sample/`
+- Dataset fingerprint at `data/fingerprints/btcusdt-sample.fingerprint.json`
+- Kill switch state/events under `runtime/kill_switch/`
+
+Curated representative outputs for quick review live in `reports/sample/`.
+
+## Minimal command walkthrough
+
+Install and run from a fresh clone:
+
+```bash
+python -m pip install -e ".[dev]"
+```
+
+Prepare local sample data:
 
 ```bash
 tc data prepare --dataset btcusdt-sample
 tc data fingerprint --dataset btcusdt-sample
 ```
 
-Use the printed `dataset_sha256` value as the `data.fingerprint` field in your run spec.
+Expected outputs:
+- `data/datasets/btcusdt-sample/`
+- `data/fingerprints/btcusdt-sample.fingerprint.json`
 
-## Slice 5 minimal Nautilus smoke backtest
-
-Run the minimal NautilusTrader smoke backtest from a validated spec:
+Run smoke backtest:
 
 ```bash
 tc run backtest --spec examples/configs/btcusdt_backtest.yaml
 ```
 
-This command runs a minimal NautilusTrader engine smoke backtest and writes lifecycle artifacts.
-It loads prepared fixture candles and converts them to Nautilus bars before execution.
-This is not a validated strategy performance report.
-No profitability claims are made, and no orders/fills/PnL metrics are produced.
-
-## Slice 6 paper lifecycle skeleton
-
-Run the bounded deterministic paper-mode lifecycle skeleton from a validated spec:
+Run paper lifecycle skeleton:
 
 ```bash
 tc run paper --spec examples/configs/btcusdt_paper.yaml
 ```
 
-This command writes paper lifecycle skeleton artifacts only.
-It does not connect to any exchange or testnet and does not execute paper trading connectivity.
+How to choose `<run_id>`:
+- Read `run_id` from the spec (`examples/configs/*.yaml`), or
+- List directories under `artifacts/runs/` and pick an existing run.
 
-## Slice 7 artifact-driven metrics export
-
-Run a backtest or paper workflow first so artifacts exist under `artifacts/runs/<run_id>/`.
-
-Export Prometheus text metrics from existing artifacts:
+Export metrics from existing artifacts:
 
 ```bash
 tc metrics export --run-id <run_id>
 tc metrics export --run-id <run_id> --output artifacts/runs/<run_id>/metrics.prom
 ```
 
-Slice 7 observability is artifact-driven and local-only.
-It does not start a monitoring daemon or long-running metrics exporter.
+Expected output:
+- `artifacts/runs/<run_id>/metrics.prom` (when `--output` is used)
 
-## Slice 8 file-based kill switch
-
-Use the minimal kill switch safety signal commands:
+Toggle file-based kill switch state:
 
 ```bash
 tc kill activate --run-id <run_id> --reason "manual stop"
@@ -108,24 +115,20 @@ tc kill status --run-id <run_id>
 tc kill clear --run-id <run_id> --reason "manual reset"
 ```
 
-This is a file-based operational safety signal for local workflows.
-It does not cancel orders, flatten positions, or connect to exchanges.
+Expected outputs:
+- `runtime/kill_switch/<run_id>.state.json`
+- `runtime/kill_switch/<run_id>.events.jsonl`
 
-## Slice 9 file-based reconciliation
-
-Run deterministic local reconciliation from JSON fixtures:
+Run reconciliation check:
 
 ```bash
-tc reconcile check --run-id <run_id> --expected <path> --observed <path>
+tc reconcile check --run-id <run_id> --expected examples/reconciliation/expected_match.json --observed examples/reconciliation/observed_match.json
 ```
 
-Slice 9 reconciliation is file-based and local-only.
-It does not connect to exchanges, does not use API keys/secrets, and has no trading side effects.
-It writes `reconciliation_result.json` into the run artifact directory and is report-only (no automatic kill switch activation).
+Expected output:
+- `artifacts/runs/<run_id>/reconciliation_result.json`
 
-## Slice 10 deterministic failure drills
-
-Run deterministic local failure drills against existing run artifacts:
+Run deterministic failure drills:
 
 ```bash
 tc drill stale-market-data --run-id <run_id>
@@ -133,5 +136,37 @@ tc drill reconciliation-mismatch --run-id <run_id>
 tc drill restart-recovery --run-id <run_id>
 ```
 
-Each drill writes a report under `artifacts/runs/<run_id>/drills/`.
-These drills are local and file-based only: no exchange connectivity, no live market data, and no real restart orchestration.
+Important:
+- `tc drill reconciliation-mismatch --run-id <run_id>` exits non-zero by design (`exit 1`) when mismatch is detected.
+
+Expected outputs:
+- `artifacts/runs/<run_id>/drills/stale_market_data.json`
+- `artifacts/runs/<run_id>/drills/reconciliation_mismatch.json`
+- `artifacts/runs/<run_id>/drills/restart_recovery.json`
+
+## Repo map
+
+- Scope and boundaries: `docs/scope.md`
+- Logical architecture: `docs/architecture.md`
+- Run model: `docs/run-model.md`
+- Backtest vs paper framing: `docs/backtest-vs-paper.md`
+- Canonical limitations: `docs/limitations.md`
+- Failure drill runbooks: `docs/runbooks/README.md`
+- Reconciliation fixtures: `examples/reconciliation/README.md`
+- Sample run specs: `examples/configs/`
+- Static Grafana dashboard definition: `dashboards/grafana/ops-lab-run-observability.json`
+- Curated portfolio samples: `reports/sample/README.md`
+
+## Limitations
+
+- Local-first lab; no live exchange connectivity
+- Smoke backtest and skeleton paper lifecycle only
+- File-based kill switch, reconciliation, and drills
+- Single engine and example instrument scope for v1
+- No profitability, alpha, latency, or production safety claims
+
+See `docs/limitations.md` for the canonical list.
+
+## Brief future work
+
+Future work is intentionally brief: broaden data/instrument coverage, deepen observability ergonomics, and harden operational workflows only after preserving the same explicit scope and non-production claims.

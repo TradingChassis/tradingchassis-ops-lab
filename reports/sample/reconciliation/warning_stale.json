@@ -1,0 +1,18 @@
+{
+  "run_id": "2026-05-20-btcusdt-backtest-001",
+  "status": "warning",
+  "summary": {
+    "ok": 2,
+    "warning": 1,
+    "mismatch": 0,
+    "unknown": 0
+  },
+  "checks": {
+    "position": "ok",
+    "open_orders": "ok",
+    "freshness": "warning"
+  },
+  "details": {
+    "freshness_note": "observed freshness timestamp is stale relative to expected threshold"
+  }
+}

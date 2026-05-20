@@ -4,6 +4,7 @@
 
 A run is a single, identifiable execution of a trading workflow in either `backtest` or `paper` mode.
 Each run is defined by a versioned spec and produces traceable metadata, journal entries, and artifacts.
+Example specs are in `examples/configs/`.
 
 ## Core concepts
 
@@ -16,29 +17,31 @@ Each run is defined by a versioned spec and produces traceable metadata, journal
 - **journal**: operational event log for the run lifecycle
 - **report**: concise summary of outcome, checks, and notable events
 
+## Artifact contract (v1)
+
+For a given `run_id`, the local artifact contract is:
+
+- `artifacts/runs/<run_id>/run_spec.yaml`
+- `artifacts/runs/<run_id>/metadata.json`
+- `artifacts/runs/<run_id>/journal.jsonl`
+- `artifacts/runs/<run_id>/metrics.json`
+- `artifacts/runs/<run_id>/report.md`
+
+Optional/additional outputs depending on commands:
+
+- `artifacts/runs/<run_id>/reconciliation_result.json`
+- `artifacts/runs/<run_id>/drills/*.json`
+- `artifacts/runs/<run_id>/metrics.prom` (when exported to file)
+
 ## Why reproducibility and traceability matter
 
 - Reproducibility allows the same run inputs to be rerun with consistent expectations.
 - Traceability allows operators to answer what ran, when, with which inputs, and why a result occurred.
 - Together they support practical debugging, review, and drill validation.
 
-## Illustrative example (schema placeholder)
+## Concrete examples
 
-This YAML is illustrative only. The final schema will be implemented in a later slice.
+- Backtest example: `examples/configs/btcusdt_backtest.yaml`
+- Paper example: `examples/configs/btcusdt_paper.yaml`
 
-```yaml
-run_id: "run-2026-05-20T190000Z-backtest-btcusdt"
-mode: "backtest"
-instrument: "BTCUSDT"
-strategy: "toy_strategy_v1"
-spec_version: "v1"
-inputs:
-  config_ref: "configs/backtest/toy-btcusdt.yaml"
-  data_ref: "data/btcusdt/sample-dataset.parquet"
-  code_ref: "git:abc1234"
-hashes:
-  config_sha256: "<placeholder>"
-  data_sha256: "<placeholder>"
-  code_sha256: "<placeholder>"
-artifacts_root: "artifacts/run-2026-05-20T190000Z-backtest-btcusdt/"
-```
+For the end-to-end runnable sequence, see the `v1 demo flow` and `Minimal command walkthrough` sections in `README.md`.

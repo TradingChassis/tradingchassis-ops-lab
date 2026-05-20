@@ -1,6 +1,7 @@
 # Backtest vs Paper
 
 Both modes are first-class run modes in v1 and share the same operational framing: versioned specs, run metadata, hashes, artifacts, journal, and reports.
+For runnable commands, see `README.md` (`v1 demo flow` and `Minimal command walkthrough`).
 
 ## Comparison
 
@@ -13,6 +14,7 @@ Both modes are first-class run modes in v1 and share the same operational framin
 | reconciliation | Compare expected replay state | Compare runtime observed state |
 | observability | Run progress and result signals | Runtime health and progress signals |
 | output artifacts | Replay outputs and summary reports | Session outputs and summary reports |
+| connectivity | Local fixture-driven smoke path | Lifecycle skeleton only, no exchange/testnet connectivity |
 
 ## What is shared
 

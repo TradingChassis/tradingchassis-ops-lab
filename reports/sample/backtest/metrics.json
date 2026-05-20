@@ -1,0 +1,13 @@
+{
+  "run_id": "2026-05-20-btcusdt-backtest-001",
+  "mode": "backtest",
+  "duration_seconds": 2.0,
+  "backtest": {
+    "engine_duration_seconds": 1.7,
+    "input_candles_total": 60,
+    "bars_processed_total": 60
+  },
+  "journal": {
+    "event_total": 5
+  }
+}

@@ -1,5 +1,7 @@
 # Failure Drill Runbooks
 
+Runbooks are referenced from the `README.md` demo flow and cover deterministic local drill behavior only.
+
 - [`stale-market-data.md`](./stale-market-data.md)
 - [`reconciliation-mismatch.md`](./reconciliation-mismatch.md)
 - [`restart-recovery.md`](./restart-recovery.md)

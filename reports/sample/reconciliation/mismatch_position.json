@@ -1,0 +1,18 @@
+{
+  "run_id": "2026-05-20-btcusdt-backtest-001",
+  "status": "mismatch",
+  "summary": {
+    "ok": 2,
+    "warning": 0,
+    "mismatch": 1,
+    "unknown": 0
+  },
+  "checks": {
+    "position": "mismatch",
+    "open_orders": "ok",
+    "freshness": "ok"
+  },
+  "details": {
+    "position_note": "expected and observed net position differ in representative fixture"
+  }
+}

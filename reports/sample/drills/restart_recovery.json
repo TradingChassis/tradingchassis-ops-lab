@@ -1,0 +1,12 @@
+{
+  "run_id": "2026-05-20-btcusdt-backtest-001",
+  "drill": "restart-recovery",
+  "status": "completed",
+  "outcome": "simulated_recovery_ok",
+  "summary": {
+    "metadata_present": true,
+    "run_spec_present": true,
+    "journal_present": true
+  },
+  "note": "no process restart performed; this is artifact-based recovery rehearsal"
+}

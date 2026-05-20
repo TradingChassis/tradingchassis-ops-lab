@@ -1,6 +1,7 @@
 # Reconciliation Fixtures (Slice 9)
 
 These files are local, deterministic fixtures for `tc reconcile check`.
+They are referenced by the `README.md` minimal command walkthrough.
 
 Example:
 

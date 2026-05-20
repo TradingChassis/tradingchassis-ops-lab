@@ -1,0 +1,6 @@
+{"event":"run_initialized","ts_utc":"2026-05-20T19:10:00Z","run_id":"2026-05-20-btcusdt-paper-001","status":"started"}
+{"event":"paper_started","ts_utc":"2026-05-20T19:10:01Z","run_id":"2026-05-20-btcusdt-paper-001","status":"running"}
+{"event":"paper_heartbeat","ts_utc":"2026-05-20T19:10:02Z","run_id":"2026-05-20-btcusdt-paper-001","heartbeat":1}
+{"event":"paper_heartbeat","ts_utc":"2026-05-20T19:10:03Z","run_id":"2026-05-20-btcusdt-paper-001","heartbeat":2}
+{"event":"paper_heartbeat","ts_utc":"2026-05-20T19:10:04Z","run_id":"2026-05-20-btcusdt-paper-001","heartbeat":3}
+{"event":"paper_completed","ts_utc":"2026-05-20T19:10:04Z","run_id":"2026-05-20-btcusdt-paper-001","status":"completed"}
