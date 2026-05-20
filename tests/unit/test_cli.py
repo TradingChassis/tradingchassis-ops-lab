@@ -431,3 +431,127 @@ def test_tc_data_fingerprint_succeeds_after_prepare(tmp_path: Path, monkeypatch)
     assert result.exit_code == 0
     assert "dataset_sha256=" in result.stdout
     assert (data_root / "fingerprints" / "btcusdt-sample.fingerprint.json").is_file()
+
+
+def test_tc_metrics_export_outputs_prometheus_text(tmp_path: Path, monkeypatch) -> None:
+    """Metrics export command prints Prometheus exposition to stdout."""
+    monkeypatch.chdir(tmp_path)
+    run_id = "slice7-cli-export"
+    run_dir = tmp_path / "artifacts" / "runs" / run_id
+    run_dir.mkdir(parents=True)
+    (run_dir / "metadata.json").write_text(
+        json.dumps(
+            {
+                "run_id": run_id,
+                "mode": "backtest",
+                "engine": "nautilus",
+                "venue": "binance",
+                "instrument": "BTCUSDT",
+                "status": "completed",
+                "created_at_utc": "2026-05-20T19:00:00Z",
+                "data": {"dataset": "btcusdt-sample"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "metrics.json").write_text(
+        json.dumps(
+            {
+                "dataset": "btcusdt-sample",
+                "is_placeholder": False,
+                "engine_executed": True,
+                "input_candles_count": 20,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "journal.jsonl").write_text('{"event":"run_started"}\n', encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "metrics",
+            "export",
+            "--run-id",
+            run_id,
+            "--artifacts-root",
+            str(tmp_path / "artifacts" / "runs"),
+        ],
+    )
+    assert result.exit_code == 0
+    assert "ops_lab_run_info{" in result.stdout
+    assert "ops_lab_backtest_input_candles_total" in result.stdout
+
+
+def test_tc_metrics_export_writes_output_file(tmp_path: Path, monkeypatch) -> None:
+    """Metrics export command writes exposition text to output file."""
+    monkeypatch.chdir(tmp_path)
+    run_id = "slice7-cli-output"
+    run_dir = tmp_path / "artifacts" / "runs" / run_id
+    run_dir.mkdir(parents=True)
+    (run_dir / "metadata.json").write_text(
+        json.dumps(
+            {
+                "run_id": run_id,
+                "mode": "paper",
+                "engine": "nautilus",
+                "venue": "binance_testnet",
+                "instrument": "BTCUSDT",
+                "status": "completed",
+                "created_at_utc": "2026-05-20T19:00:00Z",
+                "data": {"dataset": "btcusdt-sample"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "metrics.json").write_text(
+        json.dumps(
+            {
+                "is_placeholder": True,
+                "engine_executed": False,
+                "heartbeat_count": 3,
+                "synthetic_duration_seconds": 3,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    output_path = tmp_path / "exports" / "run.prom"
+    result = runner.invoke(
+        app,
+        [
+            "metrics",
+            "export",
+            "--run-id",
+            run_id,
+            "--artifacts-root",
+            str(tmp_path / "artifacts" / "runs"),
+            "--output",
+            str(output_path),
+            "--no-include-journal",
+        ],
+    )
+    assert result.exit_code == 0
+    assert output_path.is_file()
+    assert "Exported metrics to" in result.stdout
+    contents = output_path.read_text(encoding="utf-8")
+    assert "ops_lab_paper_heartbeat_total" in contents
+    assert "ops_lab_journal_events_total" not in contents
+
+
+def test_tc_metrics_export_fails_for_invalid_run_id(tmp_path: Path, monkeypatch) -> None:
+    """Metrics export fails with non-zero exit for missing run artifacts."""
+    monkeypatch.chdir(tmp_path)
+    result = runner.invoke(
+        app,
+        [
+            "metrics",
+            "export",
+            "--run-id",
+            "missing-run",
+            "--artifacts-root",
+            str(tmp_path / "artifacts" / "runs"),
+        ],
+    )
+    assert result.exit_code != 0
+    assert "Run artifacts directory not found" in result.stderr

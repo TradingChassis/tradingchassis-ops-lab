@@ -12,6 +12,10 @@ from ops_lab.data.fingerprint import (
     write_fingerprint,
 )
 from ops_lab.data.prepare import UnsupportedDatasetError, prepare_dataset
+from ops_lab.observability.metrics import (
+    RunObservabilityError,
+    export_run_metrics,
+)
 from ops_lab.runs.artifacts import RunArtifactsAlreadyExistError, initialize_run_artifacts
 from ops_lab.runs.backtest import InvalidBacktestModeError, run_backtest_lifecycle
 from ops_lab.runs.hashing import compute_config_sha256
@@ -24,9 +28,11 @@ app = typer.Typer(help="ops-lab command line interface.")
 spec_app = typer.Typer(help="Run spec validation commands.")
 run_app = typer.Typer(help="Run initialization commands.")
 data_app = typer.Typer(help="Local dataset preparation and fingerprint commands.")
+metrics_app = typer.Typer(help="Run artifact metrics export commands.")
 app.add_typer(spec_app, name="spec")
 app.add_typer(run_app, name="run")
 app.add_typer(data_app, name="data")
+app.add_typer(metrics_app, name="metrics")
 
 
 @app.callback()
@@ -169,3 +175,51 @@ def data_fingerprint(
 
     typer.echo(f"dataset_sha256={fingerprint.dataset_sha256}")
     typer.echo(f"fingerprint_file={output_path.resolve()}")
+
+
+@metrics_app.command("export")
+def metrics_export(
+    run_id: str = typer.Option(..., "--run-id", help="Run ID to export metrics for."),
+    artifacts_root: Path = typer.Option(
+        Path("artifacts/runs"),
+        "--artifacts-root",
+        help="Root directory containing run artifact subdirectories.",
+    ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        help="Optional output file path for Prometheus text exposition.",
+    ),
+    include_journal: bool = typer.Option(
+        True,
+        "--include-journal/--no-include-journal",
+        help="Include journal-derived metrics.",
+    ),
+) -> None:
+    """Export run artifact metrics as Prometheus text exposition."""
+    try:
+        rendered = export_run_metrics(
+            run_id=run_id,
+            artifacts_root=artifacts_root,
+            include_journal=include_journal,
+        )
+    except RunObservabilityError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+
+    if output is None:
+        typer.echo(rendered, nl=False)
+        return
+
+    try:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(rendered, encoding="utf-8")
+    except OSError as exc:
+        typer.secho(
+            f"Failed to write metrics output file {output}: {exc}",
+            fg=typer.colors.RED,
+            err=True,
+        )
+        raise typer.Exit(1) from exc
+
+    typer.echo(f"Exported metrics to {output.resolve()}")
