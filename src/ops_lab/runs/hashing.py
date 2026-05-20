@@ -1,9 +1,20 @@
-"""Placeholder hashing interfaces for future slices.
+"""Config hashing utilities for run initialization."""
 
-Slice 1 intentionally avoids implementing hashing behavior.
-"""
+from __future__ import annotations
+
+import hashlib
+import json
+
+from ops_lab.runs.spec import RunSpec, run_spec_to_normalized_dict
 
 
-def hash_inputs_placeholder() -> None:
-    """Reserve input hashing for a future slice."""
-    raise NotImplementedError("Run input hashing will be implemented in a future slice.")
+def compute_config_sha256(spec: RunSpec) -> str:
+    """Compute deterministic SHA-256 over canonicalized run config JSON."""
+    normalized = run_spec_to_normalized_dict(spec)
+    canonical = json.dumps(
+        normalized,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()

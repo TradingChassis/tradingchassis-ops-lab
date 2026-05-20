@@ -1,0 +1,18 @@
+spec_version: v1
+run_id: 2026-05-20-btcusdt-paper-001
+mode: paper
+engine: nautilus
+venue: binance_testnet
+instrument: BTCUSDT
+strategy:
+  name: toy_mean_reversion
+  version: 0.1.0
+data:
+  dataset: btcusdt-sample
+  fingerprint: placeholder
+risk:
+  profile: tiny
+observability:
+  journal: true
+  metrics: false
+  report: false
