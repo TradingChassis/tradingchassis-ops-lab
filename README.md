@@ -83,3 +83,17 @@ tc run paper --spec examples/configs/btcusdt_paper.yaml
 
 This command writes paper lifecycle skeleton artifacts only.
 It does not connect to any exchange or testnet and does not execute paper trading connectivity.
+
+## Slice 7 artifact-driven metrics export
+
+Run a backtest or paper workflow first so artifacts exist under `artifacts/runs/<run_id>/`.
+
+Export Prometheus text metrics from existing artifacts:
+
+```bash
+tc metrics export --run-id <run_id>
+tc metrics export --run-id <run_id> --output artifacts/runs/<run_id>/metrics.prom
+```
+
+Slice 7 observability is artifact-driven and local-only.
+It does not start a monitoring daemon or long-running metrics exporter.
