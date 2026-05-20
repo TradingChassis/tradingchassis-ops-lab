@@ -92,3 +92,47 @@ def test_tc_run_init_fails_for_duplicate_run_id(tmp_path: Path, monkeypatch) -> 
     assert first.exit_code == 0
     assert second.exit_code != 0
     assert "Run artifacts already exist" in second.stderr
+
+
+def test_tc_data_prepare_succeeds_and_is_idempotent(tmp_path: Path, monkeypatch) -> None:
+    """Data prepare command succeeds repeatedly for the supported dataset."""
+    data_root = tmp_path / "runtime-data"
+    monkeypatch.setenv("OPS_LAB_DATA_ROOT", str(data_root))
+
+    first = runner.invoke(app, ["data", "prepare", "--dataset", "btcusdt-sample"])
+    second = runner.invoke(app, ["data", "prepare", "--dataset", "btcusdt-sample"])
+
+    assert first.exit_code == 0
+    assert second.exit_code == 0
+    assert "Prepared dataset=btcusdt-sample" in first.stdout
+    assert (data_root / "datasets" / "btcusdt-sample" / "candles_1m.csv").is_file()
+
+
+def test_tc_data_prepare_fails_for_unknown_dataset(tmp_path: Path, monkeypatch) -> None:
+    """Data prepare command fails for unsupported datasets."""
+    monkeypatch.setenv("OPS_LAB_DATA_ROOT", str(tmp_path / "runtime-data"))
+    result = runner.invoke(app, ["data", "prepare", "--dataset", "ethusdt-sample"])
+    assert result.exit_code != 0
+    assert "Unsupported dataset" in result.stderr
+
+
+def test_tc_data_fingerprint_fails_before_prepare(tmp_path: Path, monkeypatch) -> None:
+    """Fingerprint command fails with actionable guidance when data is missing."""
+    monkeypatch.setenv("OPS_LAB_DATA_ROOT", str(tmp_path / "runtime-data"))
+    result = runner.invoke(app, ["data", "fingerprint", "--dataset", "btcusdt-sample"])
+    assert result.exit_code != 0
+    assert "tc data prepare --dataset btcusdt-sample" in result.stderr
+
+
+def test_tc_data_fingerprint_succeeds_after_prepare(tmp_path: Path, monkeypatch) -> None:
+    """Fingerprint command succeeds after preparing local dataset files."""
+    data_root = tmp_path / "runtime-data"
+    monkeypatch.setenv("OPS_LAB_DATA_ROOT", str(data_root))
+
+    prepared = runner.invoke(app, ["data", "prepare", "--dataset", "btcusdt-sample"])
+    result = runner.invoke(app, ["data", "fingerprint", "--dataset", "btcusdt-sample"])
+
+    assert prepared.exit_code == 0
+    assert result.exit_code == 0
+    assert "dataset_sha256=" in result.stdout
+    assert (data_root / "fingerprints" / "btcusdt-sample.fingerprint.json").is_file()

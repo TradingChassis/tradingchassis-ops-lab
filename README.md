@@ -48,3 +48,14 @@ In under 60 seconds: this repository focuses on running and inspecting trading w
 
 Slice 0 is complete when documentation is in place only.
 No implementation logic is included yet, and no claims are made that execution workflows already exist.
+
+## Slice 3 local data workflow
+
+Prepare the local synthetic sample dataset and compute its deterministic fingerprint:
+
+```bash
+tc data prepare --dataset btcusdt-sample
+tc data fingerprint --dataset btcusdt-sample
+```
+
+Use the printed `dataset_sha256` value as the `data.fingerprint` field in your run spec.
