@@ -26,7 +26,7 @@
 - Escalate alerting and open an incident.
 - Require operator acknowledgement and state convergence checks before resuming.
 
-## What this v1 lab intentionally does not do
+## What this lab intentionally does not do
 
 - No exchange/account API polling.
 - No kill switch auto-activation.

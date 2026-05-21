@@ -1,6 +1,6 @@
-# Limitations (v1)
+# Limitations
 
-This project is intentionally constrained for a finite v1.
+This project is intentionally constrained in its current implementation.
 
 - Local-only operations lab; no live exchange connectivity
 - NautilusTrader-only engine scope
@@ -14,4 +14,4 @@ This project is intentionally constrained for a finite v1.
 - No profitability/alpha claim
 - No production-grade safety, reliability, or low-latency claim
 
-These limitations are deliberate to keep v1 focused on operational workflow quality rather than breadth or performance claims.
+These limitations are deliberate to keep the current implementation focused on operational workflow quality rather than breadth or performance claims.

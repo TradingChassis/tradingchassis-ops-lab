@@ -1,6 +1,6 @@
 # Scope
 
-## In scope (v1)
+## In scope (current implementation)
 
 - Operations-focused run lab around NautilusTrader
 - One engine: NautilusTrader
@@ -8,7 +8,7 @@
 - One intentionally simple toy strategy
 - Two run modes: backtest and paper
 - Local-first execution model
-- Reproducible runs from versioned run specs
+- Reproducible runs from run specs
 - Run metadata with config/data/code hashes
 - Predictable artifact layout, operational journal, and basic reports
 - Basic observability hooks
@@ -26,7 +26,7 @@ Implemented in current repository scope:
 - File-based reconciliation checks
 - Deterministic failure drills with runbooks
 
-## Out of scope (v1)
+## Out of scope (current implementation)
 
 - Building a custom trading engine
 - Building a strategy library or quant research platform
@@ -37,8 +37,8 @@ Implemented in current repository scope:
 - Generic Kubernetes platform work
 - Full production observability stack hardening
 
-Future work beyond v1 may expand depth, but this repository intentionally keeps the current implementation local, reproducible, and non-production.
+Future work may expand depth, but this repository intentionally keeps the current implementation local, reproducible, and non-production.
 
-## Definition of Done (v1)
+## Definition of Done (current scope)
 
-v1 is complete when a user can run one NautilusTrader backtest smoke workflow and one paper lifecycle skeleton workflow from versioned specs, inspect artifacts/reports, export metrics, exercise file-based safety/reconciliation behavior, and run/read three deterministic failure drills and runbooks.
+The current scope is complete when a user can run one NautilusTrader backtest smoke workflow and one paper lifecycle skeleton workflow from run specs, inspect artifacts/reports, export metrics, exercise file-based safety/reconciliation behavior, and run/read three deterministic failure drills and runbooks.

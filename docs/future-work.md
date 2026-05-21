@@ -1,6 +1,6 @@
-# Future Work (Post-v1 Candidates)
+# Future Work
 
-The items below are intentionally out of scope for v1.
+The items below are intentionally out of current scope.
 They are candidate extensions, not commitments.
 
 - Richer Nautilus integration patterns
@@ -12,4 +12,4 @@ They are candidate extensions, not commitments.
 - Additional instruments beyond BTCUSDT
 - Optional hftbacktest comparison module
 
-Prioritization depends on v1 stability and learning outcomes.
+Prioritization depends on current implementation stability and learning outcomes.

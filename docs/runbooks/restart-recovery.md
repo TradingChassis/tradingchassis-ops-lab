@@ -27,7 +27,7 @@
 - Validate warm-start state and downstream connectivity.
 - Run post-restart safety checks before re-enabling trading actions.
 
-## What this v1 lab intentionally does not do
+## What this lab intentionally does not do
 
 - No process orchestration.
 - No daemon/supervisor control.

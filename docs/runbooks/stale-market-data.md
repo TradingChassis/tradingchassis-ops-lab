@@ -26,7 +26,7 @@
 - Trigger alerting and failover logic.
 - Gate order placement until freshness recovers.
 
-## What this v1 lab intentionally does not do
+## What this lab intentionally does not do
 
 - No exchange connectivity.
 - No live market data subscription.

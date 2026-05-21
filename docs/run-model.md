@@ -3,13 +3,13 @@
 ## What is a run?
 
 A run is a single, identifiable execution of a trading workflow in either `backtest` or `paper` mode.
-Each run is defined by a versioned spec and produces traceable metadata, journal entries, and artifacts.
+Each run is defined by a spec and produces traceable metadata, journal entries, and artifacts.
 Example specs are in `examples/configs/`.
 
 ## Core concepts
 
 - **run_id**: unique identifier for a run instance
-- **run spec**: versioned declaration of mode, instrument, strategy reference, and run configuration
+- **run spec**: declaration of mode, instrument, strategy reference, and run configuration
 - **immutable inputs**: exact config/data/code references used for that run
 - **metadata**: operational facts (timestamps, status, mode, identifiers)
 - **hashes**: fingerprints for config/data/code inputs to support reproducibility checks
@@ -17,7 +17,7 @@ Example specs are in `examples/configs/`.
 - **journal**: operational event log for the run lifecycle
 - **report**: concise summary of outcome, checks, and notable events
 
-## Artifact contract (v1)
+## Artifact contract (current implementation)
 
 For a given `run_id`, the local artifact contract is:
 
@@ -44,4 +44,4 @@ Optional/additional outputs depending on commands:
 - Backtest example: `examples/configs/btcusdt_backtest.yaml`
 - Paper example: `examples/configs/btcusdt_paper.yaml`
 
-For the end-to-end runnable sequence, see the `v1 demo flow` and `Minimal command walkthrough` sections in `README.md`.
+For the end-to-end runnable sequence, see `Quickstart` and `Full demo flow` in `README.md`.
