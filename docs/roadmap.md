@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This roadmap describes the planned development direction for `ops-lab` based on the current repository state and documented scope.
+This roadmap describes the planned development direction for `TradingChassis Ops Lab` based on the current repository state and documented scope.
 
 Released milestones are documented in the repository changelog.
 
-`ops-lab` is a local-first operations lab around NautilusTrader. It is not a commitment to build a production trading system.
+`TradingChassis Ops Lab` is a local-first operations lab around NautilusTrader. It is not a commitment to build a production trading system.
 
 For context, see [Architecture](architecture.md), [Run model](run-model.md), [Limitations](limitations.md), [Runbooks](runbooks/stale-market-data.md), and [Demo flow](demo-flow.md).
 
