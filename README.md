@@ -1,6 +1,6 @@
-# ops-lab
+# TradingChassis Ops Lab
 
-`ops-lab` is a local-first trading operations lab around NautilusTrader. It focuses on reproducible, spec-driven `backtest` and `paper` workflows with deterministic local data preparation, artifact-first observability, and file-based operational controls.
+`TradingChassis Ops Lab` is a local-first trading operations lab around [NautilusTrader](https://github.com/nautechsystems/nautilus_trader). It focuses on reproducible, spec-driven backtest and paper workflows with deterministic local data preparation, artifact-first observability, and file-based operational controls.
 
 The backtest path is a smoke backtest for lifecycle and artifact validation, not a strategy performance report. The paper path is a lifecycle skeleton with no exchange or testnet connectivity.
 
