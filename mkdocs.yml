@@ -1,8 +1,6 @@
 site_name: TradingChassis Ops Lab
 site_description: local-first trading operations lab around NautilusTrader
 docs_dir: docs
-repo_url: https://github.com/TradingChassis/ops-lab
-repo_name: TradingChassis/ops-lab
 
 theme:
   name: material
