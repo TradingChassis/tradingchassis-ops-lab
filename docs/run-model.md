@@ -44,4 +44,4 @@ Optional/additional outputs depending on commands:
 - Backtest example: `examples/configs/btcusdt_backtest.yaml`
 - Paper example: `examples/configs/btcusdt_paper.yaml`
 
-For the end-to-end runnable sequence, see `Quickstart` and `Full demo flow` in `README.md`.
+For the end-to-end runnable sequence, see [Quickstart](quickstart.md) and [Demo Flow](demo-flow.md).

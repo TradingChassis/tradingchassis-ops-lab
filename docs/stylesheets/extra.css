@@ -1,0 +1,554 @@
+/* ==========================================================================
+   Layout
+   ========================================================================== */
+
+   .mermaid {
+    overflow-x: auto;
+  }
+  
+  .md-content__inner {
+    max-width: 70rem;
+    margin: 0 auto;
+  }
+  
+  .md-main__inner {
+    justify-content: center;
+  }
+  
+  @media screen and (max-width: 1220px) {
+    .md-content__inner {
+      padding-left: 1.2rem;
+      padding-right: 1.2rem;
+    }
+  }
+  
+  /* ==========================================================================
+     Typography
+     ========================================================================== */
+  
+  .md-typeset {
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--md-default-fg-color);
+  }
+  
+  /* Ensure headings use same color as text */
+  .md-typeset h1,
+  .md-typeset h2,
+  .md-typeset h3,
+  .md-typeset h4,
+  .md-typeset h5 {
+    color: var(--md-default-fg-color);
+  }
+  
+  .md-typeset h1 {
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  
+  .md-typeset h2 {
+    border-left: 3px solid var(--md-primary-fg-color);
+    padding-left: 0.6rem;
+  }
+  
+  .md-typeset .admonition {
+    border-radius: 10px;
+  }
+  
+  .md-typeset a {
+    color: var(--md-default-fg-color);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  
+  .md-typeset a:hover {
+    color: var(--md-default-fg-color);
+    text-decoration-thickness: 2px;
+  }
+  
+  /* Keep visited content links same color as normal links */
+  .md-content a,
+  .md-content a:link,
+  .md-content a:visited,
+  .md-content a:hover,
+  .md-content a:focus,
+  .md-content a:focus-visible,
+  .md-content a:active {
+    color: var(--md-default-fg-color);
+  }
+  
+  /* Breadcrumbs (navigation.path): match sidebar hover color */
+  .md-path__link:focus,
+  .md-path__link:hover {
+    color: var(--md-default-fg-color);
+  }
+  
+  /* Removes the vertical bar in front of headings */
+  .md-typeset h1,
+  .md-typeset h2,
+  .md-typeset h3,
+  .md-typeset h4,
+  .md-typeset h5,
+  .md-typeset h6 {
+    border-left: none !important;
+    padding-left: 0 !important;
+  }
+  
+  /* ==========================================================================
+     Background tokens
+     ========================================================================== */
+  
+  [data-md-color-scheme="default"] {
+    --md-default-bg-color: #f5f7fa;
+    --md-code-bg-color: #e7ecf2;
+  }
+  
+  .md-typeset pre.code-wrap {
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    overflow-x: hidden !important;
+    padding: 0.5rem !important;
+    background: var(--md-code-bg-color) !important;
+    border-radius: 0.5rem !important;
+  }
+  
+  [data-md-color-scheme="slate"] {
+    --md-default-bg-color: #0f1115;
+  }
+  
+  body {
+    background-color: var(--md-default-bg-color);
+  }
+  
+  /* ==========================================================================
+     Header
+     ========================================================================== */
+  
+  .md-header {
+    box-shadow: none;
+    border-bottom: none;
+    backdrop-filter: none;
+  }
+  
+  /* Light header */
+  [data-md-color-scheme="default"] .md-header {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--md-default-fg-color);
+  }
+  
+  /* Dark header */
+  [data-md-color-scheme="slate"] .md-header {
+    background: rgba(20, 22, 28, 0.9);
+    color: var(--md-default-fg-color);
+  }
+  
+  .md-header__button {
+    color: inherit;
+    padding: 0.18rem;
+  }
+  
+  .md-header__button svg {
+    transform: scale(0.75);
+  }
+  
+  /* Header + mobile drawer: dual SVG logos, scheme toggle via data-md-color-scheme */
+  .md-header__button.md-logo,
+  .md-nav__title .md-logo {
+    display: inline-flex;
+    align-items: center;
+  }
+  
+  .md-header__button.md-logo .tc-logo,
+  .md-nav__title .md-logo .tc-logo {
+    height: 1.25rem;
+    width: auto;
+    display: block;
+  }
+  
+  /* Must beat .md-header__button.md-logo .tc-logo { display: block } or both logos stay visible */
+  body[data-md-color-scheme="default"] .md-header__button.md-logo .tc-logo--dark,
+  body[data-md-color-scheme="default"] .md-nav__title .md-logo .tc-logo--dark,
+  body[data-md-color-scheme="slate"] .md-header__button.md-logo .tc-logo--light,
+  body[data-md-color-scheme="slate"] .md-nav__title .md-logo .tc-logo--light {
+    display: none;
+  }
+  
+  /* ==========================================================================
+     Tabs
+     ========================================================================== */
+  
+  [data-md-color-scheme="default"] .md-tabs {
+    background: #ffffff;
+    color: var(--md-default-fg-color);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+  
+  [data-md-color-scheme="slate"] .md-tabs {
+    background: #14161c;
+    color: var(--md-default-fg-color);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .md-tabs__link {
+    color: inherit;
+    font-size: 0.7rem;
+  }
+  
+  /* ==========================================================================
+     Search
+     ========================================================================== */
+  
+  .md-search__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .md-search__icon svg {
+    width: 19px;
+    height: 19px;
+  }
+  
+  .md-search__input {
+    font-size: 0.7rem;
+  }
+  
+  /* Search overlay: remove blue selection/focus/active highlights (scoped to overlay) */
+  .md-search {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Text selection highlight */
+  .md-search ::selection {
+    background-color: transparent;
+    color: inherit;
+  }
+  .md-search ::-moz-selection {
+    background-color: transparent;
+    color: inherit;
+  }
+  
+  /* Focus outline / glow */
+  .md-search .md-search__input:focus,
+  .md-search .md-search__input:focus-visible,
+  .md-search .md-search__input.focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+  
+  .md-search .md-search-result__link:focus,
+  .md-search .md-search-result__link:focus-visible,
+  .md-search .md-search-result__link.focus-visible,
+  .md-search .md-search__scrollwrap:focus,
+  .md-search .md-search__scrollwrap:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+  
+  /* Active highlight flash */
+  .md-search .md-search__input:active,
+  .md-search .md-search-result__link:active,
+  .md-search .md-search-result__link:active *,
+  .md-search .md-search-result__link:focus:active {
+    background-color: transparent;
+  }
+  
+  /* Scrollbars inside search overlay */
+  .md-search .md-search__scrollwrap {
+    scrollbar-color: var(--md-default-fg-color--lighter) transparent;
+  }
+  .md-search .md-search__scrollwrap::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .md-search .md-search__scrollwrap::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .md-search .md-search__scrollwrap::-webkit-scrollbar-thumb {
+    background-color: var(--md-default-fg-color--lighter);
+    border-radius: 999px;
+  }
+  .md-search .md-search__scrollwrap::-webkit-scrollbar-thumb:hover,
+  .md-search .md-search__scrollwrap::-webkit-scrollbar-thumb:active {
+    background-color: var(--md-default-fg-color--lighter);
+  }
+  
+  /* ==========================================================================
+     Back-to-top button
+     ========================================================================== */
+  
+  /* Hide back-to-top text, keep arrow */
+  .md-top {
+    font-size: 0 !important;
+    padding: 0.3rem !important;
+    box-shadow: none !important;
+  }
+  
+  .md-top svg {
+    font-size: initial;
+    position: relative;
+    top: -1px;
+    width: 20px;
+    height: 20px;
+  }
+  
+  /* Light */
+  [data-md-color-scheme="default"] .md-top {
+    background: rgba(255, 255, 255);
+    color: var(--md-default-fg-color);
+  }
+  
+  /* Dark */
+  [data-md-color-scheme="slate"] .md-top {
+    background: rgba(20, 22, 28);
+    color: var(--md-default-fg-color);
+  }
+  
+  /* ==========================================================================
+     Sidebar navigation
+     ========================================================================== */
+  
+  /* Section labels */
+  .md-nav--primary .md-nav__title,
+  .md-nav--secondary .md-nav__title,
+  .md-nav--primary .md-nav__item--section > .md-nav__link,
+  .md-nav--primary .md-nav__item--nested > .md-nav__link {
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--md-default-fg-color--light);
+  }
+  
+  /* Top-level primary category labels and first nested section labels only */
+  .md-nav--primary > .md-nav__list > .md-nav__item > .md-nav__link,
+  .md-nav--primary > .md-nav__list > .md-nav__item > .md-nav__container > a.md-nav__link {
+  /* .md-nav--primary > .md-nav__list > .md-nav__item > nav > .md-nav__list > .md-nav__item--section > .md-nav__link, */
+  /* .md-nav--primary > .md-nav__list > .md-nav__item > nav > .md-nav__list > .md-nav__item--section > .md-nav__container > a.md-nav__link { */
+    font-weight: 600;
+  }
+  
+  /* Remove blue focus/active highlight from sidebar + integrated TOC links */
+  .md-nav--primary .md-nav__link,
+  .md-nav--secondary .md-nav__link {
+    background: transparent;
+    box-shadow: none;
+    color: var(--md-default-fg-color);
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Preserve active-page styling */
+  .md-nav--primary .md-nav__link--active,
+  .md-nav--primary .md-nav__link--active:visited,
+  .md-nav--primary .md-nav__link--active:focus,
+  .md-nav--primary .md-nav__link--active:focus-visible,
+  .md-nav--primary .md-nav__link--active:active,
+  .md-nav--secondary .md-nav__link--active,
+  .md-nav--secondary .md-nav__link--active:visited,
+  .md-nav--secondary .md-nav__link--active:focus,
+  .md-nav--secondary .md-nav__link--active:focus-visible,
+  .md-nav--secondary .md-nav__link--active:active {
+    font-weight: 600;
+    color: var(--md-default-fg-color);
+    background: transparent;
+    box-shadow: none;
+  }
+  
+  .md-nav--primary .md-nav__link:focus,
+  .md-nav--primary .md-nav__link:focus-visible,
+  .md-nav--primary .md-nav__link:active,
+  .md-nav--secondary .md-nav__link:focus,
+  .md-nav--secondary .md-nav__link:focus-visible,
+  .md-nav--secondary .md-nav__link:active {
+    outline: none;
+    box-shadow: none;
+    background: transparent;
+    color: inherit;
+  }
+  
+  /* Keep sidebar text color stable even on visited/focus/active */
+  .md-nav--primary .md-nav__link:visited,
+  .md-nav--primary .md-nav__link:focus,
+  .md-nav--primary .md-nav__link:focus-visible,
+  .md-nav--primary .md-nav__link:active,
+  .md-nav--secondary .md-nav__link:visited,
+  .md-nav--secondary .md-nav__link:focus,
+  .md-nav--secondary .md-nav__link:focus-visible,
+  .md-nav--secondary .md-nav__link:active {
+    color: var(--md-default-fg-color--light);
+  }
+  
+  .md-nav--primary .md-nav__link::before,
+  .md-nav--secondary .md-nav__link::before {
+    display: none;
+  }
+  
+  .md-nav__icon {
+    display: none;
+  }
+  
+  /* ==========================================================================
+     Integrated TOC indicator (toc.integrate)
+     ========================================================================== */
+  
+  [dir="ltr"] .md-nav--integrated > .md-nav__list > .md-nav__item--active .md-nav--secondary {
+    border-left: 1px solid var(--md-default-fg-color--lighter);
+  }
+  
+  /* ==========================================================================
+     Sidebar & TOC Scrollbar
+     ========================================================================== */
+  
+  /* Firefox */
+  .md-sidebar__scrollwrap,
+  .md-sidebar__scrollwrap:hover {
+    scrollbar-color: var(--md-default-fg-color--lighter) transparent !important;
+  }
+  
+  /* Chrome / Edge / Safari */
+  .md-sidebar__scrollwrap::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .md-sidebar__scrollwrap::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+  
+  .md-sidebar__scrollwrap::-webkit-scrollbar-thumb {
+    background-color: var(--md-default-fg-color--lighter) !important;
+    border-radius: 999px;
+  }
+  
+  /* Disable hover color change */
+  .md-sidebar__scrollwrap::-webkit-scrollbar-thumb:hover {
+    background-color: var(--md-default-fg-color--lighter) !important;
+  }
+  
+  .md-sidebar__scrollwrap::-webkit-scrollbar-thumb:active {
+    background-color: var(--md-default-fg-color--lighter) !important;
+  }
+  
+  /* ==========================================================================
+     Footer
+     ========================================================================== */
+  
+  .md-footer {
+    margin-top: 5rem;
+  }
+  
+  .md-footer-meta .md-footer-generator {
+    display: none;
+  }
+  
+  /* Fixes light-mode pagination + footer text + social icon colors */
+  [data-md-color-scheme="default"] {
+    --md-footer-bg-color: var(--md-default-bg-color);
+    --md-footer-bg-color--dark: var(--md-default-bg-color);
+    --md-footer-fg-color: var(--md-default-fg-color);
+    --md-footer-fg-color--light: var(--md-default-fg-color--light);
+    --md-footer-fg-color--lighter: var(--md-default-fg-color--lighter);
+  }
+  
+  [data-md-color-scheme="slate"] {
+    --md-footer-bg-color: var(--md-default-bg-color);
+    --md-footer-bg-color--dark: var(--md-default-bg-color);
+    --md-footer-fg-color: var(--md-default-fg-color);
+    --md-footer-fg-color--light: var(--md-default-fg-color--light);
+    --md-footer-fg-color--lighter: var(--md-default-fg-color--lighter);
+  }
+  
+  /* Keep pagination and icons consistent with the computed footer foreground */
+  .md-footer__inner {
+    color: var(--md-footer-fg-color);
+  }
+  
+  .md-footer__button,
+  .md-footer__title,
+  .md-footer__direction {
+    color: inherit;
+  }
+  
+  /* Remove the separator line between footer pagination and footer bar */
+  .md-footer-meta {
+    border-top: none;
+    box-shadow: none;
+  }
+  
+  .md-footer-meta__inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .md-footer-copyright {
+    text-align: center;
+    font-size: 0.65rem;
+  }
+  
+  /* ==========================================================================
+     Navigation Colors
+     ========================================================================== */
+  
+  /* Remove Material accent highlight */
+  :root {
+    --md-accent-fg-color: var(--md-default-fg-color);
+  }
+  
+  /* Default navigation links */
+  .md-nav--primary .md-nav__link,
+  .md-nav--secondary .md-nav__link {
+    color: var(--md-default-fg-color--light);
+  }
+  
+  /* Hover */
+  .md-nav--primary .md-nav__link:hover,
+  .md-nav--secondary .md-nav__link:hover {
+    color: var(--md-default-fg-color);
+    background: transparent;
+  }
+  
+  /* Active page */
+  .md-nav--primary .md-nav__link--active,
+  .md-nav--secondary .md-nav__link--active {
+    color: var(--md-default-fg-color);
+    font-weight: 600;
+  }
+  
+  /* Mobile drawer (burger menu) */
+  @media screen and (max-width: 76.234375em) {
+    .md-nav--primary .md-nav__item--active > .md-nav__link {
+      color: var(--md-default-fg-color);
+      font-weight: 600;
+    }
+  
+    .md-nav--primary .md-nav__item--active > .md-nav__link:hover,
+    .md-nav--primary .md-nav__item--active > .md-nav__link:focus,
+    .md-nav--primary .md-nav__item--active > .md-nav__link:focus-visible {
+      color: var(--md-default-fg-color);
+    }
+  
+    .md-nav--primary .md-nav__link--active,
+    .md-nav--primary .md-nav__link--active:hover,
+    .md-nav--primary .md-nav__link--active:focus,
+    .md-nav--primary .md-nav__link--active:focus-visible {
+      color: var(--md-default-fg-color);
+    }
+  
+    .md-nav--primary .md-nav__link[for]:hover,
+    .md-nav--primary .md-nav__link[for]:focus,
+    .md-nav--primary .md-nav__link[for]:focus-visible,
+    .md-nav--primary .md-nav__link[href]:hover,
+    .md-nav--primary .md-nav__link[href]:focus,
+    .md-nav--primary .md-nav__link[href]:focus-visible {
+      color: var(--md-default-fg-color);
+    }
+  
+    .md-nav--primary .md-nav__link[for]:hover code,
+    .md-nav--primary .md-nav__link[for]:focus code,
+    .md-nav--primary .md-nav__link[href]:hover code,
+    .md-nav--primary .md-nav__link[href]:focus code {
+      background-color: transparent;
+      color: var(--md-default-fg-color);
+    }
+  }

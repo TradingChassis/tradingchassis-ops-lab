@@ -21,6 +21,10 @@ dev = [
   "pytest",
   "ruff",
 ]
+docs = [
+  "mkdocs",
+  "mkdocs-material",
+]
 
 [project.scripts]
 tc = "ops_lab.cli:app"

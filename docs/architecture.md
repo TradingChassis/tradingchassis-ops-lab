@@ -2,7 +2,7 @@
 
 This document describes the logical architecture only.
 Implementation structure, module internals, and package naming are deferred to future work.
-For the runnable local demo flow, see `README.md`.
+For the runnable local demo flow, see [Demo Flow](demo-flow.md).
 
 ## Diagram
 
