@@ -24,6 +24,7 @@ from ops_lab.observability.metrics import (
     RunObservabilityError,
     export_run_metrics,
 )
+from ops_lab.observability.serve import serve_metrics
 from ops_lab.reconciliation.checks import ReconciliationError, run_reconciliation_check
 from ops_lab.runs.artifacts import RunArtifactsAlreadyExistError, initialize_run_artifacts
 from ops_lab.runs.backtest import InvalidBacktestModeError, run_backtest_lifecycle
@@ -43,7 +44,9 @@ app = typer.Typer(help="TradingChassis Ops Lab CLI.")
 spec_app = typer.Typer(help="Run spec validation commands.")
 run_app = typer.Typer(help="Run initialization commands.")
 data_app = typer.Typer(help="Local dataset preparation and fingerprint commands.")
-metrics_app = typer.Typer(help="Run artifact metrics export commands.")
+metrics_app = typer.Typer(
+    help="Local artifact-derived metrics commands (export one run or serve /metrics over HTTP)."
+)
 kill_app = typer.Typer(help="File-based kill switch safety commands.")
 reconcile_app = typer.Typer(help="File-based reconciliation commands.")
 drill_app = typer.Typer(help="Deterministic local failure drills.")
@@ -258,6 +261,52 @@ def metrics_export(
         raise typer.Exit(1) from exc
 
     typer.echo(f"Exported metrics to {output.resolve()}")
+
+
+@metrics_app.command("serve")
+def metrics_serve(
+    artifacts_root: Path = typer.Option(
+        Path("artifacts/runs"),
+        "--artifacts-root",
+        help="Root directory containing local run artifact subdirectories.",
+    ),
+    host: str = typer.Option(
+        "127.0.0.1",
+        "--host",
+        help="Host interface for the local metrics server.",
+    ),
+    port: int = typer.Option(
+        8000,
+        "--port",
+        min=1,
+        max=65535,
+        help="Port for the local metrics server.",
+    ),
+    run_id: str | None = typer.Option(
+        None,
+        "--run-id",
+        help="Optional run ID filter. If omitted, serves all discovered runs.",
+    ),
+) -> None:
+    """Serve local artifact-derived metrics at /metrics for local scraping."""
+    target = f"http://{host}:{port}/metrics"
+    if run_id:
+        typer.echo(f"Serving local artifact-derived metrics for run_id={run_id} at {target}")
+    else:
+        typer.echo(f"Serving local artifact-derived metrics for all runs at {target}")
+
+    try:
+        serve_metrics(
+            artifacts_root=artifacts_root,
+            host=host,
+            port=port,
+            run_id=run_id,
+        )
+    except OSError as exc:
+        typer.secho(
+            f"Failed to start metrics server on {host}:{port}: {exc}", fg=typer.colors.RED, err=True
+        )
+        raise typer.Exit(1) from exc
 
 
 @kill_app.command("activate")

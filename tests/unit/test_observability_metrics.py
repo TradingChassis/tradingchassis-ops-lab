@@ -11,7 +11,9 @@ from ops_lab.observability.metrics import (
     RunArtifactsFileMissingError,
     RunArtifactsNotFoundError,
     RunArtifactsParseError,
+    discover_run_ids,
     export_run_metrics,
+    render_metrics_text,
 )
 
 
@@ -343,3 +345,90 @@ def test_malformed_reconciliation_result_fails_clearly(tmp_path: Path) -> None:
 
     with pytest.raises(RunArtifactsParseError):
         export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+
+
+def test_render_metrics_text_all_runs_discovers_multiple_runs_deterministically(
+    tmp_path: Path,
+) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id="z-run",
+        metadata={
+            "run_id": "z-run",
+            "mode": "backtest",
+            "engine": "nautilus",
+            "venue": "binance",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+            "data": {"dataset": "btcusdt-sample"},
+        },
+        metrics={"is_placeholder": False, "engine_executed": True},
+    )
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id="a-run",
+        metadata={
+            "run_id": "a-run",
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+            "data": {"dataset": "btcusdt-sample"},
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+    )
+
+    assert discover_run_ids(artifacts_root) == ["a-run", "z-run"]
+    rendered = render_metrics_text(artifacts_root=artifacts_root)
+    assert 'run_id="a-run"' in rendered
+    assert 'run_id="z-run"' in rendered
+    assert rendered.index('run_id="a-run"') < rendered.index('run_id="z-run"')
+
+
+def test_render_metrics_text_single_run_limits_output(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id="only-this",
+        metadata={
+            "run_id": "only-this",
+            "mode": "backtest",
+            "engine": "nautilus",
+            "venue": "binance",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+            "data": {"dataset": "btcusdt-sample"},
+        },
+        metrics={"is_placeholder": False, "engine_executed": True},
+    )
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id="not-selected",
+        metadata={
+            "run_id": "not-selected",
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+            "data": {"dataset": "btcusdt-sample"},
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+    )
+
+    rendered = render_metrics_text(artifacts_root=artifacts_root, run_id="only-this")
+    assert 'run_id="only-this"' in rendered
+    assert 'run_id="not-selected"' not in rendered
+
+
+def test_render_metrics_text_missing_selected_run_returns_comment(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    rendered = render_metrics_text(artifacts_root=artifacts_root, run_id="missing-run")
+    assert rendered.startswith("#")
+    assert "missing-run" in rendered

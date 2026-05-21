@@ -557,6 +557,13 @@ def test_tc_metrics_export_fails_for_invalid_run_id(tmp_path: Path, monkeypatch)
     assert "Run artifacts directory not found" in result.stderr
 
 
+def test_tc_metrics_serve_help_exits_successfully() -> None:
+    """Metrics serve help output is available."""
+    result = runner.invoke(app, ["metrics", "serve", "--help"])
+    assert result.exit_code == 0
+    assert "artifact-derived metrics" in result.stdout
+
+
 def test_tc_kill_activate_writes_runtime_files(tmp_path: Path, monkeypatch) -> None:
     """Kill activate command writes state and events files."""
     runtime_root = tmp_path / "runtime" / "kill_switch"

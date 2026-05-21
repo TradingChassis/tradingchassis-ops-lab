@@ -352,3 +352,60 @@ def export_run_metrics(
         include_journal=include_journal,
     )
     return render_prometheus_text(artifacts)
+
+
+def discover_run_ids(artifacts_root: Path = Path("artifacts/runs")) -> list[str]:
+    """Discover run artifact directory names in deterministic order."""
+    if not artifacts_root.is_dir():
+        return []
+    return sorted(path.name for path in artifacts_root.iterdir() if path.is_dir())
+
+
+def _render_comment_only(message: str) -> str:
+    return f"# {message}\n"
+
+
+def render_metrics_text(
+    *,
+    artifacts_root: Path = Path("artifacts/runs"),
+    run_id: str | None = None,
+    include_journal: bool = True,
+) -> str:
+    """Render Prometheus text for one selected run or all discovered runs."""
+    if run_id is not None:
+        try:
+            return export_run_metrics(
+                run_id=run_id,
+                artifacts_root=artifacts_root,
+                include_journal=include_journal,
+            )
+        except RunObservabilityError:
+            return _render_comment_only(
+                f"ops_lab: run_id {run_id} not found or unreadable under {artifacts_root}"
+            )
+
+    discovered_run_ids = discover_run_ids(artifacts_root)
+    if not discovered_run_ids:
+        return _render_comment_only(f"ops_lab: no run artifacts found under {artifacts_root}")
+
+    rendered_parts: list[str] = []
+    for discovered_run_id in discovered_run_ids:
+        try:
+            rendered_parts.append(
+                export_run_metrics(
+                    run_id=discovered_run_id,
+                    artifacts_root=artifacts_root,
+                    include_journal=include_journal,
+                )
+            )
+        except RunObservabilityError:
+            rendered_parts.append(
+                _render_comment_only(
+                    (
+                        "ops_lab: skipped run_id "
+                        f"{discovered_run_id} due to missing or malformed artifacts"
+                    )
+                )
+            )
+
+    return "".join(rendered_parts)

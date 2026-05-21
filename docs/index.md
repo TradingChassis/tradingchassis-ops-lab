@@ -1,10 +1,8 @@
 # TradingChassis Ops Lab Documentation
 
-<div class="ops-hero">
-TradingChassis Ops Lab is a local-first trading operations lab around NautilusTrader. It is built for reproducible, spec-driven backtest and paper workflows with deterministic local data preparation, artifact-first observability, and file-based operational controls.
-</div>
-
 ## What this project is
+
+`TradingChassis Ops Lab` is a local-first trading operations lab around [NautilusTrader](https://github.com/nautechsystems/nautilus_trader). It is built for reproducible, spec-driven `backtest` and `paper` workflows with deterministic local data preparation, artifact-first observability, and file-based operational controls.
 
 - A local operations lab for running and inspecting deterministic workflows
 - A repository focused on run lifecycle quality, traceability, and drillability
