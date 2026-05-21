@@ -245,7 +245,7 @@
   "schemaVersion": 38,
   "style": "dark",
   "tags": [
-    "ops-lab",
+    "tradingchassis-ops-lab",
     "artifact-driven-metrics-export",
     "observability"
   ],
@@ -283,8 +283,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "ops-lab Run Observability",
-  "uid": "ops-lab-run-observability",
+  "title": "tradingchassis-ops-lab Run Observability",
+  "uid": "tradingchassis-ops-lab-run-observability",
   "version": 1,
   "weekStart": ""
 }

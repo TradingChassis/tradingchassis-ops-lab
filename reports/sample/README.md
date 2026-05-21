@@ -1,6 +1,6 @@
 # Curated Sample Artifacts
 
-This directory contains small, curated examples of `ops-lab` run outputs for portfolio review.
+This directory contains small, curated examples of `tradingchassis-ops-lab` run outputs for portfolio review.
 These files are representative, not full runtime trees.
 
 ## Provenance and curation policy

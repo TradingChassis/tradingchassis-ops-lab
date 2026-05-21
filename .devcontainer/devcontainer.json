@@ -5,7 +5,7 @@
     "context": ".."
   },
 
-  "workspaceFolder": "/workspaces/ops-lab",
+  "workspaceFolder": "/workspaces/tradingchassis-ops-lab",
   "remoteUser": "root",
   "runArgs": ["--security-opt=label=disable"],
   "containerEnv": {

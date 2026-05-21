@@ -39,7 +39,7 @@ from ops_lab.safety.kill_switch import (
     get_kill_switch_status,
 )
 
-app = typer.Typer(help="ops-lab command line interface.")
+app = typer.Typer(help="tradingchassis-ops-lab command line interface.")
 spec_app = typer.Typer(help="Run spec validation commands.")
 run_app = typer.Typer(help="Run initialization commands.")
 data_app = typer.Typer(help="Local dataset preparation and fingerprint commands.")

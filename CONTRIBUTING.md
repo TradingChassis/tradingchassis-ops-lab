@@ -1,8 +1,8 @@
-# Contributing to ops-lab
+# Contributing to TradingChassis Ops Lab
 
 ## Project scope
 
-`ops-lab` is a local operations lab around NautilusTrader with explicit current-scope boundaries.
+`TradingChassis Ops Lab` is a local operations lab around NautilusTrader with explicit current-scope boundaries.
 Contributions must preserve local-first behavior and the documented non-production scope.
 
 ## Local setup

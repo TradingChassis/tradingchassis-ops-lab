@@ -48,7 +48,7 @@ TradingChassis Ops Lab is a local-first trading operations lab around NautilusTr
     <strong>Runbooks</strong>
     Deterministic failure drill runbooks for stale data, mismatch, and restart recovery.
   </a>
-  <a class="ops-card" href="https://github.com/TradingChassis/ops-lab/tree/main/reports/sample">
+  <a class="ops-card" href="https://github.com/TradingChassis/tradingchassis-ops-lab/tree/main/reports/sample">
     <strong>Sample reports</strong>
     Representative outputs for quick review in the repository.
   </a>
