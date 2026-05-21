@@ -52,7 +52,7 @@ extra:
   generator: false
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/TradingChassis/ops-lab
+      link: https://github.com/TradingChassis/tradingchassis-ops-lab
 
 extra_css:
   - stylesheets/extra.css
@@ -61,6 +61,7 @@ nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - Full demo flow: demo-flow.md
+  - Roadmap: roadmap.md
   - Concepts:
       - Project scope: scope.md
       - Run model: run-model.md

@@ -81,7 +81,7 @@ def _run_fixture_reconciliation(
     expected_payload = _rewrite_fixture_run_id(_load_json_object(expected_fixture_path), run_id)
     observed_payload = _rewrite_fixture_run_id(_load_json_object(observed_fixture_path), run_id)
 
-    with tempfile.TemporaryDirectory(prefix="ops-lab-drill-") as temp_dir:
+    with tempfile.TemporaryDirectory(prefix="tradingchassis-ops-lab-drill-") as temp_dir:
         temp_path = Path(temp_dir)
         expected_path = temp_path / "expected.json"
         observed_path = temp_path / "observed.json"

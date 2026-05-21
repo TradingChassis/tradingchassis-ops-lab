@@ -57,7 +57,7 @@ flowchart LR
 - Reports summarize run outcomes and key checks
 - Observability hooks expose basic signals for health and run progress
 - Designed for practical inspection, not full production telemetry
-- Static dashboard definition: `dashboards/grafana/ops-lab-run-observability.json`
+- Static dashboard definition: `dashboards/grafana/tradingchassis-ops-lab-run-observability.json`
 
 ### Safety / Reconciliation / Drills
 

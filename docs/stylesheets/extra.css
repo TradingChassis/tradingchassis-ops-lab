@@ -1,5 +1,5 @@
 :root {
-  --ops-lab-radius: 0.7rem;
+  --tradingchassis-ops-lab-radius: 0.7rem;
 }
 
 [data-md-color-scheme="default"] {
@@ -56,12 +56,12 @@
 }
 
 .md-typeset pre > code {
-  border-radius: var(--ops-lab-radius);
+  border-radius: var(--tradingchassis-ops-lab-radius);
 }
 
 .md-typeset .admonition,
 .md-typeset details {
-  border-radius: var(--ops-lab-radius);
+  border-radius: var(--tradingchassis-ops-lab-radius);
 }
 
 .md-header {
@@ -140,7 +140,7 @@
 .ops-hero {
   padding: 1.25rem 1.35rem;
   margin: 0 0 1.5rem;
-  border-radius: var(--ops-lab-radius);
+  border-radius: var(--tradingchassis-ops-lab-radius);
   border: 1px solid var(--md-default-fg-color--lightest);
   background: color-mix(in srgb, var(--md-default-bg-color) 88%, var(--md-primary-fg-color) 12%);
 }
@@ -159,7 +159,7 @@
 .ops-card {
   display: block;
   padding: 0.8rem 0.9rem;
-  border-radius: var(--ops-lab-radius);
+  border-radius: var(--tradingchassis-ops-lab-radius);
   border: 1px solid var(--md-default-fg-color--lightest);
   background: color-mix(in srgb, var(--md-default-bg-color) 94%, var(--md-primary-fg-color) 6%);
   color: inherit;

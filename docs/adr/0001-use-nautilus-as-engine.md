@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-`ops-lab` is an operations-focused project with finite scope.
+`TradingChassis Ops Lab` is an operations-focused project with finite scope.
 The current implementation needs a stable engine base to demonstrate reproducible runs, metadata, artifacts, safety checks, and failure drills without building core execution infrastructure from scratch.
 
 ## Decision
