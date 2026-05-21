@@ -25,20 +25,20 @@ theme:
     text: false
     code: false
 
-  # features:
-  #   - navigation.top
-  #   - navigation.tabs
-  #   - navigation.instant
-  #   - navigation.tracking
-  #   - navigation.expand
-  #   - navigation.sections
-  #   - header.autohide
-  #   - toc.follow
-  #   - navigation.footer
-  #   - navigation.indexes
-  #   - navigation.path
-  #   - toc.integrate
-  #   - search.highlight
+  features:
+    - navigation.top
+    - navigation.tabs
+    - navigation.instant
+    - navigation.tracking
+    - navigation.expand
+    - navigation.sections
+    - header.autohide
+    - toc.follow
+    - navigation.footer
+    - navigation.indexes
+    - navigation.path
+    # - toc.integrate
+    - search.highlight
 
   palette:
     # Light (default)
@@ -78,7 +78,6 @@ markdown_extensions:
 
 plugins:
   - search
-  - macros
 
 extra:
   generator: false
@@ -86,16 +85,17 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/TradingChassis/ops-lab
 
-# extra_css:
-  # - stylesheets/extra.css
+extra_css:
+  - stylesheets/extra.css
 
 extra_javascript:
   - javascripts/disable-nav-drag.js
 
 nav:
-  - Home: index.md
-  - Quickstart: quickstart.md
-  - Demo Flow: demo-flow.md
+  - Home:
+      - Introduction: index.md
+      - Quickstart: quickstart.md
+      - Demo Flow: demo-flow.md
   - Concepts:
       - Scope: scope.md
       - Run Model: run-model.md
