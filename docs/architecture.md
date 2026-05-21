@@ -2,11 +2,29 @@
 
 This document describes the logical architecture only.
 Implementation structure, module internals, and package naming are deferred to future work.
-For the runnable local demo flow, see `README.md`.
+For the runnable local demo flow, see [Demo Flow](demo-flow.md).
 
 ## Diagram
 
-Run Spec -> Nautilus Run Mode -> Journal/Metadata/Artifacts -> Reports/Observability -> Safety/Reconciliation/Drills
+```mermaid
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "fontSize": "12px"
+  },
+  "flowchart": {
+    "nodeSpacing": 25,
+    "rankSpacing": 35,
+    "padding": 8
+  }
+}}%%
+
+flowchart LR
+    A["Run Spec"] --> B["Nautilus<br/>Run Mode"]
+    B --> C["Journal<br/>Metadata<br/>Artifacts"]
+    C --> D["Reports<br/>Observability"]
+    D --> E["Safety<br/>Reconciliation<br/>Drills"]
+```
 
 ## Responsibilities
 

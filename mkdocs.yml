@@ -1,0 +1,78 @@
+site_name: TradingChassis Ops Lab
+site_description: local-first trading operations lab around NautilusTrader
+docs_dir: docs
+copyright: Built with MkDocs Material.
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.top
+    - navigation.footer
+    - navigation.sections
+    - navigation.indexes
+    - search.suggest
+    - content.code.copy
+
+  palette:
+    - scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets:
+      base_path: docs
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+plugins:
+  - search
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/TradingChassis/ops-lab
+
+extra_css:
+  - stylesheets/extra.css
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Full demo flow: demo-flow.md
+  - Concepts:
+      - Project scope: scope.md
+      - Run model: run-model.md
+      - Backtest vs paper: backtest-vs-paper.md
+      - Architecture: architecture.md
+      - Limitations: limitations.md
+      - Future work: future-work.md
+  - Runbooks:
+      - Stale market data: runbooks/stale-market-data.md
+      - Reconciliation mismatch: runbooks/reconciliation-mismatch.md
+      - Restart recovery: runbooks/restart-recovery.md
+  - ADRs:
+      - NautilusTrader as engine: adr/0001-use-nautilus-as-engine.md
+      - Local-first repository: adr/0002-local-first-monorepo.md
+      - Backtest and paper modes: adr/0003-backtest-and-paper-as-run-modes.md

@@ -1,7 +1,7 @@
 # Backtest vs Paper
 
 Both modes are first-class run modes in the current implementation and share the same operational framing: specs, run metadata, hashes, artifacts, journal, and reports.
-For runnable commands, see `README.md` (`Quickstart` and `Full demo flow`).
+For runnable commands, see [Quickstart](quickstart.md) and [Demo Flow](demo-flow.md).
 
 ## Comparison
 

@@ -1,0 +1,55 @@
+# TradingChassis Ops Lab Documentation
+
+<div class="ops-hero">
+TradingChassis Ops Lab is a local-first trading operations lab around NautilusTrader. It is built for reproducible, spec-driven backtest and paper workflows with deterministic local data preparation, artifact-first observability, and file-based operational controls.
+</div>
+
+## What this project is
+
+- A local operations lab for running and inspecting deterministic workflows
+- A repository focused on run lifecycle quality, traceability, and drillability
+- A constrained environment for backtest smoke runs and paper lifecycle rehearsal
+
+## What this project is not
+
+- Not a live trading system
+- Not a production-grade safety or reliability platform
+- Not a strategy-performance or profitability benchmark
+- Not connected to live exchanges or testnets
+
+## What you can demonstrate
+
+- Spec validation and deterministic `run_id` flows
+- Local dataset preparation and fingerprinting
+- Smoke backtest and paper lifecycle skeleton runs
+- Metrics export, kill switch controls, reconciliation checks, and failure drills
+- Consistent run artifacts under `artifacts/runs/<run_id>/`
+
+## Where to go next
+
+<div class="ops-grid">
+  <a class="ops-card" href="quickstart/">
+    <strong>Quickstart</strong>
+    Short first-run path for install, checks, data prep, backtest smoke run, and metrics export.
+  </a>
+  <a class="ops-card" href="demo-flow/">
+    <strong>Full demo flow</strong>
+    End-to-end operational walkthrough including paper lifecycle, kill switch, reconciliation, and drills.
+  </a>
+  <a class="ops-card" href="architecture/">
+    <strong>Architecture</strong>
+    Logical architecture and artifact/safety/reconciliation responsibilities.
+  </a>
+  <a class="ops-card" href="limitations/">
+    <strong>Limitations</strong>
+    Canonical current implementation boundaries and non-production scope.
+  </a>
+  <a class="ops-card" href="runbooks/stale-market-data">
+    <strong>Runbooks</strong>
+    Deterministic failure drill runbooks for stale data, mismatch, and restart recovery.
+  </a>
+  <a class="ops-card" href="https://github.com/TradingChassis/ops-lab/tree/main/reports/sample">
+    <strong>Sample reports</strong>
+    Representative outputs for quick review in the repository.
+  </a>
+</div>

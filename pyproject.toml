@@ -9,17 +9,21 @@ description = "Operations-focused run lab scaffold"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-  "typer",
-  "pydantic",
-  "PyYAML",
+  "typer==0.25.1",
+  "pydantic==2.13.4",
+  "PyYAML==6.0.3",
   "nautilus_trader==1.227.0",
   "pandas==2.3.3",
 ]
 
 [project.optional-dependencies]
 dev = [
-  "pytest",
-  "ruff",
+  "pytest==9.0.3",
+  "ruff==0.15.13",
+]
+docs = [
+  "mkdocs==1.6.1",
+  "mkdocs-material==9.7.1",
 ]
 
 [project.scripts]
