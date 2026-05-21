@@ -1,1 +1,1 @@
-"""Nautilus engine support for minimal Slice 5 smoke execution."""
+"""Nautilus engine support for minimal smoke backtest execution."""

@@ -1,4 +1,4 @@
-"""Unit tests for Slice 8 file-based kill switch behavior."""
+"""Unit tests for file-based kill switch behavior."""
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ def _events_path(runtime_root: Path, run_id: str) -> Path:
 def test_activate_creates_state_and_events_files(tmp_path: Path, monkeypatch) -> None:
     runtime_root = tmp_path / "runtime" / "kill_switch"
     artifacts_root = tmp_path / "artifacts" / "runs"
-    run_id = "slice8-activate"
+    run_id = "kill-switch-activate"
     monkeypatch.setenv("USER", "ops-user")
 
     state = activate_kill_switch(
@@ -63,7 +63,7 @@ def test_activate_creates_state_and_events_files(tmp_path: Path, monkeypatch) ->
 def test_repeated_activate_appends_event_and_stays_active(tmp_path: Path) -> None:
     runtime_root = tmp_path / "runtime" / "kill_switch"
     artifacts_root = tmp_path / "artifacts" / "runs"
-    run_id = "slice8-repeat-activate"
+    run_id = "kill-switch-repeat-activate"
 
     first = activate_kill_switch(
         run_id=run_id,
@@ -91,16 +91,16 @@ def test_repeated_activate_appends_event_and_stays_active(tmp_path: Path) -> Non
 
 def test_get_status_returns_absent_when_state_file_missing(tmp_path: Path) -> None:
     runtime_root = tmp_path / "runtime" / "kill_switch"
-    status = get_kill_switch_status("slice8-missing", runtime_root=runtime_root)
+    status = get_kill_switch_status("kill-switch-missing", runtime_root=runtime_root)
     assert status.schema_version == "v1"
-    assert status.run_id == "slice8-missing"
+    assert status.run_id == "kill-switch-missing"
     assert status.state == "absent"
 
 
 def test_clear_writes_cleared_state_and_event(tmp_path: Path) -> None:
     runtime_root = tmp_path / "runtime" / "kill_switch"
     artifacts_root = tmp_path / "artifacts" / "runs"
-    run_id = "slice8-clear"
+    run_id = "kill-switch-clear"
     activate_kill_switch(
         run_id=run_id,
         reason="manual stop",
@@ -134,7 +134,7 @@ def test_clear_writes_cleared_state_and_event(tmp_path: Path) -> None:
 def test_status_returns_cleared_after_clear(tmp_path: Path) -> None:
     runtime_root = tmp_path / "runtime" / "kill_switch"
     artifacts_root = tmp_path / "artifacts" / "runs"
-    run_id = "slice8-status-cleared"
+    run_id = "kill-switch-status-cleared"
     activate_kill_switch(
         run_id=run_id,
         reason="manual stop",
@@ -156,14 +156,14 @@ def test_empty_reason_fails_validation(tmp_path: Path) -> None:
     runtime_root = tmp_path / "runtime" / "kill_switch"
     with pytest.raises(KillSwitchValidationError):
         activate_kill_switch(
-            run_id="slice8-empty-reason",
+            run_id="kill-switch-empty-reason",
             reason="   ",
             runtime_root=runtime_root,
         )
 
     with pytest.raises(KillSwitchValidationError):
         clear_kill_switch(
-            run_id="slice8-empty-reason",
+            run_id="kill-switch-empty-reason",
             reason="\t",
             runtime_root=runtime_root,
         )
@@ -174,7 +174,7 @@ def test_actor_fallback_prefers_user_then_unknown(tmp_path: Path, monkeypatch) -
 
     monkeypatch.setenv("USER", "alice")
     with_user = activate_kill_switch(
-        run_id="slice8-actor-user",
+        run_id="kill-switch-actor-user",
         reason="reason",
         runtime_root=runtime_root,
     )
@@ -182,7 +182,7 @@ def test_actor_fallback_prefers_user_then_unknown(tmp_path: Path, monkeypatch) -
 
     monkeypatch.delenv("USER", raising=False)
     unknown = activate_kill_switch(
-        run_id="slice8-actor-unknown",
+        run_id="kill-switch-actor-unknown",
         reason="reason",
         runtime_root=runtime_root,
     )
@@ -192,7 +192,7 @@ def test_actor_fallback_prefers_user_then_unknown(tmp_path: Path, monkeypatch) -
 def test_activation_mirrors_to_artifacts_journal_when_present(tmp_path: Path) -> None:
     runtime_root = tmp_path / "runtime" / "kill_switch"
     artifacts_root = tmp_path / "artifacts" / "runs"
-    run_id = "slice8-mirror"
+    run_id = "kill-switch-mirror"
     journal_path = artifacts_root / run_id / "journal.jsonl"
     journal_path.parent.mkdir(parents=True)
     journal_path.write_text('{"event":"run_started"}\n', encoding="utf-8")
@@ -214,7 +214,7 @@ def test_activation_mirrors_to_artifacts_journal_when_present(tmp_path: Path) ->
 def test_activation_succeeds_when_artifacts_journal_absent(tmp_path: Path) -> None:
     runtime_root = tmp_path / "runtime" / "kill_switch"
     artifacts_root = tmp_path / "artifacts" / "runs"
-    run_id = "slice8-no-mirror"
+    run_id = "kill-switch-no-mirror"
 
     state = activate_kill_switch(
         run_id=run_id,

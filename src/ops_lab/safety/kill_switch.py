@@ -1,4 +1,4 @@
-"""File-based kill switch state and audit helpers for Slice 8."""
+"""File-based kill switch state and audit helpers."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Narrow config helpers for Slice 5 Nautilus smoke backtest."""
+"""Narrow config helpers for minimal NautilusTrader smoke backtest."""
 
 from __future__ import annotations
 
@@ -12,7 +12,9 @@ def resolve_smoke_instrument(*, venue: str, instrument: str):
     normalized_venue = venue.strip().lower()
     normalized_instrument = instrument.strip().upper()
     if normalized_venue != "binance" or normalized_instrument != "BTCUSDT":
-        raise ValueError("Slice 5 smoke backtest supports only venue=binance instrument=BTCUSDT.")
+        raise ValueError(
+            "Minimal NautilusTrader smoke backtest supports only venue=binance instrument=BTCUSDT."
+        )
     return TestInstrumentProvider.btcusdt_binance()
 
 

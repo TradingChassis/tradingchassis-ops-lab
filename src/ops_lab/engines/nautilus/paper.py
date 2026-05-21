@@ -1,9 +1,9 @@
-"""Placeholder paper mode adapter for future slices.
+"""Placeholder paper mode adapter for future work.
 
-Slice 1 intentionally avoids implementing run execution behavior.
+v1 intentionally avoids implementing run execution behavior in this adapter.
 """
 
 
 def run_paper_placeholder() -> None:
-    """Reserve paper execution for a future slice."""
-    raise NotImplementedError("Paper execution will be implemented in a future slice.")
+    """Reserve paper execution for future work."""
+    raise NotImplementedError("Paper execution will be implemented in future work.")

@@ -1,4 +1,4 @@
-"""Backtest lifecycle orchestration for Slice 5 Nautilus smoke runs."""
+"""Backtest lifecycle orchestration for minimal NautilusTrader smoke runs."""
 
 from __future__ import annotations
 
@@ -77,7 +77,7 @@ def _write_smoke_metrics(
 
 
 def run_backtest_lifecycle(spec_path: Path) -> tuple[Path, str]:
-    """Run Slice 5 Nautilus smoke backtest lifecycle and persist artifacts."""
+    """Run minimal NautilusTrader smoke backtest lifecycle and persist artifacts."""
     spec = load_run_spec(spec_path)
     if spec.mode != "backtest":
         raise InvalidBacktestModeError(

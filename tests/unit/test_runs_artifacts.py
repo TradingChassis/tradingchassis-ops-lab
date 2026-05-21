@@ -31,7 +31,7 @@ def _write_valid_spec(path: Path, run_id: str) -> None:
 
 def test_initialize_run_artifacts_creates_dir_and_spec_copy(tmp_path: Path) -> None:
     spec_path = tmp_path / "spec.yaml"
-    _write_valid_spec(spec_path, run_id="slice2-artifacts-run")
+    _write_valid_spec(spec_path, run_id="run-spec-artifacts-run")
     spec = load_run_spec(spec_path)
 
     run_dir = initialize_run_artifacts(
@@ -41,14 +41,14 @@ def test_initialize_run_artifacts_creates_dir_and_spec_copy(tmp_path: Path) -> N
         artifacts_root=tmp_path / "artifacts" / "runs",
     )
 
-    assert run_dir == tmp_path / "artifacts" / "runs" / "slice2-artifacts-run"
+    assert run_dir == tmp_path / "artifacts" / "runs" / "run-spec-artifacts-run"
     assert run_dir.is_dir()
     assert (run_dir / "run_spec.yaml").is_file()
 
 
 def test_initialize_run_artifacts_fails_for_duplicate_run(tmp_path: Path) -> None:
     spec_path = tmp_path / "spec.yaml"
-    _write_valid_spec(spec_path, run_id="slice2-artifacts-duplicate")
+    _write_valid_spec(spec_path, run_id="run-spec-artifacts-duplicate")
     spec = load_run_spec(spec_path)
     artifacts_root = tmp_path / "artifacts" / "runs"
 

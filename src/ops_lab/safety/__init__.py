@@ -1,1 +1,1 @@
-"""Safety control placeholders for future slices."""
+"""Safety control placeholders for future work."""

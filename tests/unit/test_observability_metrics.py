@@ -1,4 +1,4 @@
-"""Unit tests for Slice 7 artifact-driven observability metrics rendering."""
+"""Unit tests for artifact-driven observability metrics rendering."""
 
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ def _write_run_artifacts(
 
 def test_render_backtest_metrics_from_artifacts(tmp_path: Path) -> None:
     artifacts_root = tmp_path / "artifacts" / "runs"
-    run_id = "slice7-backtest"
+    run_id = "metrics-backtest"
     _write_run_artifacts(
         artifacts_root=artifacts_root,
         run_id=run_id,
@@ -84,7 +84,7 @@ def test_render_backtest_metrics_from_artifacts(tmp_path: Path) -> None:
 
 def test_render_paper_metrics_from_artifacts(tmp_path: Path) -> None:
     artifacts_root = tmp_path / "artifacts" / "runs"
-    run_id = "slice7-paper"
+    run_id = "metrics-paper"
     _write_run_artifacts(
         artifacts_root=artifacts_root,
         run_id=run_id,
@@ -124,7 +124,7 @@ def test_render_paper_metrics_from_artifacts(tmp_path: Path) -> None:
 
 def test_journal_metrics_include_total_and_per_event_counts(tmp_path: Path) -> None:
     artifacts_root = tmp_path / "artifacts" / "runs"
-    run_id = "slice7-journal"
+    run_id = "metrics-journal"
     _write_run_artifacts(
         artifacts_root=artifacts_root,
         run_id=run_id,
@@ -155,7 +155,7 @@ def test_journal_metrics_include_total_and_per_event_counts(tmp_path: Path) -> N
 
 def test_no_include_journal_omits_journal_metrics(tmp_path: Path) -> None:
     artifacts_root = tmp_path / "artifacts" / "runs"
-    run_id = "slice7-no-journal"
+    run_id = "metrics-no-journal"
     _write_run_artifacts(
         artifacts_root=artifacts_root,
         run_id=run_id,
@@ -184,7 +184,7 @@ def test_no_include_journal_omits_journal_metrics(tmp_path: Path) -> None:
 
 def test_render_is_deterministic_for_same_inputs(tmp_path: Path) -> None:
     artifacts_root = tmp_path / "artifacts" / "runs"
-    run_id = "slice7-deterministic"
+    run_id = "metrics-deterministic"
     _write_run_artifacts(
         artifacts_root=artifacts_root,
         run_id=run_id,
@@ -227,7 +227,7 @@ def test_missing_run_directory_fails_clearly(tmp_path: Path) -> None:
 
 def test_missing_required_artifact_files_fail_clearly(tmp_path: Path) -> None:
     artifacts_root = tmp_path / "artifacts" / "runs"
-    run_id = "slice7-missing-files"
+    run_id = "metrics-missing-files"
     run_dir = artifacts_root / run_id
     run_dir.mkdir(parents=True)
     (run_dir / "metadata.json").write_text("{}", encoding="utf-8")
@@ -238,7 +238,7 @@ def test_missing_required_artifact_files_fail_clearly(tmp_path: Path) -> None:
 
 def test_malformed_json_or_jsonl_fails_clearly(tmp_path: Path) -> None:
     artifacts_root = tmp_path / "artifacts" / "runs"
-    run_id = "slice7-malformed"
+    run_id = "metrics-malformed"
     run_dir = artifacts_root / run_id
     run_dir.mkdir(parents=True)
     (run_dir / "metadata.json").write_text("{bad-json", encoding="utf-8")
@@ -250,7 +250,7 @@ def test_malformed_json_or_jsonl_fails_clearly(tmp_path: Path) -> None:
 
 def test_reconciliation_metrics_emitted_when_result_exists(tmp_path: Path) -> None:
     artifacts_root = tmp_path / "artifacts" / "runs"
-    run_id = "slice9-reconciliation-metrics"
+    run_id = "reconcile-reconciliation-metrics"
     run_dir = _write_run_artifacts(
         artifacts_root=artifacts_root,
         run_id=run_id,
@@ -282,7 +282,7 @@ def test_reconciliation_metrics_emitted_when_result_exists(tmp_path: Path) -> No
 
     rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
     assert "ops_lab_reconciliation_status{" in rendered
-    assert 'run_id="slice9-reconciliation-metrics"' in rendered
+    assert 'run_id="reconcile-reconciliation-metrics"' in rendered
     assert 'status="warning"} 1' in rendered
     assert "ops_lab_reconciliation_checks_total{" in rendered
     assert 'severity="warning"} 1' in rendered
@@ -291,7 +291,7 @@ def test_reconciliation_metrics_emitted_when_result_exists(tmp_path: Path) -> No
 
 def test_reconciliation_metrics_omitted_when_result_missing(tmp_path: Path) -> None:
     artifacts_root = tmp_path / "artifacts" / "runs"
-    run_id = "slice9-no-reconciliation-metrics"
+    run_id = "reconcile-no-reconciliation-metrics"
     _write_run_artifacts(
         artifacts_root=artifacts_root,
         run_id=run_id,
@@ -316,7 +316,7 @@ def test_reconciliation_metrics_omitted_when_result_missing(tmp_path: Path) -> N
 
 def test_malformed_reconciliation_result_fails_clearly(tmp_path: Path) -> None:
     artifacts_root = tmp_path / "artifacts" / "runs"
-    run_id = "slice9-malformed-reconciliation"
+    run_id = "reconcile-malformed-reconciliation"
     run_dir = _write_run_artifacts(
         artifacts_root=artifacts_root,
         run_id=run_id,

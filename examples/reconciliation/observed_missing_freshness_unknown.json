@@ -1,6 +1,6 @@
 {
   "schema_version": "v1",
-  "run_id": "slice9-example-run",
+  "run_id": "reconcile-example-run",
   "as_of_utc": "2026-05-21T00:00:00Z",
   "position": {
     "symbol": "BTCUSDT",

@@ -11,7 +11,7 @@ from ops_lab.runs.spec import RunSpec, RunSpecLoadError, load_run_spec
 def _valid_spec_dict() -> dict:
     return {
         "spec_version": "v1",
-        "run_id": "slice2-spec-run",
+        "run_id": "run-spec-spec-run",
         "mode": "backtest",
         "engine": "nautilus",
         "venue": "binance",
@@ -33,7 +33,7 @@ def test_load_run_spec_parses_valid_spec(tmp_path: Path) -> None:
 
     loaded = load_run_spec(spec_path)
     assert isinstance(loaded, RunSpec)
-    assert loaded.run_id == "slice2-spec-run"
+    assert loaded.run_id == "run-spec-spec-run"
     assert loaded.mode == "backtest"
     assert loaded.engine == "nautilus"
 

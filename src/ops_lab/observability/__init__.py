@@ -1,1 +1,1 @@
-"""Observability placeholders for future slices."""
+"""Observability placeholders for future work."""

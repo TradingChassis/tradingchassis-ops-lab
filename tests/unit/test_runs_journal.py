@@ -9,7 +9,7 @@ from ops_lab.runs.journal import append_journal_event, build_run_initialized_eve
 from ops_lab.runs.spec import load_run_spec
 
 
-def _write_valid_spec(path: Path, run_id: str = "slice2-journal-run") -> None:
+def _write_valid_spec(path: Path, run_id: str = "run-spec-journal-run") -> None:
     path.write_text(
         yaml.safe_dump(
             {
@@ -31,7 +31,7 @@ def _write_valid_spec(path: Path, run_id: str = "slice2-journal-run") -> None:
 
 def test_append_journal_event_writes_run_initialized_jsonl(tmp_path: Path) -> None:
     spec_path = tmp_path / "spec.yaml"
-    artifacts_dir = tmp_path / "artifacts" / "runs" / "slice2-journal-run"
+    artifacts_dir = tmp_path / "artifacts" / "runs" / "run-spec-journal-run"
     artifacts_dir.mkdir(parents=True)
     _write_valid_spec(spec_path)
     spec = load_run_spec(spec_path)
@@ -50,6 +50,6 @@ def test_append_journal_event_writes_run_initialized_jsonl(tmp_path: Path) -> No
 
     parsed = json.loads(lines[0])
     assert parsed["event"] == "run_initialized"
-    assert parsed["run_id"] == "slice2-journal-run"
+    assert parsed["run_id"] == "run-spec-journal-run"
     assert parsed["status"] == "initialized"
     assert parsed["config_sha256"] == "feedface"

@@ -6,5 +6,5 @@ Runbooks are referenced from the `README.md` demo flow and cover deterministic l
 - [`reconciliation-mismatch.md`](./reconciliation-mismatch.md)
 - [`restart-recovery.md`](./restart-recovery.md)
 
-These runbooks describe deterministic local Slice 10 drills only.
+These runbooks describe deterministic local failure drills only.
 They do not perform live exchange actions or process orchestration.

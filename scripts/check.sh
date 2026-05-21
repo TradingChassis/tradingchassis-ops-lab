@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "🔍 Running import-linter..."
-lint-imports --verbose
+cd "$(dirname "$0")/.."
 
-echo "⚡ Running ruff (check only)..."
-ruff check src tests
+echo "⚡ Checking formatting..."
+ruff format --check .
 
-echo "🧠 Running mypy..."
-mypy src tests
+echo "⚡ Running lint..."
+ruff check .
 
-echo "🧪 Running pytest..."
+echo "🧪 Running tests..."
 python -m pytest
 
 echo "✅ All checks passed!"

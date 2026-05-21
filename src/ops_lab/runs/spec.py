@@ -1,4 +1,4 @@
-"""Run specification model and loader for Slice 2."""
+"""Run specification model and loader."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ class StrictBaseModel(BaseModel):
 
 
 class StrategySpec(StrictBaseModel):
-    """Strategy metadata only for Slice 2."""
+    """Strategy metadata for the v1 run spec."""
 
     name: str
     version: str
@@ -64,7 +64,7 @@ class DataSpec(StrictBaseModel):
 
 
 class RiskSpec(StrictBaseModel):
-    """Risk profile placeholder for Slice 2."""
+    """Risk profile placeholder for the v1 run spec."""
 
     profile: str
 
@@ -80,7 +80,7 @@ class RiskSpec(StrictBaseModel):
 
 
 class ObservabilitySpec(StrictBaseModel):
-    """Simple observability toggles for Slice 2."""
+    """Simple observability toggles for the v1 run spec."""
 
     journal: bool = True
     metrics: bool = False

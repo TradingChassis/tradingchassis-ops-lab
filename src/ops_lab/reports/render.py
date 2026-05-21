@@ -11,7 +11,7 @@ def render_backtest_skeleton_report(
     status: str,
     config_sha256: str,
 ) -> str:
-    """Render the Slice 4 skeleton backtest report markdown."""
+    """Render the backtest lifecycle skeleton report markdown."""
     return (
         f"# Backtest Skeleton Report: {run_id}\n\n"
         f"- mode: {mode}\n"
@@ -25,7 +25,7 @@ def render_backtest_skeleton_report(
         "- metrics.json\n"
         "- report.md\n\n"
         "## Disclaimer\n\n"
-        "This report comes from the Slice 4 backtest lifecycle skeleton.\n"
+        "This report comes from the backtest lifecycle skeleton.\n"
         "No NautilusTrader backtest was executed.\n"
         "No orders, fills, strategy PnL, or trading performance metrics were produced.\n"
     )
@@ -40,7 +40,7 @@ def render_backtest_nautilus_smoke_report(
     bars_processed: int,
     engine_duration_ms: int,
 ) -> str:
-    """Render the Slice 5 Nautilus smoke backtest report markdown."""
+    """Render the minimal NautilusTrader smoke backtest report markdown."""
     return (
         f"# Nautilus Smoke Backtest Report: {run_id}\n\n"
         f"- status: {status}\n"
@@ -71,7 +71,7 @@ def render_paper_skeleton_report(
     heartbeat_count: int,
     connectivity: str,
 ) -> str:
-    """Render the Slice 6 paper lifecycle skeleton report markdown."""
+    """Render the paper lifecycle skeleton report markdown."""
     return (
         f"# Paper Skeleton Report: {run_id}\n\n"
         f"- mode: {mode}\n"
@@ -82,7 +82,7 @@ def render_paper_skeleton_report(
         f"- connectivity: {connectivity}\n\n"
         "## Skeleton Session Summary\n\n"
         "This run completed a bounded synthetic paper lifecycle with deterministic heartbeats.\n"
-        "No exchange or testnet integration is performed in this slice.\n\n"
+        "No exchange or testnet integration is performed in this paper lifecycle skeleton.\n\n"
         "## Explicit Non-Features\n\n"
         "- no exchange/testnet connection\n"
         "- no API keys or secrets\n"

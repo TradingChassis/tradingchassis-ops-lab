@@ -1,4 +1,4 @@
-# Reconciliation Fixtures (Slice 9)
+# Reconciliation Fixtures (file-based reconciliation)
 
 These files are local, deterministic fixtures for `tc reconcile check`.
 They are referenced by the `README.md` minimal command walkthrough.
@@ -7,7 +7,7 @@ Example:
 
 ```bash
 tc reconcile check \
-  --run-id slice9-example-run \
+  --run-id reconcile-example-run \
   --expected examples/reconciliation/expected_match.json \
   --observed examples/reconciliation/observed_match.json
 ```

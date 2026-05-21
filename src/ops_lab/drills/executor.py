@@ -1,4 +1,4 @@
-"""Deterministic local failure drill execution for Slice 10."""
+"""Deterministic local failure drill execution."""
 
 from __future__ import annotations
 
