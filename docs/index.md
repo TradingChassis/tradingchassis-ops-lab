@@ -1,6 +1,8 @@
-# ops-lab Documentation
+# TradingChassis Ops Lab Documentation
 
-`ops-lab` is a local-first trading operations lab around NautilusTrader. It is built for reproducible, spec-driven `backtest` and `paper` workflows with deterministic local data preparation, artifact-first observability, and file-based operational controls.
+<div class="ops-hero">
+TradingChassis Ops Lab is a local-first trading operations lab around NautilusTrader. It is built for reproducible, spec-driven backtest and paper workflows with deterministic local data preparation, artifact-first observability, and file-based operational controls.
+</div>
 
 ## What this project is
 
@@ -25,8 +27,29 @@
 
 ## Where to go next
 
-- Start with [Quickstart](quickstart.md)
-- Run the full [Demo Flow](demo-flow.md)
-- Review [Run Model](run-model.md) and [Architecture](architecture.md)
-- Use [Runbooks](runbooks/index.md) for deterministic drill response
-- Read scope boundaries in [Scope](scope.md) and [Limitations](limitations.md)
+<div class="ops-grid">
+  <a class="ops-card" href="quickstart/">
+    <strong>Quickstart</strong>
+    Short first-run path for install, checks, data prep, backtest smoke run, and metrics export.
+  </a>
+  <a class="ops-card" href="demo-flow/">
+    <strong>Full demo flow</strong>
+    End-to-end operational walkthrough including paper lifecycle, kill switch, reconciliation, and drills.
+  </a>
+  <a class="ops-card" href="architecture/">
+    <strong>Architecture</strong>
+    Logical architecture and artifact/safety/reconciliation responsibilities.
+  </a>
+  <a class="ops-card" href="limitations/">
+    <strong>Limitations</strong>
+    Canonical current implementation boundaries and non-production scope.
+  </a>
+  <a class="ops-card" href="runbooks/">
+    <strong>Runbooks</strong>
+    Deterministic failure drill runbooks for stale data, mismatch, and restart recovery.
+  </a>
+  <a class="ops-card" href="https://github.com/TradingChassis/ops-lab/tree/main/reports/sample">
+    <strong>Sample reports</strong>
+    Representative outputs for quick review in the repository.
+  </a>
+</div>

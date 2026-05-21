@@ -19,6 +19,7 @@
   - restart/recovery
 
 Implemented in current repository scope:
+
 - Local data prepare/fingerprint workflow
 - Spec-driven backtest smoke run and paper lifecycle skeleton
 - Artifact-driven metrics export

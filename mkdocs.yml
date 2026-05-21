@@ -1,56 +1,30 @@
 site_name: TradingChassis Ops Lab
 site_description: local-first trading operations lab around NautilusTrader
-copyright: >-
-  Copyright © 2026 <a href="https://github.com/TradingChassis/ops-lab" target="_blank" rel="noopener">TradingChassis</a>.
-  Licensed under <a href="https://github.com/TradingChassis/ops-lab/blob/main/LICENSE" target="_blank" rel="noopener">MIT</a>.
-  No financial advice.
 docs_dir: docs
+repo_url: https://github.com/TradingChassis/ops-lab
+repo_name: TradingChassis/ops-lab
 
 theme:
   name: material
-  custom_dir: docs/overrides
-  # Fallback only; header/drawer logos are overrides/partials/logo.html (light + dark)
-  logo: assets/tc_logo_light.png
-  favicon: assets/tc_logo_dark.png
   language: en
-
   features:
+    - navigation.top
+    - navigation.footer
     - navigation.sections
     - navigation.indexes
-    - navigation.top
     - search.suggest
     - content.code.copy
 
-  font:
-    text: false
-    code: false
-
-  features:
-    - navigation.top
-    - navigation.tabs
-    - navigation.instant
-    - navigation.tracking
-    - navigation.expand
-    - navigation.sections
-    - header.autohide
-    - toc.follow
-    - navigation.footer
-    - navigation.indexes
-    - navigation.path
-    # - toc.integrate
-    - search.highlight
-
   palette:
-    # Light (default)
     - scheme: default
-      primary: white
+      primary: teal
+      accent: teal
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-
-    # Dark
     - scheme: slate
-      primary: black
+      primary: teal
+      accent: teal
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
@@ -59,17 +33,13 @@ markdown_extensions:
   - admonition
   - attr_list
   - md_in_html
-
   - pymdownx.tabbed:
       alternate_style: true
-
   - pymdownx.snippets:
       base_path: docs
-
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
-
   - pymdownx.superfences:
       custom_fences:
         - name: mermaid
@@ -88,28 +58,22 @@ extra:
 extra_css:
   - stylesheets/extra.css
 
-extra_javascript:
-  - javascripts/disable-nav-drag.js
-
 nav:
-  - Home:
-      - Introduction: index.md
-      - Quickstart: quickstart.md
-      - Demo Flow: demo-flow.md
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Full demo flow: demo-flow.md
   - Concepts:
-      - Scope: scope.md
-      - Run Model: run-model.md
-      - Backtest vs Paper: backtest-vs-paper.md
+      - Project scope: scope.md
+      - Run model: run-model.md
+      - Backtest vs paper: backtest-vs-paper.md
       - Architecture: architecture.md
       - Limitations: limitations.md
-      - Future Work: future-work.md
+      - Future work: future-work.md
   - Runbooks:
-      - Overview: runbooks/index.md
-      - Stale Market Data: runbooks/stale-market-data.md
-      - Reconciliation Mismatch: runbooks/reconciliation-mismatch.md
-      - Restart Recovery: runbooks/restart-recovery.md
+      - Stale market data: runbooks/stale-market-data.md
+      - Reconciliation mismatch: runbooks/reconciliation-mismatch.md
+      - Restart recovery: runbooks/restart-recovery.md
   - ADRs:
-      - Overview: adr/index.md
-      - 0001 Use Nautilus as Engine: adr/0001-use-nautilus-as-engine.md
-      - 0002 Local-first Monorepo: adr/0002-local-first-monorepo.md
-      - 0003 Backtest and Paper as Run Modes: adr/0003-backtest-and-paper-as-run-modes.md
+      - NautilusTrader as engine: adr/0001-use-nautilus-as-engine.md
+      - Local-first repository: adr/0002-local-first-monorepo.md
+      - Backtest and paper modes: adr/0003-backtest-and-paper-as-run-modes.md

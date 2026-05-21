@@ -17,7 +17,7 @@ tc metrics export --run-id 2026-05-20-btcusdt-backtest-001
 
 ## Documentation
 
-- GitHub Pages (after enabling in repository settings): `https://OWNER.github.io/ops-lab/`
+- Documentation is published with GitHub Pages from the MkDocs site.
 - Local docs home: [`docs/index.md`](docs/index.md)
 - Local quickstart page: [`docs/quickstart.md`](docs/quickstart.md)
 - Local full walkthrough: [`docs/demo-flow.md`](docs/demo-flow.md)
