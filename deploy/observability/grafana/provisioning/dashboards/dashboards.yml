@@ -1,7 +1,7 @@
 apiVersion: 1
 
 providers:
-  - name: "ops-lab-dashboards"
+  - name: "tradingchassis-ops-lab-dashboards"
     orgId: 1
     folder: ""
     type: file

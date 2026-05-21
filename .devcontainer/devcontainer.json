@@ -5,9 +5,11 @@
     "context": ".."
   },
   "features": {
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:2": {}
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "moby": false
+    }
   },
-  "workspaceFolder": "/workspaces/ops-lab",
+  "workspaceFolder": "/workspaces/tradingchassis-ops-lab",
   "remoteUser": "root",
   "runArgs": ["--security-opt=label=disable"],
   "forwardPorts": [8000, 9090, 3000],

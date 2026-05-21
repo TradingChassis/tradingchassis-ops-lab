@@ -24,7 +24,7 @@ def test_observability_stack_files_exist() -> None:
         root / "deploy/observability/prometheus/prometheus.yml",
         root / "deploy/observability/grafana/provisioning/datasources/prometheus.yml",
         root / "deploy/observability/grafana/provisioning/dashboards/dashboards.yml",
-        root / "dashboards/grafana/ops-lab-run-observability.json",
+        root / "dashboards/grafana/tradingchassis-ops-lab-run-observability.json",
     ]
     for path in expected:
         assert path.exists(), f"Expected config or dashboard file to exist: {path}"
@@ -42,18 +42,18 @@ def test_compose_contains_only_prometheus_and_grafana_services() -> None:
 
     assert prometheus.get("image", "").startswith("prom/prometheus")
     assert grafana.get("image", "").startswith("grafana/grafana")
-    assert "9090:9090" in prometheus.get("ports", [])
-    assert "3000:3000" in grafana.get("ports", [])
+    assert "127.0.0.1:${TC_PROMETHEUS_PORT:-9090}:9090" in prometheus.get("ports", [])
+    assert "127.0.0.1:${TC_GRAFANA_PORT:-3000}:3000" in grafana.get("ports", [])
     assert "host.docker.internal:host-gateway" in prometheus.get("extra_hosts", [])
 
     prometheus_volumes = prometheus.get("volumes", [])
-    assert "./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro" in prometheus_volumes
+    assert "./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro,z" in prometheus_volumes
 
     grafana_volumes = grafana.get("volumes", [])
-    assert "./grafana/provisioning:/etc/grafana/provisioning:ro" in grafana_volumes
+    assert "./grafana/provisioning:/etc/grafana/provisioning:ro,z" in grafana_volumes
     assert (
-        "../../dashboards/grafana/ops-lab-run-observability.json:"
-        "/var/lib/grafana/dashboards/ops-lab-run-observability.json:ro"
+        "../../dashboards/grafana/tradingchassis-ops-lab-run-observability.json:"
+        "/var/lib/grafana/dashboards/tradingchassis-ops-lab-run-observability.json:ro,z"
     ) in grafana_volumes
 
 

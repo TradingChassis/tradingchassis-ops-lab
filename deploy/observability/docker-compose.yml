@@ -4,18 +4,18 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
     ports:
-      - "9090:9090"
+      - "127.0.0.1:${TC_PROMETHEUS_PORT:-9090}:9090"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro,z
 
   grafana:
     image: grafana/grafana:latest
     depends_on:
       - prometheus
     ports:
-      - "3000:3000"
+      - "127.0.0.1:${TC_GRAFANA_PORT:-3000}:3000"
     volumes:
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-      - ../../dashboards/grafana/ops-lab-run-observability.json:/var/lib/grafana/dashboards/ops-lab-run-observability.json:ro
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro,z
+      - ../../dashboards/grafana/tradingchassis-ops-lab-run-observability.json:/var/lib/grafana/dashboards/tradingchassis-ops-lab-run-observability.json:ro,z
