@@ -1,6 +1,7 @@
 site_name: TradingChassis Ops Lab
 site_description: local-first trading operations lab around NautilusTrader
 docs_dir: docs
+copyright: Built with MkDocs Material.
 
 theme:
   name: material

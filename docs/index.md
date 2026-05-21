@@ -44,7 +44,7 @@ TradingChassis Ops Lab is a local-first trading operations lab around NautilusTr
     <strong>Limitations</strong>
     Canonical current implementation boundaries and non-production scope.
   </a>
-  <a class="ops-card" href="runbooks/">
+  <a class="ops-card" href="runbooks/stale-market-data">
     <strong>Runbooks</strong>
     Deterministic failure drill runbooks for stale data, mismatch, and restart recovery.
   </a>
