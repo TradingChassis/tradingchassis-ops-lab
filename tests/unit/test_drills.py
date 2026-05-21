@@ -1,4 +1,4 @@
-"""Unit tests for Slice 10 deterministic local failure drills."""
+"""Unit tests for deterministic local failure drills."""
 
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ def _prepare_run_dir(tmp_path: Path, run_id: str, *, with_journal: bool = False)
 
 def test_stale_market_data_writes_expected_warning_report(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
-    run_id = "slice10-stale"
+    run_id = "drill-stale"
     run_dir = _prepare_run_dir(tmp_path, run_id, with_journal=True)
 
     result = execute_stale_market_data_drill(
@@ -78,7 +78,7 @@ def test_reconciliation_mismatch_writes_expected_mismatch_report(
     tmp_path: Path, monkeypatch
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    run_id = "slice10-mismatch"
+    run_id = "drill-mismatch"
     run_dir = _prepare_run_dir(tmp_path, run_id, with_journal=True)
 
     result = execute_reconciliation_mismatch_drill(
@@ -100,7 +100,7 @@ def test_reconciliation_mismatch_writes_expected_mismatch_report(
 
 def test_restart_recovery_writes_checklist_and_statement(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
-    run_id = "slice10-restart"
+    run_id = "drill-restart"
     run_dir = _prepare_run_dir(tmp_path, run_id, with_journal=True)
 
     result = execute_restart_recovery_drill(
@@ -129,15 +129,15 @@ def test_missing_run_directory_fails_clearly(tmp_path: Path, monkeypatch) -> Non
     monkeypatch.chdir(tmp_path)
     with pytest.raises(DrillArtifactsError):
         execute_stale_market_data_drill(
-            run_id="slice10-missing",
+            run_id="drill-missing",
             artifacts_root=tmp_path / "artifacts" / "runs",
         )
 
 
 def test_journal_append_when_present_and_absent_behavior(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
-    with_journal = "slice10-journal-present"
-    without_journal = "slice10-journal-absent"
+    with_journal = "drill-journal-present"
+    without_journal = "drill-journal-absent"
 
     run_dir_with_journal = _prepare_run_dir(tmp_path, with_journal, with_journal=True)
     run_dir_without_journal = _prepare_run_dir(tmp_path, without_journal, with_journal=False)
@@ -163,7 +163,7 @@ def test_journal_append_when_present_and_absent_behavior(tmp_path: Path, monkeyp
 
 def test_deterministic_shape_and_stable_keys(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
-    run_id = "slice10-stable-shape"
+    run_id = "drill-stable-shape"
     run_dir = _prepare_run_dir(tmp_path, run_id, with_journal=False)
     report_path = run_dir / "drills" / "restart_recovery.json"
 
@@ -185,7 +185,7 @@ def test_metrics_include_failure_drill_journal_event_when_present(
     tmp_path: Path, monkeypatch
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    run_id = "slice10-metrics-journal"
+    run_id = "drill-metrics-journal"
     _prepare_run_dir(tmp_path, run_id, with_journal=True)
 
     execute_restart_recovery_drill(

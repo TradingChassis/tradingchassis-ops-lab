@@ -1,4 +1,4 @@
-"""File-based reconciliation checks for Slice 9."""
+"""File-based reconciliation checks."""
 
 from __future__ import annotations
 

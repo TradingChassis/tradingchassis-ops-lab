@@ -1,4 +1,4 @@
-"""Paper lifecycle orchestration for Slice 6 bounded skeleton runs."""
+"""Paper lifecycle orchestration for bounded skeleton runs."""
 
 from __future__ import annotations
 
@@ -97,7 +97,7 @@ def _write_placeholder_metrics(path: Path, *, spec: RunSpec) -> None:
 
 
 def run_paper_lifecycle(spec_path: Path) -> tuple[Path, str]:
-    """Run Slice 6 deterministic paper skeleton lifecycle and persist artifacts."""
+    """Run deterministic paper lifecycle skeleton and persist artifacts."""
     spec = load_run_spec(spec_path)
     if spec.mode != "paper":
         raise InvalidPaperModeError(

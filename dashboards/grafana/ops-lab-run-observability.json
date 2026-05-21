@@ -246,7 +246,7 @@
   "style": "dark",
   "tags": [
     "ops-lab",
-    "slice-7",
+    "artifact-driven-metrics-export",
     "observability"
   ],
   "templating": {

@@ -28,7 +28,7 @@ def test_tc_version_outputs_package_version() -> None:
 
 def _write_valid_spec(
     path: Path,
-    run_id: str = "slice2-cli-run",
+    run_id: str = "run-spec-cli-run",
     mode: str = "backtest",
 ) -> None:
     spec = {
@@ -54,7 +54,7 @@ def test_tc_spec_validate_succeeds_for_valid_spec(tmp_path: Path) -> None:
     result = runner.invoke(app, ["spec", "validate", "--spec", str(spec_path)])
     assert result.exit_code == 0
     assert "Spec is valid" in result.stdout
-    assert "slice2-cli-run" in result.stdout
+    assert "run-spec-cli-run" in result.stdout
 
 
 def test_tc_spec_validate_fails_for_invalid_spec(tmp_path: Path) -> None:
@@ -74,14 +74,14 @@ def test_tc_run_init_creates_expected_artifacts(tmp_path: Path, monkeypatch) -> 
     """Init command writes run artifacts and run metadata."""
     monkeypatch.chdir(tmp_path)
     spec_path = tmp_path / "valid.yaml"
-    _write_valid_spec(spec_path, run_id="slice2-cli-run-init")
+    _write_valid_spec(spec_path, run_id="run-spec-cli-run-init")
 
     result = runner.invoke(app, ["run", "init", "--spec", str(spec_path)])
     assert result.exit_code == 0
     assert "Initialized run artifacts at" in result.stdout
     assert "config_sha256=" in result.stdout
 
-    run_dir = tmp_path / "artifacts" / "runs" / "slice2-cli-run-init"
+    run_dir = tmp_path / "artifacts" / "runs" / "run-spec-cli-run-init"
     assert run_dir.is_dir()
     assert (run_dir / "run_spec.yaml").is_file()
     assert (run_dir / "metadata.json").is_file()
@@ -92,7 +92,7 @@ def test_tc_run_init_fails_for_duplicate_run_id(tmp_path: Path, monkeypatch) -> 
     """Init command fails cleanly when run artifacts already exist."""
     monkeypatch.chdir(tmp_path)
     spec_path = tmp_path / "valid.yaml"
-    _write_valid_spec(spec_path, run_id="slice2-duplicate-run")
+    _write_valid_spec(spec_path, run_id="run-spec-duplicate-run")
 
     first = runner.invoke(app, ["run", "init", "--spec", str(spec_path)])
     second = runner.invoke(app, ["run", "init", "--spec", str(spec_path)])
@@ -102,11 +102,11 @@ def test_tc_run_init_fails_for_duplicate_run_id(tmp_path: Path, monkeypatch) -> 
 
 
 def test_tc_run_backtest_creates_lifecycle_artifacts(tmp_path: Path, monkeypatch) -> None:
-    """Backtest command creates final Slice 5 smoke lifecycle artifact set."""
+    """Backtest command creates final minimal NautilusTrader smoke lifecycle artifact set."""
     monkeypatch.chdir(tmp_path)
     prepare_dataset(dataset="btcusdt-sample", data_root=Path("data"))
     spec_path = tmp_path / "backtest.yaml"
-    _write_valid_spec(spec_path, run_id="slice5-backtest-run")
+    _write_valid_spec(spec_path, run_id="smoke-backtest-backtest-run")
 
     result = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
     assert result.exit_code == 0
@@ -114,7 +114,7 @@ def test_tc_run_backtest_creates_lifecycle_artifacts(tmp_path: Path, monkeypatch
     assert "config_sha256=" in result.stdout
     assert "status=completed" in result.stdout
 
-    run_dir = tmp_path / "artifacts" / "runs" / "slice5-backtest-run"
+    run_dir = tmp_path / "artifacts" / "runs" / "smoke-backtest-backtest-run"
     assert run_dir.is_dir()
     assert (run_dir / "run_spec.yaml").is_file()
     assert (run_dir / "metadata.json").is_file()
@@ -170,7 +170,7 @@ def test_tc_run_backtest_fails_when_prepared_dataset_is_missing(
     """Backtest command fails clearly before data preparation."""
     monkeypatch.chdir(tmp_path)
     spec_path = tmp_path / "missing-data.yaml"
-    _write_valid_spec(spec_path, run_id="slice5-missing-dataset")
+    _write_valid_spec(spec_path, run_id="smoke-backtest-missing-dataset")
 
     result = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
     assert result.exit_code != 0
@@ -181,7 +181,7 @@ def test_tc_run_backtest_fails_for_paper_mode(tmp_path: Path, monkeypatch) -> No
     """Backtest command rejects specs that are not mode=backtest."""
     monkeypatch.chdir(tmp_path)
     spec_path = tmp_path / "paper.yaml"
-    _write_valid_spec(spec_path, run_id="slice5-paper-run", mode="paper")
+    _write_valid_spec(spec_path, run_id="smoke-backtest-paper-run", mode="paper")
 
     result = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
     assert result.exit_code != 0
@@ -192,7 +192,7 @@ def test_tc_run_backtest_fails_for_duplicate_run_id(tmp_path: Path, monkeypatch)
     """Backtest command fails cleanly when run artifacts already exist."""
     monkeypatch.chdir(tmp_path)
     spec_path = tmp_path / "dup.yaml"
-    _write_valid_spec(spec_path, run_id="slice5-backtest-duplicate")
+    _write_valid_spec(spec_path, run_id="smoke-backtest-backtest-duplicate")
 
     def _fake_smoke(**kwargs):
         del kwargs
@@ -219,7 +219,7 @@ def test_tc_run_backtest_failure_writes_failed_metadata(tmp_path: Path, monkeypa
     monkeypatch.chdir(tmp_path)
     prepare_dataset(dataset="btcusdt-sample", data_root=Path("data"))
     spec_path = tmp_path / "failure.yaml"
-    _write_valid_spec(spec_path, run_id="slice5-backtest-failure")
+    _write_valid_spec(spec_path, run_id="smoke-backtest-backtest-failure")
 
     def _raise_smoke_failure(**kwargs):
         del kwargs
@@ -229,7 +229,7 @@ def test_tc_run_backtest_failure_writes_failed_metadata(tmp_path: Path, monkeypa
     result = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
     assert result.exit_code != 0
 
-    run_dir = tmp_path / "artifacts" / "runs" / "slice5-backtest-failure"
+    run_dir = tmp_path / "artifacts" / "runs" / "smoke-backtest-backtest-failure"
     assert run_dir.is_dir()
 
     metadata = json.loads((run_dir / "metadata.json").read_text(encoding="utf-8"))
@@ -249,10 +249,10 @@ def test_tc_run_backtest_failure_writes_failed_metadata(tmp_path: Path, monkeypa
 
 
 def test_tc_run_paper_creates_lifecycle_artifacts(tmp_path: Path, monkeypatch) -> None:
-    """Paper command creates deterministic Slice 6 skeleton lifecycle artifact set."""
+    """Paper command creates deterministic paper lifecycle skeleton artifact set."""
     monkeypatch.chdir(tmp_path)
     spec_path = tmp_path / "paper.yaml"
-    _write_valid_spec(spec_path, run_id="slice6-paper-run", mode="paper")
+    _write_valid_spec(spec_path, run_id="paper-skeleton-paper-run", mode="paper")
 
     result = runner.invoke(app, ["run", "paper", "--spec", str(spec_path)])
     assert result.exit_code == 0
@@ -260,7 +260,7 @@ def test_tc_run_paper_creates_lifecycle_artifacts(tmp_path: Path, monkeypatch) -
     assert "config_sha256=" in result.stdout
     assert "status=completed" in result.stdout
 
-    run_dir = tmp_path / "artifacts" / "runs" / "slice6-paper-run"
+    run_dir = tmp_path / "artifacts" / "runs" / "paper-skeleton-paper-run"
     assert run_dir.is_dir()
     assert (run_dir / "run_spec.yaml").is_file()
     assert (run_dir / "metadata.json").is_file()
@@ -329,7 +329,7 @@ def test_tc_run_paper_fails_for_backtest_mode(tmp_path: Path, monkeypatch) -> No
     """Paper command rejects specs that are not mode=paper."""
     monkeypatch.chdir(tmp_path)
     spec_path = tmp_path / "backtest.yaml"
-    _write_valid_spec(spec_path, run_id="slice6-backtest-spec", mode="backtest")
+    _write_valid_spec(spec_path, run_id="paper-skeleton-backtest-spec", mode="backtest")
 
     result = runner.invoke(app, ["run", "paper", "--spec", str(spec_path)])
     assert result.exit_code != 0
@@ -340,7 +340,7 @@ def test_tc_run_paper_fails_for_duplicate_run_id(tmp_path: Path, monkeypatch) ->
     """Paper command fails cleanly when run artifacts already exist."""
     monkeypatch.chdir(tmp_path)
     spec_path = tmp_path / "dup-paper.yaml"
-    _write_valid_spec(spec_path, run_id="slice6-paper-duplicate", mode="paper")
+    _write_valid_spec(spec_path, run_id="paper-skeleton-paper-duplicate", mode="paper")
 
     first = runner.invoke(app, ["run", "paper", "--spec", str(spec_path)])
     second = runner.invoke(app, ["run", "paper", "--spec", str(spec_path)])
@@ -354,7 +354,7 @@ def test_tc_run_paper_failure_writes_failed_metadata(tmp_path: Path, monkeypatch
     """Paper command marks run failed and appends run_failed journal event."""
     monkeypatch.chdir(tmp_path)
     spec_path = tmp_path / "paper-failure.yaml"
-    _write_valid_spec(spec_path, run_id="slice6-paper-failure", mode="paper")
+    _write_valid_spec(spec_path, run_id="paper-skeleton-paper-failure", mode="paper")
 
     def _raise_heartbeat_failure(**kwargs):
         del kwargs
@@ -367,7 +367,7 @@ def test_tc_run_paper_failure_writes_failed_metadata(tmp_path: Path, monkeypatch
     result = runner.invoke(app, ["run", "paper", "--spec", str(spec_path)])
     assert result.exit_code != 0
 
-    run_dir = tmp_path / "artifacts" / "runs" / "slice6-paper-failure"
+    run_dir = tmp_path / "artifacts" / "runs" / "paper-skeleton-paper-failure"
     assert run_dir.is_dir()
 
     metadata = json.loads((run_dir / "metadata.json").read_text(encoding="utf-8"))
@@ -436,7 +436,7 @@ def test_tc_data_fingerprint_succeeds_after_prepare(tmp_path: Path, monkeypatch)
 def test_tc_metrics_export_outputs_prometheus_text(tmp_path: Path, monkeypatch) -> None:
     """Metrics export command prints Prometheus exposition to stdout."""
     monkeypatch.chdir(tmp_path)
-    run_id = "slice7-cli-export"
+    run_id = "metrics-cli-export"
     run_dir = tmp_path / "artifacts" / "runs" / run_id
     run_dir.mkdir(parents=True)
     (run_dir / "metadata.json").write_text(
@@ -486,7 +486,7 @@ def test_tc_metrics_export_outputs_prometheus_text(tmp_path: Path, monkeypatch) 
 def test_tc_metrics_export_writes_output_file(tmp_path: Path, monkeypatch) -> None:
     """Metrics export command writes exposition text to output file."""
     monkeypatch.chdir(tmp_path)
-    run_id = "slice7-cli-output"
+    run_id = "metrics-cli-output"
     run_dir = tmp_path / "artifacts" / "runs" / run_id
     run_dir.mkdir(parents=True)
     (run_dir / "metadata.json").write_text(
@@ -561,8 +561,8 @@ def test_tc_kill_activate_writes_runtime_files(tmp_path: Path, monkeypatch) -> N
     """Kill activate command writes state and events files."""
     runtime_root = tmp_path / "runtime" / "kill_switch"
     monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
-    monkeypatch.setenv("USER", "slice8-operator")
-    run_id = "slice8-cli-activate"
+    monkeypatch.setenv("USER", "test-operator")
+    run_id = "kill-switch-cli-activate"
 
     result = runner.invoke(
         app,
@@ -573,7 +573,7 @@ def test_tc_kill_activate_writes_runtime_files(tmp_path: Path, monkeypatch) -> N
     assert "state=active" in result.stdout
     assert "event=kill_activated" in result.stdout
     assert "reason=manual stop" in result.stdout
-    assert "actor=slice8-operator" in result.stdout
+    assert "actor=test-operator" in result.stdout
     assert (runtime_root / f"{run_id}.state.json").is_file()
     assert (runtime_root / f"{run_id}.events.jsonl").is_file()
 
@@ -582,7 +582,7 @@ def test_tc_kill_status_absent_exits_zero(tmp_path: Path, monkeypatch) -> None:
     """Kill status reports absent when state file does not exist."""
     runtime_root = tmp_path / "runtime" / "kill_switch"
     monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
-    run_id = "slice8-cli-status-absent"
+    run_id = "kill-switch-cli-status-absent"
 
     result = runner.invoke(app, ["kill", "status", "--run-id", run_id])
     assert result.exit_code == 0
@@ -594,7 +594,7 @@ def test_tc_kill_status_json_outputs_payload(tmp_path: Path, monkeypatch) -> Non
     """Kill status --json outputs valid JSON payload."""
     runtime_root = tmp_path / "runtime" / "kill_switch"
     monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
-    run_id = "slice8-cli-status-json"
+    run_id = "kill-switch-cli-status-json"
     runner.invoke(
         app,
         ["kill", "activate", "--run-id", run_id, "--reason", "manual stop"],
@@ -612,7 +612,7 @@ def test_tc_kill_clear_writes_cleared_state(tmp_path: Path, monkeypatch) -> None
     """Kill clear command appends clear event and writes cleared state."""
     runtime_root = tmp_path / "runtime" / "kill_switch"
     monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
-    run_id = "slice8-cli-clear"
+    run_id = "kill-switch-cli-clear"
     runner.invoke(app, ["kill", "activate", "--run-id", run_id, "--reason", "manual stop"])
 
     result = runner.invoke(
@@ -636,7 +636,7 @@ def test_tc_kill_activate_fails_for_empty_reason(tmp_path: Path, monkeypatch) ->
 
     result = runner.invoke(
         app,
-        ["kill", "activate", "--run-id", "slice8-cli-empty-reason", "--reason", "   "],
+        ["kill", "activate", "--run-id", "kill-switch-cli-empty-reason", "--reason", "   "],
     )
     assert result.exit_code != 0
     assert "reason must be non-empty" in result.stderr
@@ -646,7 +646,7 @@ def test_tc_kill_status_fails_for_malformed_state_file(tmp_path: Path, monkeypat
     """Kill status returns non-zero for malformed state file JSON."""
     runtime_root = tmp_path / "runtime" / "kill_switch"
     monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
-    run_id = "slice8-cli-malformed"
+    run_id = "kill-switch-cli-malformed"
     runtime_root.mkdir(parents=True)
     (runtime_root / f"{run_id}.state.json").write_text("{bad json", encoding="utf-8")
 
@@ -679,7 +679,7 @@ def _write_reconciliation_state(path: Path, *, run_id: str, freshness_max_age_se
 def test_tc_reconcile_check_ok_writes_result_file(tmp_path: Path, monkeypatch) -> None:
     """Reconcile check exits zero for matching expected/observed fixtures."""
     monkeypatch.chdir(tmp_path)
-    run_id = "slice9-cli-ok"
+    run_id = "reconcile-cli-ok"
     run_dir = tmp_path / "artifacts" / "runs" / run_id
     run_dir.mkdir(parents=True)
 
@@ -719,7 +719,7 @@ def test_tc_reconcile_check_ok_writes_result_file(tmp_path: Path, monkeypatch) -
 def test_tc_reconcile_check_mismatch_exits_non_zero(tmp_path: Path, monkeypatch) -> None:
     """Reconcile check exits non-zero for mismatching open orders."""
     monkeypatch.chdir(tmp_path)
-    run_id = "slice9-cli-mismatch"
+    run_id = "reconcile-cli-mismatch"
     run_dir = tmp_path / "artifacts" / "runs" / run_id
     run_dir.mkdir(parents=True)
 
@@ -773,7 +773,7 @@ def test_tc_reconcile_check_mismatch_exits_non_zero(tmp_path: Path, monkeypatch)
 def test_tc_reconcile_check_warning_exits_zero(tmp_path: Path, monkeypatch) -> None:
     """Reconcile check exits zero for warning-only freshness staleness."""
     monkeypatch.chdir(tmp_path)
-    run_id = "slice9-cli-warning"
+    run_id = "reconcile-cli-warning"
     (tmp_path / "artifacts" / "runs" / run_id).mkdir(parents=True)
 
     expected_path = tmp_path / "expected.json"
@@ -809,7 +809,7 @@ def test_tc_reconcile_check_warning_exits_zero(tmp_path: Path, monkeypatch) -> N
 def test_tc_reconcile_check_unknown_exits_non_zero(tmp_path: Path, monkeypatch) -> None:
     """Reconcile check exits non-zero when freshness data is insufficient."""
     monkeypatch.chdir(tmp_path)
-    run_id = "slice9-cli-unknown"
+    run_id = "reconcile-cli-unknown"
     (tmp_path / "artifacts" / "runs" / run_id).mkdir(parents=True)
 
     expected_path = tmp_path / "expected.json"
@@ -850,7 +850,7 @@ def test_tc_reconcile_check_unknown_exits_non_zero(tmp_path: Path, monkeypatch) 
 def test_tc_reconcile_check_run_id_mismatch_fails(tmp_path: Path, monkeypatch) -> None:
     """Reconcile check fails clearly when payload run_id mismatches CLI run_id."""
     monkeypatch.chdir(tmp_path)
-    run_id = "slice9-cli-run-id"
+    run_id = "reconcile-cli-run-id"
     (tmp_path / "artifacts" / "runs" / run_id).mkdir(parents=True)
 
     expected_path = tmp_path / "expected.json"
@@ -882,7 +882,7 @@ def test_tc_reconcile_check_run_id_mismatch_fails(tmp_path: Path, monkeypatch) -
 def test_tc_reconcile_check_missing_run_directory_fails(tmp_path: Path, monkeypatch) -> None:
     """Reconcile check fails when run artifact directory does not exist."""
     monkeypatch.chdir(tmp_path)
-    run_id = "slice9-cli-missing-run-dir"
+    run_id = "reconcile-cli-missing-run-dir"
     expected_path = tmp_path / "expected.json"
     observed_path = tmp_path / "observed.json"
     _write_reconciliation_state(expected_path, run_id=run_id, freshness_max_age_seconds=999999999)
@@ -908,7 +908,7 @@ def test_tc_reconcile_check_missing_run_directory_fails(tmp_path: Path, monkeypa
 def test_tc_reconcile_check_appends_journal_when_present(tmp_path: Path, monkeypatch) -> None:
     """Reconcile check appends compact reconciliation event when journal exists."""
     monkeypatch.chdir(tmp_path)
-    run_id = "slice9-cli-journal"
+    run_id = "reconcile-cli-journal"
     run_dir = tmp_path / "artifacts" / "runs" / run_id
     run_dir.mkdir(parents=True)
     journal_path = run_dir / "journal.jsonl"
@@ -985,7 +985,7 @@ def _write_minimal_run_artifacts_for_drill(tmp_path: Path, run_id: str, with_jou
 
 def test_tc_drill_stale_market_data_succeeds(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
-    run_id = "slice10-cli-stale"
+    run_id = "drill-cli-stale"
     _write_minimal_run_artifacts_for_drill(tmp_path, run_id=run_id, with_journal=True)
 
     result = runner.invoke(app, ["drill", "stale-market-data", "--run-id", run_id])
@@ -1005,7 +1005,7 @@ def test_tc_drill_reconciliation_mismatch_exits_non_zero_by_design(
     tmp_path: Path, monkeypatch
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    run_id = "slice10-cli-mismatch"
+    run_id = "drill-cli-mismatch"
     _write_minimal_run_artifacts_for_drill(tmp_path, run_id=run_id, with_journal=True)
 
     result = runner.invoke(app, ["drill", "reconciliation-mismatch", "--run-id", run_id])
@@ -1026,7 +1026,7 @@ def test_tc_drill_reconciliation_mismatch_exits_non_zero_by_design(
 
 def test_tc_drill_restart_recovery_succeeds(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
-    run_id = "slice10-cli-restart"
+    run_id = "drill-cli-restart"
     _write_minimal_run_artifacts_for_drill(tmp_path, run_id=run_id, with_journal=False)
 
     result = runner.invoke(app, ["drill", "restart-recovery", "--run-id", run_id])
@@ -1047,7 +1047,7 @@ def test_tc_drill_restart_recovery_succeeds(tmp_path: Path, monkeypatch) -> None
 
 def test_tc_drill_missing_run_directory_fails(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
-    run_id = "slice10-cli-missing"
+    run_id = "drill-cli-missing"
     result = runner.invoke(app, ["drill", "stale-market-data", "--run-id", run_id])
     assert result.exit_code != 0
     assert "Run artifacts directory not found" in result.stderr

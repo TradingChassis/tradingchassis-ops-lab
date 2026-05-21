@@ -1,4 +1,4 @@
-"""Minimal Nautilus smoke backtest execution for Slice 5."""
+"""Minimal NautilusTrader smoke backtest execution."""
 
 from __future__ import annotations
 

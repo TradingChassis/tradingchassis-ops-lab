@@ -9,7 +9,7 @@ from ops_lab.runs.metadata import build_initial_metadata, write_metadata
 from ops_lab.runs.spec import load_run_spec
 
 
-def _write_valid_spec(path: Path, run_id: str = "slice2-metadata-run") -> None:
+def _write_valid_spec(path: Path, run_id: str = "run-spec-metadata-run") -> None:
     path.write_text(
         yaml.safe_dump(
             {
@@ -31,7 +31,7 @@ def _write_valid_spec(path: Path, run_id: str = "slice2-metadata-run") -> None:
 
 def test_write_metadata_contains_required_fields(tmp_path: Path) -> None:
     spec_path = tmp_path / "spec.yaml"
-    artifacts_dir = tmp_path / "artifacts" / "runs" / "slice2-metadata-run"
+    artifacts_dir = tmp_path / "artifacts" / "runs" / "run-spec-metadata-run"
     artifacts_dir.mkdir(parents=True)
     _write_valid_spec(spec_path)
     spec = load_run_spec(spec_path)
@@ -47,7 +47,7 @@ def test_write_metadata_contains_required_fields(tmp_path: Path) -> None:
 
     parsed = json.loads(metadata_path.read_text(encoding="utf-8"))
     assert parsed["schema_version"] == "v1"
-    assert parsed["run_id"] == "slice2-metadata-run"
+    assert parsed["run_id"] == "run-spec-metadata-run"
     assert parsed["mode"] == "paper"
     assert parsed["engine"] == "nautilus"
     assert parsed["status"] == "initialized"

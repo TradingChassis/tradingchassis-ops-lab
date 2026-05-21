@@ -1,4 +1,4 @@
-"""Unit tests for Slice 9 file-based reconciliation checks."""
+"""Unit tests for file-based reconciliation checks."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ def _base_state(run_id: str) -> dict:
 
 
 def test_exact_match_returns_ok_and_writes_result(tmp_path: Path) -> None:
-    run_id = "slice9-match"
+    run_id = "reconcile-match"
     run_dir = tmp_path / "artifacts" / "runs" / run_id
     run_dir.mkdir(parents=True)
     expected = _base_state(run_id)
@@ -65,7 +65,7 @@ def test_exact_match_returns_ok_and_writes_result(tmp_path: Path) -> None:
 
 
 def test_position_mismatch_returns_mismatch(tmp_path: Path) -> None:
-    run_id = "slice9-position-mismatch"
+    run_id = "reconcile-position-mismatch"
     (tmp_path / "artifacts" / "runs" / run_id).mkdir(parents=True)
     expected = _base_state(run_id)
     observed = _base_state(run_id)
@@ -94,7 +94,7 @@ def test_position_mismatch_returns_mismatch(tmp_path: Path) -> None:
 
 
 def test_open_order_mismatch_returns_mismatch(tmp_path: Path) -> None:
-    run_id = "slice9-order-mismatch"
+    run_id = "reconcile-order-mismatch"
     (tmp_path / "artifacts" / "runs" / run_id).mkdir(parents=True)
     expected = _base_state(run_id)
     observed = _base_state(run_id)
@@ -127,7 +127,7 @@ def test_open_order_mismatch_returns_mismatch(tmp_path: Path) -> None:
 
 
 def test_stale_freshness_returns_warning(tmp_path: Path) -> None:
-    run_id = "slice9-stale"
+    run_id = "reconcile-stale"
     (tmp_path / "artifacts" / "runs" / run_id).mkdir(parents=True)
     expected = _base_state(run_id)
     observed = _base_state(run_id)
@@ -152,7 +152,7 @@ def test_stale_freshness_returns_warning(tmp_path: Path) -> None:
 
 
 def test_missing_freshness_threshold_returns_unknown(tmp_path: Path) -> None:
-    run_id = "slice9-missing-freshness"
+    run_id = "reconcile-missing-freshness"
     (tmp_path / "artifacts" / "runs" / run_id).mkdir(parents=True)
     expected = _base_state(run_id)
     observed = _base_state(run_id)
@@ -176,7 +176,7 @@ def test_missing_freshness_threshold_returns_unknown(tmp_path: Path) -> None:
 
 
 def test_malformed_decimal_in_position_returns_unknown(tmp_path: Path) -> None:
-    run_id = "slice9-bad-decimal"
+    run_id = "reconcile-bad-decimal"
     (tmp_path / "artifacts" / "runs" / run_id).mkdir(parents=True)
     expected = _base_state(run_id)
     observed = _base_state(run_id)
@@ -198,7 +198,7 @@ def test_malformed_decimal_in_position_returns_unknown(tmp_path: Path) -> None:
 
 
 def test_malformed_freshness_timestamp_returns_unknown(tmp_path: Path) -> None:
-    run_id = "slice9-bad-freshness-timestamp"
+    run_id = "reconcile-bad-freshness-timestamp"
     (tmp_path / "artifacts" / "runs" / run_id).mkdir(parents=True)
     expected = _base_state(run_id)
     observed = _base_state(run_id)
@@ -222,7 +222,7 @@ def test_malformed_freshness_timestamp_returns_unknown(tmp_path: Path) -> None:
 
 
 def test_run_id_mismatch_raises_validation_error(tmp_path: Path) -> None:
-    run_id = "slice9-run-id"
+    run_id = "reconcile-run-id"
     (tmp_path / "artifacts" / "runs" / run_id).mkdir(parents=True)
     expected = _base_state(run_id)
     observed = _base_state("different-run")
@@ -241,7 +241,7 @@ def test_run_id_mismatch_raises_validation_error(tmp_path: Path) -> None:
 
 
 def test_missing_artifacts_dir_raises_error(tmp_path: Path) -> None:
-    run_id = "slice9-missing-artifacts"
+    run_id = "reconcile-missing-artifacts"
     expected = _base_state(run_id)
     observed = _base_state(run_id)
     expected_path = tmp_path / "expected.json"
@@ -259,7 +259,7 @@ def test_missing_artifacts_dir_raises_error(tmp_path: Path) -> None:
 
 
 def test_journal_append_when_present(tmp_path: Path) -> None:
-    run_id = "slice9-journal-present"
+    run_id = "reconcile-journal-present"
     run_dir = tmp_path / "artifacts" / "runs" / run_id
     run_dir.mkdir(parents=True)
     journal_path = run_dir / "journal.jsonl"
@@ -287,7 +287,7 @@ def test_journal_append_when_present(tmp_path: Path) -> None:
 
 
 def test_deterministic_result_ordering(tmp_path: Path) -> None:
-    run_id = "slice9-deterministic"
+    run_id = "reconcile-deterministic"
     run_dir = tmp_path / "artifacts" / "runs" / run_id
     run_dir.mkdir(parents=True)
     expected = _base_state(run_id)

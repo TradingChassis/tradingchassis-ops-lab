@@ -1,4 +1,4 @@
-"""Unit tests for Slice 3 local dataset preparation."""
+"""Unit tests for local dataset preparation."""
 
 from pathlib import Path
 

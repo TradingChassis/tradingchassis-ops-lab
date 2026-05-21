@@ -1,4 +1,4 @@
-"""Artifact-driven Prometheus metrics rendering for Slice 7."""
+"""Artifact-driven Prometheus metrics rendering."""
 
 from __future__ import annotations
 

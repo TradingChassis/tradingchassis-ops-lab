@@ -28,7 +28,7 @@ Use one local run to demonstrate data prep, run lifecycle, observability export,
 5. Run reconciliation check
 6. Run deterministic failure drills
 
-Build history note: slices 0-10 established the foundations; this slice focuses on portfolio readability and curated evidence.
+Build history note: v1 established the foundations; this phase focuses on portfolio readability and curated sample artifacts.
 
 ## Operational features demonstrated
 

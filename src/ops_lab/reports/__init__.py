@@ -1,1 +1,1 @@
-"""Reporting placeholders for future slices."""
+"""Reporting placeholders for future work."""
