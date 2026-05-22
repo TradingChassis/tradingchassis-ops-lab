@@ -150,8 +150,12 @@ def run_backtest(spec: Path = typer.Option(..., "--spec", help="Path to run spec
 @run_app.command("paper")
 def run_paper(spec: Path = typer.Option(..., "--spec", help="Path to run spec YAML.")) -> None:
     """Run a bounded deterministic paper lifecycle skeleton and persist artifacts."""
+    runtime_root = _resolve_runtime_root()
     try:
-        artifacts_dir, config_sha256 = run_paper_lifecycle(spec)
+        artifacts_dir, config_sha256, status = run_paper_lifecycle(
+            spec,
+            runtime_root=runtime_root,
+        )
     except (RunSpecLoadError, InvalidPaperModeError) as exc:
         typer.secho(str(exc), fg=typer.colors.RED, err=True)
         raise typer.Exit(1) from exc
@@ -164,7 +168,7 @@ def run_paper(spec: Path = typer.Option(..., "--spec", help="Path to run spec YA
 
     typer.echo(f"Paper lifecycle artifacts at {artifacts_dir.resolve()}")
     typer.echo(f"config_sha256={config_sha256}")
-    typer.echo("status=completed")
+    typer.echo(f"status={status}")
 
 
 def _resolve_data_root() -> Path:

@@ -70,6 +70,8 @@ def render_paper_skeleton_report(
     config_sha256: str,
     heartbeat_count: int,
     connectivity: str,
+    kill_switch_state: str,
+    lifecycle_outcome: str,
 ) -> str:
     """Render the paper lifecycle skeleton report markdown."""
     return (
@@ -80,8 +82,13 @@ def render_paper_skeleton_report(
         f"- config_sha256: {config_sha256}\n"
         f"- heartbeat_count: {heartbeat_count}\n"
         f"- connectivity: {connectivity}\n\n"
+        "## Safety status\n\n"
+        f"- kill_switch_state: {kill_switch_state}\n"
+        f"- lifecycle_outcome: {lifecycle_outcome}\n"
+        "- control_signal: local file-based kill switch state\n"
+        "- no order cancellation, no position flattening, no production safety guarantee\n\n"
         "## Skeleton Session Summary\n\n"
-        "This run completed a bounded synthetic paper lifecycle with deterministic heartbeats.\n"
+        "This run executes a bounded local paper lifecycle with deterministic behavior.\n"
         "No exchange or testnet integration is performed in this paper lifecycle skeleton.\n\n"
         "## Explicit Non-Features\n\n"
         "- no exchange/testnet connection\n"

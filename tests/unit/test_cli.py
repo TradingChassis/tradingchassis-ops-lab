@@ -285,10 +285,11 @@ def test_tc_run_paper_creates_lifecycle_artifacts(tmp_path: Path, monkeypatch) -
     assert metadata["paper_execution"]["error"] is None
 
     journal_lines = (run_dir / "journal.jsonl").read_text(encoding="utf-8").splitlines()
-    assert len(journal_lines) == 7
+    assert len(journal_lines) == 8
     journal = [json.loads(line) for line in journal_lines]
     assert [entry["event"] for entry in journal] == [
         "run_started",
+        "paper_safety_checked",
         "paper_started",
         "paper_heartbeat",
         "paper_heartbeat",
@@ -298,15 +299,20 @@ def test_tc_run_paper_creates_lifecycle_artifacts(tmp_path: Path, monkeypatch) -
     ]
     assert all(entry["event"] != "run_initialized" for entry in journal)
     assert (
-        journal[1]["note"] == "paper skeleton lifecycle started; no exchange/testnet connectivity"
+        journal[2]["note"] == "paper skeleton lifecycle started; no exchange/testnet connectivity"
     )
-    for index, heartbeat in enumerate(journal[2:5], start=1):
+    assert journal[1]["kill_switch_state"] == "absent"
+    assert journal[1]["lifecycle_outcome"] == "checked_continue"
+    for index, heartbeat in enumerate(journal[3:6], start=1):
         assert heartbeat["heartbeat_index"] == index
         assert heartbeat["heartbeat_total"] == 3
         assert heartbeat["synthetic"] is True
-    assert journal[5]["result"] == "paper_skeleton_completed"
-    assert journal[5]["heartbeat_count"] == 3
-    assert journal[6]["status"] == "completed"
+    assert journal[6]["result"] == "paper_skeleton_completed"
+    assert journal[6]["heartbeat_count"] == 3
+    assert journal[7]["status"] == "completed"
+
+    assert metadata["safety"]["kill_switch"]["state"] == "absent"
+    assert metadata["safety"]["lifecycle_outcome"] == "checked_continue"
 
     metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
     assert metrics["status"] == "completed"
@@ -327,6 +333,8 @@ def test_tc_run_paper_creates_lifecycle_artifacts(tmp_path: Path, monkeypatch) -
     assert "no fills" in report
     assert "no strategy execution" in report
     assert "not paper trading connectivity" in report
+    assert "## Safety status" in report
+    assert "kill_switch_state: absent" in report
 
 
 def test_tc_run_paper_fails_for_backtest_mode(tmp_path: Path, monkeypatch) -> None:
@@ -386,6 +394,7 @@ def test_tc_run_paper_failure_writes_failed_metadata(tmp_path: Path, monkeypatch
     journal = [json.loads(line) for line in journal_lines]
     assert [entry["event"] for entry in journal] == [
         "run_started",
+        "paper_safety_checked",
         "paper_started",
         "run_failed",
     ]

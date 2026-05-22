@@ -13,6 +13,7 @@ from tradingchassis_ops_lab.runs.hashing import compute_config_sha256
 from tradingchassis_ops_lab.runs.journal import append_journal_event
 from tradingchassis_ops_lab.runs.metadata import build_initial_metadata, write_metadata
 from tradingchassis_ops_lab.runs.spec import RunSpec, load_run_spec
+from tradingchassis_ops_lab.safety.kill_switch import build_safety_snapshot
 
 _HEARTBEAT_COUNT = 3
 _SYNTHETIC_DURATION_SECONDS = 3
@@ -96,13 +97,48 @@ def _write_placeholder_metrics(path: Path, *, spec: RunSpec) -> None:
     )
 
 
-def run_paper_lifecycle(spec_path: Path) -> tuple[Path, str]:
+def _write_blocked_metrics(path: Path, *, spec: RunSpec) -> None:
+    payload = {
+        "schema_version": "v1",
+        "run_id": spec.run_id,
+        "mode": spec.mode,
+        "engine": "nautilus",
+        "status": "safety_blocked",
+        "is_placeholder": True,
+        "engine_executed": False,
+        "connectivity": "none",
+        "paper_lifecycle": "blocked_kill_switch",
+        "heartbeat_count": 0,
+        "synthetic_duration_seconds": 0,
+        "metrics": {},
+    }
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def run_paper_lifecycle(
+    spec_path: Path,
+    *,
+    runtime_root: Path = Path("runtime/kill_switch"),
+) -> tuple[Path, str, str]:
     """Run deterministic paper lifecycle skeleton and persist artifacts."""
     spec = load_run_spec(spec_path)
     if spec.mode != "paper":
         raise InvalidPaperModeError(
             f"Spec mode must be paper for `tc run paper`; got mode={spec.mode}"
         )
+    safety_checked_at = _utc_now_iso8601()
+    safety_snapshot = build_safety_snapshot(
+        run_id=spec.run_id,
+        runtime_root=runtime_root,
+        checked_at_utc=safety_checked_at,
+    )
+    kill_switch_state = safety_snapshot["kill_switch"]["state"]
+    lifecycle_outcome = (
+        "blocked_kill_switch" if kill_switch_state == "active" else "checked_continue"
+    )
 
     config_sha256 = compute_config_sha256(spec)
     artifacts_dir = initialize_run_artifacts(
@@ -121,6 +157,10 @@ def run_paper_lifecycle(spec_path: Path) -> tuple[Path, str]:
     metadata["started_at_utc"] = _utc_now_iso8601()
     metadata["lifecycle"] = "paper_skeleton"
     metadata["is_placeholder"] = True
+    metadata["safety"] = {
+        **safety_snapshot,
+        "lifecycle_outcome": lifecycle_outcome,
+    }
     paper_started_at = _utc_now_iso8601()
     metadata["paper_execution"] = {
         "status": "running",
@@ -144,6 +184,80 @@ def run_paper_lifecycle(spec_path: Path) -> tuple[Path, str]:
             artifacts_dir=artifacts_dir,
         ),
     )
+    append_journal_event(
+        journal_path,
+        _build_lifecycle_event(
+            event="paper_safety_checked",
+            status="running",
+            spec=spec,
+            config_sha256=config_sha256,
+            artifacts_dir=artifacts_dir,
+            extra_fields={
+                "kill_switch_state": kill_switch_state,
+                "lifecycle_outcome": lifecycle_outcome,
+                "control_signal": "local_file_based",
+            },
+        ),
+    )
+
+    if kill_switch_state == "active":
+        blocked_at = _utc_now_iso8601()
+        metadata["status"] = "safety_blocked"
+        metadata["completed_at_utc"] = blocked_at
+        metadata["paper_execution"] = {
+            "status": "blocked",
+            "engine": "nautilus",
+            "connectivity": "none",
+            "session_type": "blocked_kill_switch",
+            "started_at_utc": paper_started_at,
+            "completed_at_utc": blocked_at,
+            "error": None,
+        }
+        write_metadata(artifacts_dir / "metadata.json", metadata)
+
+        append_journal_event(
+            journal_path,
+            _build_lifecycle_event(
+                event="paper_safety_blocked",
+                status="safety_blocked",
+                spec=spec,
+                config_sha256=config_sha256,
+                artifacts_dir=artifacts_dir,
+                extra_fields={
+                    "result": "blocked_kill_switch",
+                    "kill_switch_state": "active",
+                    "control_signal": "local_file_based",
+                },
+            ),
+        )
+        append_journal_event(
+            journal_path,
+            _build_lifecycle_event(
+                event="run_completed",
+                status="safety_blocked",
+                spec=spec,
+                config_sha256=config_sha256,
+                artifacts_dir=artifacts_dir,
+            ),
+        )
+
+        _write_blocked_metrics(artifacts_dir / "metrics.json", spec=spec)
+        (artifacts_dir / "report.md").write_text(
+            render_paper_skeleton_report(
+                run_id=spec.run_id,
+                mode=spec.mode,
+                engine=spec.engine,
+                status="safety_blocked",
+                config_sha256=config_sha256,
+                heartbeat_count=0,
+                connectivity="none",
+                kill_switch_state=kill_switch_state,
+                lifecycle_outcome=lifecycle_outcome,
+            ),
+            encoding="utf-8",
+        )
+        return artifacts_dir, config_sha256, "safety_blocked"
+
     append_journal_event(
         journal_path,
         _build_lifecycle_event(
@@ -217,6 +331,8 @@ def run_paper_lifecycle(spec_path: Path) -> tuple[Path, str]:
             config_sha256=config_sha256,
             heartbeat_count=_HEARTBEAT_COUNT,
             connectivity="none",
+            kill_switch_state=kill_switch_state,
+            lifecycle_outcome=lifecycle_outcome,
         ),
         encoding="utf-8",
     )
@@ -246,4 +362,4 @@ def run_paper_lifecycle(spec_path: Path) -> tuple[Path, str]:
         ),
     )
 
-    return artifacts_dir, config_sha256
+    return artifacts_dir, config_sha256, "completed"
