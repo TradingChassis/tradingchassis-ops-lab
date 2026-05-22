@@ -5,6 +5,29 @@ All notable changes to `TradingChassis Ops Lab` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0]
+
+### Added
+
+- Local artifact-backed metrics serving via `tc metrics serve` at `/metrics`.
+- Local Prometheus + Grafana Compose stack under `deploy/observability/`.
+- Provisioned Prometheus datasource and Grafana dashboard wiring for local runs.
+- Configurable local observability environment variables:
+  - `TC_METRICS_TARGET`
+  - `TC_PROMETHEUS_PORT`
+  - `TC_GRAFANA_PORT`
+
+### Changed
+
+- Local observability documentation was aligned for Dev-Container-first and host-Compose workflows across `README.md`, quickstart, demo flow, and roadmap.
+
+### Notes
+
+- No live exchange connectivity is included.
+- No testnet connectivity is included.
+- No production monitoring guarantees are implied.
+- No profitability or strategy-performance claims are made.
+
 ## [0.1.0]
 
 ### Added

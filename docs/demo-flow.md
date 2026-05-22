@@ -60,7 +60,38 @@ Expected artifact location:
 
 - `artifacts/runs/<run_id>/`
 
-## 6) Kill switch activate/status/clear
+## 6) Local observability stack demo
+
+Artifact-backed run outputs under `artifacts/runs/<run_id>/` are rendered as Prometheus text by `tc metrics serve`. Prometheus scrapes that local endpoint, and Grafana visualizes run and operational state from those scraped metrics.
+
+Terminal 1:
+
+```bash
+tc metrics serve --artifacts-root artifacts/runs --host 0.0.0.0 --port 8000
+```
+
+Terminal 2:
+
+```bash
+docker compose -f deploy/observability/docker-compose.yml up
+```
+
+Optional override example:
+
+```bash
+TC_METRICS_TARGET=<target>:8000 TC_PROMETHEUS_PORT=9091 TC_GRAFANA_PORT=3001 docker compose -f deploy/observability/docker-compose.yml up
+```
+
+Verification:
+
+- Prometheus targets page: `http://localhost:${TC_PROMETHEUS_PORT:-9090}/targets`
+- Target `tradingchassis_ops_lab_metrics` should be `UP`
+- Grafana: `http://localhost:${TC_GRAFANA_PORT:-3000}`
+- Open `TradingChassis Ops Lab Run Observability`
+
+This demo flow is local-only and artifact-backed. It is not live production monitoring, and it does not imply exchange/testnet connectivity or strategy-performance tracking.
+
+## 7) Kill switch activate/status/clear
 
 ```bash
 tc kill activate --run-id 2026-05-20-btcusdt-paper-001 --reason "manual stop"
@@ -72,7 +103,7 @@ Expected artifact location:
 
 - `runtime/kill_switch/`
 
-## 7) Reconciliation check
+## 8) Reconciliation check
 
 ```bash
 tc reconcile check --run-id 2026-05-20-btcusdt-paper-001 --expected examples/reconciliation/expected_match.json --observed examples/reconciliation/observed_match.json
@@ -82,7 +113,7 @@ Expected artifact location:
 
 - `artifacts/runs/2026-05-20-btcusdt-paper-001/`
 
-## 8) Failure drills
+## 9) Failure drills
 
 ```bash
 tc drill stale-market-data --run-id 2026-05-20-btcusdt-paper-001

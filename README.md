@@ -15,6 +15,31 @@ tc run backtest --spec examples/configs/btcusdt_backtest.yaml
 tc metrics export --run-id 2026-05-20-btcusdt-backtest-001
 ```
 
+## Local observability stack
+
+Run the local metrics endpoint (inside the Dev Container or host shell):
+
+```bash
+tc metrics serve --artifacts-root artifacts/runs --host 0.0.0.0 --port 8000
+```
+
+Start local Prometheus + Grafana:
+
+```bash
+docker compose -f deploy/observability/docker-compose.yml up
+```
+
+Optional local override example:
+
+```bash
+TC_METRICS_TARGET=<target>:8000 TC_PROMETHEUS_PORT=9091 TC_GRAFANA_PORT=3001 docker compose -f deploy/observability/docker-compose.yml up
+```
+
+Verification:
+
+- Prometheus targets: `http://localhost:${TC_PROMETHEUS_PORT:-9090}/targets`
+- Grafana dashboard: `http://localhost:${TC_GRAFANA_PORT:-3000}` then open `TradingChassis Ops Lab Run Observability`
+
 ## Documentation
 
 - Documentation is published with GitHub Pages from the MkDocs site.

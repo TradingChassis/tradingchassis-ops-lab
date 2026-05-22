@@ -17,12 +17,12 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 | Run control | Spec-driven runs with deterministic artifacts, metadata, journal, and reports | implemented |
 | Data workflow | Local synthetic dataset prepare and deterministic fingerprint workflow | implemented |
 | Engine paths | Nautilus smoke backtest and bounded paper lifecycle skeleton | implemented |
-| Observability | Artifact-driven Prometheus text export and Grafana dashboard JSON | partial |
+| Observability | Artifact-driven metrics server, local Prometheus/Grafana Compose stack, and provisioned dashboard | implemented (`0.2.0`) |
 | Safety and control | File-based kill switch state/events and deterministic drill support | partial |
 | Reconciliation | File-based expected vs observed checks with reconciliation artifact output | implemented |
 | Runbooks | Deterministic runbooks for stale data, mismatch, and restart recovery | implemented |
 | Documentation | MkDocs Material site, demo flow, scope/limitations, roadmap | implemented |
-| Local ops stack | No runnable local Prometheus/Grafana stack yet | planned |
+| Local ops stack | Runnable local Prometheus/Grafana stack for artifact-backed metrics | implemented (`0.2.0`) |
 | Kubernetes/GitOps | No cluster manifests or GitOps workflow in current repository | deferred |
 
 ## Capability gap analysis
@@ -32,11 +32,11 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 | Run control and reproducibility | RunSpec validation, config hash, artifact contract, metadata, journal, and reports are in place (`implemented`) | Data fingerprint is not yet automatically linked into run metadata; event and artifact semantics can be clearer | Keep schema stable; document reproducibility workflow and artifact/journal reference conventions |
 | Engine integration | Nautilus smoke backtest and paper lifecycle skeleton exist (`implemented`/`partial`) | Backtest scenarios are narrow; paper path remains synthetic with no connectivity or runtime-state ingestion | Expand deterministic scenario coverage first; defer connectivity until observability and safety integration is stronger |
 | Data layer | Fixture-backed prepare and fingerprint are in place (`implemented`) | No real historical import pipeline and no dedicated data quality checks | Preserve local deterministic fixtures now; add QA and import paths only after core ops gaps close |
-| Observability | Prometheus text export and Grafana dashboard JSON exist (`implemented`/`partial`) | No continuous local scrape target, no runnable local stack, no provisioning, no alert rules | Build a local observability stack next, then add provisioning and local alert examples |
+| Observability | `tc metrics serve` plus local Prometheus/Grafana Compose stack and provisioning are in place (`implemented`) | Alerting and deeper operational rule coverage are not in scope yet | Keep the current local stack stable; add only narrow follow-up hardening after safety integration |
 | Safety and control | File-based kill switch is implemented; stale signal appears via reconciliation/drills (`implemented`/`partial`) | Kill switch and guards are not integrated into lifecycle execution logic; guard reports are absent | Integrate safety state into runtime flow and artifacts before any live-like connectivity work |
 | Reconciliation | File-based reconciliation, artifact output, and journal event integration are implemented (`implemented`) | Reconciliation is fixture/file-driven only; no paper runtime-state source | Keep deterministic file path; increase coverage; defer runtime-state reconciliation until paper runtime matures |
 | Failure modes and runbooks | Three deterministic drills and runbooks are implemented (`implemented`) | Coverage is limited to current local drill set; no disconnect/missing-update/rate-limit drills | Expand drill catalog incrementally with deterministic local artifacts and runbooks |
-| Local operations environment | Development container exists; no local runtime stack (`partial`/`planned`) | No one-command local operations demo for Prometheus/Grafana | Add Compose-based local stack with documented setup and dashboard provisioning |
+| Local operations environment | Dev-Container-first and host-Compose workflows are documented and runnable (`implemented`) | Environment-specific Docker/Podman permissions can still vary by host | Keep workflow guidance explicit and local-first; avoid platform abstraction expansion |
 | Kubernetes / infrastructure | No Kubernetes manifests, in-cluster observability, or GitOps (`deferred`) | No cluster operating model yet | Keep deferred until local-first operations patterns are stable and repeatable |
 | Documentation and portfolio presentation | README/docs/runbooks/samples/contribution guidance are present (`implemented`) | Dense roadmap details reduce scanability for external readers | Keep evidence and scope discipline, but present roadmap in clearer milestone-oriented structure |
 
@@ -62,9 +62,9 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 
 #### Observability
 
-- Implemented now: artifact metrics export and dashboard JSON.
-- Open gap: no runnable local Prometheus/Grafana stack and no provisioning.
-- Direction: establish a local stack as the next milestone.
+- Implemented now: artifact-backed `tc metrics serve`, local Prometheus/Grafana Compose stack, and provisioning.
+- Open gap: alerting and additional panel hardening remain intentionally limited.
+- Direction: keep observability local and stable while prioritizing safety integration next.
 
 #### Safety and control
 
@@ -86,9 +86,9 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 
 #### Local operations environment
 
-- Implemented now: CLI workflows and artifacts for local demonstrations.
-- Open gap: no Compose-driven local observability environment.
-- Direction: add one-command local operations demo around Prometheus/Grafana.
+- Implemented now: CLI workflows, artifact outputs, and local observability demo path.
+- Open gap: host/container runtime differences can still require local troubleshooting.
+- Direction: document the practical path clearly and keep the milestone demo-focused.
 
 #### Kubernetes / infrastructure
 
@@ -102,30 +102,22 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 - Open gap: roadmap previously overloaded detailed content in long lists.
 - Direction: keep technical honesty while improving scanability and flow.
 
-## Recommended next milestone
+## Completed milestone
 
-### Local Observability Stack
+### 0.2.0 Local Observability Stack
 
-This is the next step because it:
+Implemented in current repository scope:
 
-- builds directly on existing artifact-driven metrics export and dashboard definitions
-- stays local-first and demoable
-- improves operational visibility without requiring exchange connectivity
-- creates a stable base for safety and reconciliation integration
-
-Suggested scope:
-
-- local metrics scrape flow from exported run metrics
-- Docker Compose
-- Prometheus
-- Grafana
-- provisioned datasource and dashboard
-- documentation for setup and demonstration flow
+- `tc metrics serve` for local artifact-backed `/metrics`
+- local Prometheus + Grafana Compose stack
+- provisioned Prometheus datasource and Grafana dashboard
+- local runtime hardening (`TC_METRICS_TARGET`, `TC_PROMETHEUS_PORT`, `TC_GRAFANA_PORT`, SELinux-compatible bind mounts)
+- documentation for Dev-Container-first and host-Compose workflows
 
 Explicitly not included:
 
 - exchange/testnet/live connectivity
-- production monitoring claims
+- production monitoring guarantees
 - Kubernetes or GitOps
 
 ## Near-term milestones
@@ -134,9 +126,9 @@ Explicitly not included:
 
 Goal:
 
-- Make run state visible through a local Prometheus/Grafana setup.
+- Milestone complete in `0.2.0`.
 
-Includes:
+Delivered scope:
 
 - local metrics scrape flow from run artifacts
 - Docker Compose
@@ -250,8 +242,7 @@ Intentionally not next:
 
 ## Current recommended sequence
 
-1. Local Observability Stack
-2. Runtime Safety Integration
-3. Paper/Testnet Connectivity Probe
-4. Expanded Failure Modes
-5. Kubernetes / GitOps Lab
+1. Runtime Safety Integration
+2. Paper/Testnet Connectivity Probe
+3. Expanded Failure Modes
+4. Kubernetes / GitOps Lab
