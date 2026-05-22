@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from ops_lab.data.prepare import UnsupportedDatasetError, prepare_dataset
+from tradingchassis_ops_lab.data.prepare import UnsupportedDatasetError, prepare_dataset
 
 
 def test_prepare_dataset_succeeds_for_supported_dataset(tmp_path: Path) -> None:

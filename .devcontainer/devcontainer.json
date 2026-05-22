@@ -4,12 +4,17 @@
     "dockerfile": "Dockerfile",
     "context": ".."
   },
-
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "moby": false
+    }
+  },
   "workspaceFolder": "/workspaces/tradingchassis-ops-lab",
   "remoteUser": "root",
   "runArgs": ["--security-opt=label=disable"],
+  "forwardPorts": [8000, 9090, 3000],
+  "postCreateCommand": "python -m pip install -e \".[dev]\"",
   "containerEnv": {
     "SHELL": "/bin/bash"
   }
-
 }

@@ -9,7 +9,7 @@ import urllib.request
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
-from ops_lab.observability.serve import (
+from tradingchassis_ops_lab.observability.serve import (
     PROMETHEUS_TEXT_CONTENT_TYPE,
     build_metrics_renderer,
     make_metrics_handler,
@@ -63,7 +63,7 @@ def test_metrics_handler_returns_prometheus_text_for_metrics_endpoint(tmp_path: 
             body = response.read().decode("utf-8")
             assert response.status == 200
             assert response.headers["Content-Type"] == PROMETHEUS_TEXT_CONTENT_TYPE
-            assert "ops_lab_run_info{" in body
+            assert "tradingchassis_ops_lab_run_info{" in body
             assert 'run_id="serve-metrics"' in body
     finally:
         server.shutdown()
@@ -72,7 +72,7 @@ def test_metrics_handler_returns_prometheus_text_for_metrics_endpoint(tmp_path: 
 
 
 def test_metrics_handler_returns_404_for_unknown_path() -> None:
-    handler_class = make_metrics_handler(lambda: "ops_lab_run_info{} 1\n")
+    handler_class = make_metrics_handler(lambda: "tradingchassis_ops_lab_run_info{} 1\n")
     server, thread = _start_server(handler_class)
 
     try:

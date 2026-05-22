@@ -7,13 +7,13 @@ from pathlib import Path
 
 import pytest
 
-from ops_lab.drills.errors import DrillArtifactsError
-from ops_lab.drills.executor import (
+from tradingchassis_ops_lab.drills.errors import DrillArtifactsError
+from tradingchassis_ops_lab.drills.executor import (
     execute_reconciliation_mismatch_drill,
     execute_restart_recovery_drill,
     execute_stale_market_data_drill,
 )
-from ops_lab.observability.metrics import export_run_metrics
+from tradingchassis_ops_lab.observability.metrics import export_run_metrics
 
 
 def _prepare_run_dir(tmp_path: Path, run_id: str, *, with_journal: bool = False) -> Path:
@@ -198,5 +198,5 @@ def test_metrics_include_failure_drill_journal_event_when_present(
         include_journal=True,
     )
 
-    assert "ops_lab_journal_event_total{" in rendered
+    assert "tradingchassis_ops_lab_journal_event_total{" in rendered
     assert 'event="failure_drill_executed"} 1' in rendered

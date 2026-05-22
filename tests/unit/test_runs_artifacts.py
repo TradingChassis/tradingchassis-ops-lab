@@ -5,8 +5,11 @@ from pathlib import Path
 import pytest
 import yaml
 
-from ops_lab.runs.artifacts import RunArtifactsAlreadyExistError, initialize_run_artifacts
-from ops_lab.runs.spec import load_run_spec
+from tradingchassis_ops_lab.runs.artifacts import (
+    RunArtifactsAlreadyExistError,
+    initialize_run_artifacts,
+)
+from tradingchassis_ops_lab.runs.spec import load_run_spec
 
 
 def _write_valid_spec(path: Path, run_id: str) -> None:

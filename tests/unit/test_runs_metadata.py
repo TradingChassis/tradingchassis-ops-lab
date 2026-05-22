@@ -5,8 +5,8 @@ from pathlib import Path
 
 import yaml
 
-from ops_lab.runs.metadata import build_initial_metadata, write_metadata
-from ops_lab.runs.spec import load_run_spec
+from tradingchassis_ops_lab.runs.metadata import build_initial_metadata, write_metadata
+from tradingchassis_ops_lab.runs.spec import load_run_spec
 
 
 def _write_valid_spec(path: Path, run_id: str = "run-spec-metadata-run") -> None:

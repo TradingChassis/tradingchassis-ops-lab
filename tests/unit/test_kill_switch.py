@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from ops_lab.safety.kill_switch import (
+from tradingchassis_ops_lab.safety.kill_switch import (
     KillSwitchValidationError,
     activate_kill_switch,
     clear_kill_switch,

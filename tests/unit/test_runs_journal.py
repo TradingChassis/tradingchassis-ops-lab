@@ -5,8 +5,8 @@ from pathlib import Path
 
 import yaml
 
-from ops_lab.runs.journal import append_journal_event, build_run_initialized_event
-from ops_lab.runs.spec import load_run_spec
+from tradingchassis_ops_lab.runs.journal import append_journal_event, build_run_initialized_event
+from tradingchassis_ops_lab.runs.spec import load_run_spec
 
 
 def _write_valid_spec(path: Path, run_id: str = "run-spec-journal-run") -> None:

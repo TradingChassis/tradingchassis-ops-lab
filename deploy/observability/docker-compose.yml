@@ -1,0 +1,28 @@
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    entrypoint:
+      - /bin/sh
+      - -ec
+    command:
+      - |
+        TC_METRICS_TARGET="${TC_METRICS_TARGET:-host.docker.internal:8000}"
+        sed "s|__TC_METRICS_TARGET__|$${TC_METRICS_TARGET}|g" \
+          /etc/prometheus/prometheus.yml.template > /tmp/prometheus.yml
+        exec /bin/prometheus --config.file=/tmp/prometheus.yml
+    ports:
+      - "127.0.0.1:${TC_PROMETHEUS_PORT:-9090}:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml.template:ro,z
+
+  grafana:
+    image: grafana/grafana:latest
+    depends_on:
+      - prometheus
+    ports:
+      - "127.0.0.1:${TC_GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro,z
+      - ../../dashboards/grafana:/var/lib/grafana/dashboards:ro,z

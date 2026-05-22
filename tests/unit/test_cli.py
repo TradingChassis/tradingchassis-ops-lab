@@ -6,9 +6,9 @@ from pathlib import Path
 import yaml
 from typer.testing import CliRunner
 
-from ops_lab.cli import app
-from ops_lab.data.prepare import prepare_dataset
-from ops_lab.engines.nautilus.backtest import NautilusSmokeBacktestResult
+from tradingchassis_ops_lab.cli import app
+from tradingchassis_ops_lab.data.prepare import prepare_dataset
+from tradingchassis_ops_lab.engines.nautilus.backtest import NautilusSmokeBacktestResult
 
 runner = CliRunner()
 
@@ -204,7 +204,9 @@ def test_tc_run_backtest_fails_for_duplicate_run_id(tmp_path: Path, monkeypatch)
             nautilus_version="1.227.0",
         )
 
-    monkeypatch.setattr("ops_lab.runs.backtest.run_nautilus_backtest_smoke", _fake_smoke)
+    monkeypatch.setattr(
+        "tradingchassis_ops_lab.runs.backtest.run_nautilus_backtest_smoke", _fake_smoke
+    )
 
     first = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
     second = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
@@ -225,7 +227,9 @@ def test_tc_run_backtest_failure_writes_failed_metadata(tmp_path: Path, monkeypa
         del kwargs
         raise RuntimeError("forced smoke failure")
 
-    monkeypatch.setattr("ops_lab.runs.backtest.run_nautilus_backtest_smoke", _raise_smoke_failure)
+    monkeypatch.setattr(
+        "tradingchassis_ops_lab.runs.backtest.run_nautilus_backtest_smoke", _raise_smoke_failure
+    )
     result = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
     assert result.exit_code != 0
 
@@ -361,7 +365,7 @@ def test_tc_run_paper_failure_writes_failed_metadata(tmp_path: Path, monkeypatch
         raise RuntimeError("forced paper heartbeat failure")
 
     monkeypatch.setattr(
-        "ops_lab.runs.paper._append_synthetic_heartbeat_events",
+        "tradingchassis_ops_lab.runs.paper._append_synthetic_heartbeat_events",
         _raise_heartbeat_failure,
     )
     result = runner.invoke(app, ["run", "paper", "--spec", str(spec_path)])
@@ -392,7 +396,7 @@ def test_tc_run_paper_failure_writes_failed_metadata(tmp_path: Path, monkeypatch
 def test_tc_data_prepare_succeeds_and_is_idempotent(tmp_path: Path, monkeypatch) -> None:
     """Data prepare command succeeds repeatedly for the supported dataset."""
     data_root = tmp_path / "runtime-data"
-    monkeypatch.setenv("OPS_LAB_DATA_ROOT", str(data_root))
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_DATA_ROOT", str(data_root))
 
     first = runner.invoke(app, ["data", "prepare", "--dataset", "btcusdt-sample"])
     second = runner.invoke(app, ["data", "prepare", "--dataset", "btcusdt-sample"])
@@ -405,7 +409,7 @@ def test_tc_data_prepare_succeeds_and_is_idempotent(tmp_path: Path, monkeypatch)
 
 def test_tc_data_prepare_fails_for_unknown_dataset(tmp_path: Path, monkeypatch) -> None:
     """Data prepare command fails for unsupported datasets."""
-    monkeypatch.setenv("OPS_LAB_DATA_ROOT", str(tmp_path / "runtime-data"))
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_DATA_ROOT", str(tmp_path / "runtime-data"))
     result = runner.invoke(app, ["data", "prepare", "--dataset", "ethusdt-sample"])
     assert result.exit_code != 0
     assert "Unsupported dataset" in result.stderr
@@ -413,7 +417,7 @@ def test_tc_data_prepare_fails_for_unknown_dataset(tmp_path: Path, monkeypatch) 
 
 def test_tc_data_fingerprint_fails_before_prepare(tmp_path: Path, monkeypatch) -> None:
     """Fingerprint command fails with actionable guidance when data is missing."""
-    monkeypatch.setenv("OPS_LAB_DATA_ROOT", str(tmp_path / "runtime-data"))
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_DATA_ROOT", str(tmp_path / "runtime-data"))
     result = runner.invoke(app, ["data", "fingerprint", "--dataset", "btcusdt-sample"])
     assert result.exit_code != 0
     assert "tc data prepare --dataset btcusdt-sample" in result.stderr
@@ -422,7 +426,7 @@ def test_tc_data_fingerprint_fails_before_prepare(tmp_path: Path, monkeypatch) -
 def test_tc_data_fingerprint_succeeds_after_prepare(tmp_path: Path, monkeypatch) -> None:
     """Fingerprint command succeeds after preparing local dataset files."""
     data_root = tmp_path / "runtime-data"
-    monkeypatch.setenv("OPS_LAB_DATA_ROOT", str(data_root))
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_DATA_ROOT", str(data_root))
 
     prepared = runner.invoke(app, ["data", "prepare", "--dataset", "btcusdt-sample"])
     result = runner.invoke(app, ["data", "fingerprint", "--dataset", "btcusdt-sample"])
@@ -479,8 +483,8 @@ def test_tc_metrics_export_outputs_prometheus_text(tmp_path: Path, monkeypatch) 
         ],
     )
     assert result.exit_code == 0
-    assert "ops_lab_run_info{" in result.stdout
-    assert "ops_lab_backtest_input_candles_total" in result.stdout
+    assert "tradingchassis_ops_lab_run_info{" in result.stdout
+    assert "tradingchassis_ops_lab_backtest_input_candles_total" in result.stdout
 
 
 def test_tc_metrics_export_writes_output_file(tmp_path: Path, monkeypatch) -> None:
@@ -535,8 +539,8 @@ def test_tc_metrics_export_writes_output_file(tmp_path: Path, monkeypatch) -> No
     assert output_path.is_file()
     assert "Exported metrics to" in result.stdout
     contents = output_path.read_text(encoding="utf-8")
-    assert "ops_lab_paper_heartbeat_total" in contents
-    assert "ops_lab_journal_events_total" not in contents
+    assert "tradingchassis_ops_lab_paper_heartbeat_total" in contents
+    assert "tradingchassis_ops_lab_journal_events_total" not in contents
 
 
 def test_tc_metrics_export_fails_for_invalid_run_id(tmp_path: Path, monkeypatch) -> None:
@@ -567,7 +571,7 @@ def test_tc_metrics_serve_help_exits_successfully() -> None:
 def test_tc_kill_activate_writes_runtime_files(tmp_path: Path, monkeypatch) -> None:
     """Kill activate command writes state and events files."""
     runtime_root = tmp_path / "runtime" / "kill_switch"
-    monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_RUNTIME_ROOT", str(runtime_root))
     monkeypatch.setenv("USER", "test-operator")
     run_id = "kill-switch-cli-activate"
 
@@ -588,7 +592,7 @@ def test_tc_kill_activate_writes_runtime_files(tmp_path: Path, monkeypatch) -> N
 def test_tc_kill_status_absent_exits_zero(tmp_path: Path, monkeypatch) -> None:
     """Kill status reports absent when state file does not exist."""
     runtime_root = tmp_path / "runtime" / "kill_switch"
-    monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_RUNTIME_ROOT", str(runtime_root))
     run_id = "kill-switch-cli-status-absent"
 
     result = runner.invoke(app, ["kill", "status", "--run-id", run_id])
@@ -600,7 +604,7 @@ def test_tc_kill_status_absent_exits_zero(tmp_path: Path, monkeypatch) -> None:
 def test_tc_kill_status_json_outputs_payload(tmp_path: Path, monkeypatch) -> None:
     """Kill status --json outputs valid JSON payload."""
     runtime_root = tmp_path / "runtime" / "kill_switch"
-    monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_RUNTIME_ROOT", str(runtime_root))
     run_id = "kill-switch-cli-status-json"
     runner.invoke(
         app,
@@ -618,7 +622,7 @@ def test_tc_kill_status_json_outputs_payload(tmp_path: Path, monkeypatch) -> Non
 def test_tc_kill_clear_writes_cleared_state(tmp_path: Path, monkeypatch) -> None:
     """Kill clear command appends clear event and writes cleared state."""
     runtime_root = tmp_path / "runtime" / "kill_switch"
-    monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_RUNTIME_ROOT", str(runtime_root))
     run_id = "kill-switch-cli-clear"
     runner.invoke(app, ["kill", "activate", "--run-id", run_id, "--reason", "manual stop"])
 
@@ -639,7 +643,7 @@ def test_tc_kill_clear_writes_cleared_state(tmp_path: Path, monkeypatch) -> None
 def test_tc_kill_activate_fails_for_empty_reason(tmp_path: Path, monkeypatch) -> None:
     """Kill activate command fails cleanly for whitespace-only reason."""
     runtime_root = tmp_path / "runtime" / "kill_switch"
-    monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_RUNTIME_ROOT", str(runtime_root))
 
     result = runner.invoke(
         app,
@@ -652,7 +656,7 @@ def test_tc_kill_activate_fails_for_empty_reason(tmp_path: Path, monkeypatch) ->
 def test_tc_kill_status_fails_for_malformed_state_file(tmp_path: Path, monkeypatch) -> None:
     """Kill status returns non-zero for malformed state file JSON."""
     runtime_root = tmp_path / "runtime" / "kill_switch"
-    monkeypatch.setenv("OPS_LAB_RUNTIME_ROOT", str(runtime_root))
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_RUNTIME_ROOT", str(runtime_root))
     run_id = "kill-switch-cli-malformed"
     runtime_root.mkdir(parents=True)
     (runtime_root / f"{run_id}.state.json").write_text("{bad json", encoding="utf-8")

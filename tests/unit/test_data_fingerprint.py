@@ -7,12 +7,12 @@ from pathlib import Path
 
 import pytest
 
-from ops_lab.data.fingerprint import (
+from tradingchassis_ops_lab.data.fingerprint import (
     PreparedDatasetNotFoundError,
     fingerprint_dataset,
     write_fingerprint,
 )
-from ops_lab.data.prepare import UnsupportedDatasetError, prepare_dataset
+from tradingchassis_ops_lab.data.prepare import UnsupportedDatasetError, prepare_dataset
 
 
 def test_fingerprint_requires_prepared_dataset(tmp_path: Path) -> None:

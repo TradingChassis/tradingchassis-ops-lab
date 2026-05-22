@@ -27,7 +27,7 @@ docs = [
 ]
 
 [project.scripts]
-tc = "ops_lab.cli:app"
+tc = "tradingchassis_ops_lab.cli:app"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

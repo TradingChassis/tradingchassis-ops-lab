@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from ops_lab.runs.spec import RunSpec, RunSpecLoadError, load_run_spec
+from tradingchassis_ops_lab.runs.spec import RunSpec, RunSpecLoadError, load_run_spec
 
 
 def _valid_spec_dict() -> dict:

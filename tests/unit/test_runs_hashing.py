@@ -4,8 +4,8 @@ from pathlib import Path
 
 import yaml
 
-from ops_lab.runs.hashing import compute_config_sha256
-from ops_lab.runs.spec import load_run_spec
+from tradingchassis_ops_lab.runs.hashing import compute_config_sha256
+from tradingchassis_ops_lab.runs.spec import load_run_spec
 
 
 def _spec_a() -> str:

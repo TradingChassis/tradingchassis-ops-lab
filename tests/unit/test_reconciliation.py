@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from ops_lab.reconciliation.checks import (
+from tradingchassis_ops_lab.reconciliation.checks import (
     ReconciliationArtifactsError,
     ReconciliationValidationError,
     run_reconciliation_check,
