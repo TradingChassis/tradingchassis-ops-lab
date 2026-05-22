@@ -14,14 +14,14 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 
 | Area | Current state | Status |
 |---|---|---|
-| Run control | Spec-driven runs with deterministic artifacts, metadata, journal, and reports | implemented |
-| Data workflow | Local synthetic dataset prepare and deterministic fingerprint workflow | implemented |
-| Engine paths | Nautilus smoke backtest and bounded paper lifecycle skeleton | implemented |
+| Run control | Spec-driven runs with deterministic artifacts, metadata, journal, and reports | implemented (`0.1.0`) |
+| Data workflow | Local synthetic dataset prepare and deterministic fingerprint workflow | implemented (`0.1.0`) |
+| Engine paths | Nautilus smoke backtest and bounded paper lifecycle skeleton | implemented (`0.1.0`) |
 | Observability | Artifact-driven metrics server, local Prometheus/Grafana Compose stack, and provisioned dashboard | implemented (`0.2.0`) |
 | Safety and control | File-based kill switch state/events, paper lifecycle safety gate, and safety visibility in metrics/report/dashboard | implemented (`0.3.0`) |
-| Reconciliation | File-based expected vs observed checks with reconciliation artifact output | implemented |
-| Runbooks | Deterministic runbooks for stale data, mismatch, and restart recovery | implemented |
-| Documentation | MkDocs Material site, demo flow, scope/limitations, roadmap | implemented |
+| Reconciliation | File-based expected vs observed checks with reconciliation artifact output | implemented (`0.1.0`) |
+| Runbooks | Deterministic runbooks for stale data, mismatch, and restart recovery | implemented (`0.1.0`) |
+| Documentation | MkDocs Material site, demo flow, scope/limitations, roadmap | implemented (`0.1.0`; updated through `0.3.0`) |
 | Local ops stack | Runnable local Prometheus/Grafana stack for artifact-backed metrics | implemented (`0.2.0`) |
 | Kubernetes/GitOps | No cluster manifests or GitOps workflow in current repository | deferred |
 
@@ -30,7 +30,7 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 | Capability area | Current implementation | Gap | Recommended direction |
 |---|---|---|---|
 | Run control and reproducibility | RunSpec validation, config hash, artifact contract, metadata, journal, and reports are in place (`implemented`) | Data fingerprint is not yet automatically linked into run metadata; event and artifact semantics can be clearer | Keep schema stable; document reproducibility workflow and artifact/journal reference conventions |
-| Engine integration | Nautilus smoke backtest and paper lifecycle skeleton exist (`implemented`/`partial`) | Backtest scenarios are narrow; paper path remains synthetic with no connectivity or runtime-state ingestion | Expand deterministic scenario coverage first; defer connectivity until observability and safety integration is stronger |
+| Engine integration | Nautilus smoke backtest and paper lifecycle skeleton exist (`implemented`/`partial`) | Backtest scenarios are narrow; paper path remains synthetic with no connectivity or runtime-state ingestion | Expand deterministic scenario coverage first; defer connectivity to the Paper/Testnet Connectivity Probe milestone now that `0.2.0` and `0.3.0` baselines are delivered |
 | Data layer | Fixture-backed prepare and fingerprint are in place (`implemented`) | No real historical import pipeline and no dedicated data quality checks | Preserve local deterministic fixtures now; add QA and import paths only after core ops gaps close |
 | Observability | `tc metrics serve` plus local Prometheus/Grafana Compose stack and provisioning are in place (`implemented`) | Alerting and deeper operational rule coverage are not in scope yet | Keep the current local stack stable; add only narrow follow-up hardening post-0.3.0 |
 | Safety and control | File-based kill switch is integrated into paper lifecycle state checks with artifact-backed visibility (`implemented`) | Scope intentionally remains local and file-based with no order cancellation/flattening | Keep the deterministic local safety gate stable while documenting boundaries before connectivity work |
@@ -102,7 +102,33 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 - Open gap: roadmap previously overloaded detailed content in long lists.
 - Direction: keep technical honesty while improving scanability and flow.
 
-## Completed milestone
+## Completed milestones
+
+### 0.1.0 Local Run / Artifact / Ops Baseline
+
+Implemented in current repository scope:
+
+- RunSpec validation and spec-driven run initialization
+- deterministic run artifact layout
+- metadata, journal, metrics, and report artifacts
+- local synthetic BTCUSDT dataset preparation
+- deterministic dataset fingerprinting
+- minimal Nautilus smoke backtest
+- bounded paper lifecycle skeleton without exchange/testnet/live connectivity
+- file-based kill switch state/events
+- file-based reconciliation expected vs observed checks
+- deterministic failure drills
+- runbooks for local operational failure modes
+- MkDocs documentation baseline
+- `scripts/check.sh`
+
+Explicitly not included:
+
+- local Prometheus/Grafana stack
+- exchange/testnet/live connectivity
+- production trading claims
+- strategy/alpha/PnL/profitability scope
+- Kubernetes/GitOps
 
 ### 0.2.0 Local Observability Stack
 
@@ -120,36 +146,9 @@ Explicitly not included:
 - production monitoring guarantees
 - Kubernetes or GitOps
 
-## Near-term milestones
+### 0.3.0 Runtime Safety Integration
 
-### 1. Local Observability Stack
-
-Goal:
-
-- Milestone complete in `0.2.0`.
-
-Delivered scope:
-
-- local metrics scrape flow from run artifacts
-- Docker Compose
-- Prometheus configuration
-- Grafana provisioning
-- dashboard usage documentation
-
-Explicitly not included:
-
-- production monitoring claims
-- Alertmanager integration
-- Kubernetes
-- exchange connectivity
-
-### 2. Runtime Safety Integration
-
-Goal:
-
-- Milestone complete in `0.3.0`.
-
-Delivered scope:
+Implemented in current repository scope:
 
 - artifact-backed kill-switch safety snapshot in run metadata
 - deterministic paper lifecycle block when kill switch is active
@@ -162,8 +161,11 @@ Explicitly not included:
 - real order cancellation
 - position flattening
 - production risk engine behavior
+- exchange/testnet/live connectivity
 
-### 3. Paper/Testnet Connectivity Probe
+## Near-term milestones
+
+### 1. Paper/Testnet Connectivity Probe
 
 Goal:
 
@@ -182,7 +184,7 @@ Explicitly not included:
 - multi-venue execution
 - profitability claims
 
-### 4. Expanded Failure Modes
+### 2. Expanded Failure Modes
 
 Goal:
 
@@ -195,7 +197,7 @@ Includes:
 - rate-limit exhaustion drill
 - stale orderbook drill
 
-### 5. Kubernetes / GitOps Lab
+### 3. Kubernetes / GitOps Lab
 
 Goal:
 
