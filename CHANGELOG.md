@@ -5,6 +5,28 @@ All notable changes to `TradingChassis Ops Lab` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0]
+
+### Added
+
+- Artifact-backed runtime safety snapshot integration for kill-switch state in run metadata.
+- Kill-switch state metric export via `tradingchassis_ops_lab_kill_switch_state`.
+- Deterministic paper lifecycle safety gate path with `safety_blocked` artifact status when kill switch is active.
+- `Safety status` report section for paper lifecycle safety outcomes.
+- Grafana `Kill Switch State` panel in the local run observability dashboard.
+
+### Changed
+
+- Demo flow and docs now include explicit active -> blocked -> clear -> normal paper safety walkthrough.
+- Roadmap tracking now marks Runtime Safety Integration as completed in `0.3.0`.
+
+### Notes
+
+- No real order cancellation is included.
+- No position flattening is included.
+- No production safety guarantees are implied.
+- No exchange/testnet/live connectivity is included.
+
 ## [0.2.0]
 
 ### Added

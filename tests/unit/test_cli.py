@@ -23,7 +23,7 @@ def test_tc_version_outputs_package_version() -> None:
     """Verify the CLI version command prints the current package version."""
     result = runner.invoke(app, ["version"])
     assert result.exit_code == 0
-    assert "0.2.0" in result.stdout
+    assert "0.3.0" in result.stdout
 
 
 def _write_valid_spec(

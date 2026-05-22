@@ -18,7 +18,7 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 | Data workflow | Local synthetic dataset prepare and deterministic fingerprint workflow | implemented |
 | Engine paths | Nautilus smoke backtest and bounded paper lifecycle skeleton | implemented |
 | Observability | Artifact-driven metrics server, local Prometheus/Grafana Compose stack, and provisioned dashboard | implemented (`0.2.0`) |
-| Safety and control | File-based kill switch state/events and deterministic drill support | partial |
+| Safety and control | File-based kill switch state/events, paper lifecycle safety gate, and safety visibility in metrics/report/dashboard | implemented (`0.3.0`) |
 | Reconciliation | File-based expected vs observed checks with reconciliation artifact output | implemented |
 | Runbooks | Deterministic runbooks for stale data, mismatch, and restart recovery | implemented |
 | Documentation | MkDocs Material site, demo flow, scope/limitations, roadmap | implemented |
@@ -32,8 +32,8 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 | Run control and reproducibility | RunSpec validation, config hash, artifact contract, metadata, journal, and reports are in place (`implemented`) | Data fingerprint is not yet automatically linked into run metadata; event and artifact semantics can be clearer | Keep schema stable; document reproducibility workflow and artifact/journal reference conventions |
 | Engine integration | Nautilus smoke backtest and paper lifecycle skeleton exist (`implemented`/`partial`) | Backtest scenarios are narrow; paper path remains synthetic with no connectivity or runtime-state ingestion | Expand deterministic scenario coverage first; defer connectivity until observability and safety integration is stronger |
 | Data layer | Fixture-backed prepare and fingerprint are in place (`implemented`) | No real historical import pipeline and no dedicated data quality checks | Preserve local deterministic fixtures now; add QA and import paths only after core ops gaps close |
-| Observability | `tc metrics serve` plus local Prometheus/Grafana Compose stack and provisioning are in place (`implemented`) | Alerting and deeper operational rule coverage are not in scope yet | Keep the current local stack stable; add only narrow follow-up hardening after safety integration |
-| Safety and control | File-based kill switch is implemented; stale signal appears via reconciliation/drills (`implemented`/`partial`) | Kill switch and guards are not integrated into lifecycle execution logic; guard reports are absent | Integrate safety state into runtime flow and artifacts before any live-like connectivity work |
+| Observability | `tc metrics serve` plus local Prometheus/Grafana Compose stack and provisioning are in place (`implemented`) | Alerting and deeper operational rule coverage are not in scope yet | Keep the current local stack stable; add only narrow follow-up hardening post-0.3.0 |
+| Safety and control | File-based kill switch is integrated into paper lifecycle state checks with artifact-backed visibility (`implemented`) | Scope intentionally remains local and file-based with no order cancellation/flattening | Keep the deterministic local safety gate stable while documenting boundaries before connectivity work |
 | Reconciliation | File-based reconciliation, artifact output, and journal event integration are implemented (`implemented`) | Reconciliation is fixture/file-driven only; no paper runtime-state source | Keep deterministic file path; increase coverage; defer runtime-state reconciliation until paper runtime matures |
 | Failure modes and runbooks | Three deterministic drills and runbooks are implemented (`implemented`) | Coverage is limited to current local drill set; no disconnect/missing-update/rate-limit drills | Expand drill catalog incrementally with deterministic local artifacts and runbooks |
 | Local operations environment | Dev-Container-first and host-Compose workflows are documented and runnable (`implemented`) | Environment-specific Docker/Podman permissions can still vary by host | Keep workflow guidance explicit and local-first; avoid platform abstraction expansion |
@@ -64,13 +64,13 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 
 - Implemented now: artifact-backed `tc metrics serve`, local Prometheus/Grafana Compose stack, and provisioning.
 - Open gap: alerting and additional panel hardening remain intentionally limited.
-- Direction: keep observability local and stable while prioritizing safety integration next.
+- Direction: keep observability local and stable; defer alerting until later milestones.
 
 #### Safety and control
 
-- Implemented now: file-based kill switch and drill-ready safety context.
-- Open gap: runtime lifecycle does not yet consume kill-switch state as an execution gate.
-- Direction: integrate runtime safety state into lifecycle artifacts and metrics before connectivity work.
+- Implemented now: file-based kill switch, lifecycle gate for paper start, and safety status visibility in artifacts, metrics, and dashboard.
+- Open gap: no real order cancellation/flattening and no production-style safety controls by design.
+- Direction: preserve local deterministic safety behavior while expanding only after connectivity milestones.
 
 #### Reconciliation
 
@@ -147,13 +147,15 @@ Explicitly not included:
 
 Goal:
 
-- Connect existing file-based safety state to local run lifecycle behavior.
+- Milestone complete in `0.3.0`.
 
-Includes:
+Delivered scope:
 
-- paper lifecycle checks of kill-switch state
-- safety/guard status visibility in artifacts
-- safety state surfaced in local metrics/report outputs
+- artifact-backed kill-switch safety snapshot in run metadata
+- deterministic paper lifecycle block when kill switch is active
+- safety status section in reports and safety lifecycle metadata fields
+- kill-switch state metric export and Grafana panel visibility
+- demo flow/docs updates for blocked and cleared paper paths
 
 Explicitly not included:
 
@@ -242,7 +244,6 @@ Intentionally not next:
 
 ## Current recommended sequence
 
-1. Runtime Safety Integration
-2. Paper/Testnet Connectivity Probe
-3. Expanded Failure Modes
-4. Kubernetes / GitOps Lab
+1. Paper/Testnet Connectivity Probe
+2. Expanded Failure Modes
+3. Kubernetes / GitOps Lab

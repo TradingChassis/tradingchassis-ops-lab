@@ -88,18 +88,42 @@ Verification:
 - Target `tradingchassis_ops_lab_metrics` should be `UP`
 - Grafana: `http://localhost:${TC_GRAFANA_PORT:-3000}`
 - Open `TradingChassis Ops Lab Run Observability`
+- Confirm panel `Kill Switch State` shows the selected run's local safety snapshot state
 
 This demo flow is local-only and artifact-backed. It is not live production monitoring, and it does not imply exchange/testnet connectivity or strategy-performance tracking.
 
-## 7) Kill switch activate/status/clear
+## 7) Runtime safety demo flow (paper)
 
 ```bash
-tc kill activate --run-id 2026-05-20-btcusdt-paper-001 --reason "manual stop"
-tc kill status --run-id 2026-05-20-btcusdt-paper-001
-tc kill clear --run-id 2026-05-20-btcusdt-paper-001 --reason "manual reset"
+tc kill activate --run-id 2026-05-20-btcusdt-paper-001 --reason "demo block"
+tc run paper --spec examples/configs/btcusdt_paper.yaml
 ```
 
-Expected artifact location:
+Expected blocked run behavior:
+
+- CLI reports `status=safety_blocked`
+- full run artifacts are still written under `artifacts/runs/2026-05-20-btcusdt-paper-001/`
+- journal includes `paper_safety_checked` and `paper_safety_blocked`
+- report includes `## Safety status`
+- `tc metrics export --run-id 2026-05-20-btcusdt-paper-001` includes `tradingchassis_ops_lab_kill_switch_state`
+
+Clear and rerun:
+
+```bash
+tc kill clear --run-id 2026-05-20-btcusdt-paper-001 --reason "demo clear"
+tc run paper --spec examples/configs/btcusdt_paper.yaml
+```
+
+Expected cleared/normal behavior:
+
+- use a fresh run ID (recommended) or clean old artifacts first
+- paper lifecycle follows normal synthetic heartbeat behavior
+- status is `completed`
+- safety state is reflected as `cleared` or `absent` in metadata and exported metrics
+
+This runtime safety demo is a local file-based gate. It does not perform order cancellation, position flattening, exchange/testnet/live connectivity, or provide production safety guarantees.
+
+Expected artifact location for kill-switch state files:
 
 - `runtime/kill_switch/`
 

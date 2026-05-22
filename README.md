@@ -40,6 +40,13 @@ Verification:
 - Prometheus targets: `http://localhost:${TC_PROMETHEUS_PORT:-9090}/targets`
 - Grafana dashboard: `http://localhost:${TC_GRAFANA_PORT:-3000}` then open `TradingChassis Ops Lab Run Observability`
 
+## Runtime safety integration (`0.3.0`)
+
+- Local runtime safety state is artifact-backed and file-based.
+- `tc run paper` deterministically blocks lifecycle start when kill switch state is active.
+- Grafana includes `Kill Switch State` from `tradingchassis_ops_lab_kill_switch_state`.
+- No real order cancellation or position flattening is included.
+
 ## Documentation
 
 - Documentation is published with GitHub Pages from the MkDocs site.

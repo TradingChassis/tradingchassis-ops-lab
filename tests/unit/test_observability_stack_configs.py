@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import re
 from pathlib import Path
 
 import yaml
@@ -134,3 +136,39 @@ def test_grafana_dashboard_provisioning_uses_expected_path() -> None:
     provider = providers[0]
     options = provider.get("options", {})
     assert options.get("path") == "/var/lib/grafana/dashboards"
+
+
+def test_grafana_dashboard_queries_use_supported_metric_namespace() -> None:
+    dashboard_path = _repo_root() / _DASHBOARD_DIR / _DASHBOARD_FILENAME
+    dashboard = json.loads(dashboard_path.read_text(encoding="utf-8"))
+
+    panels = dashboard.get("panels", [])
+    assert isinstance(panels, list)
+
+    metric_pattern = re.compile(r"tradingchassis_ops_lab_[a-zA-Z0-9_]+")
+    referenced_metrics: set[str] = set()
+    for panel in panels:
+        targets = panel.get("targets", [])
+        if not isinstance(targets, list):
+            continue
+        for target in targets:
+            if not isinstance(target, dict):
+                continue
+            expr = target.get("expr")
+            if not isinstance(expr, str):
+                continue
+            assert re.search(r"(^|[^a-zA-Z0-9_])ops_lab_", expr) is None
+            referenced_metrics.update(metric_pattern.findall(expr))
+
+    assert "tradingchassis_ops_lab_kill_switch_state" in referenced_metrics
+    supported_metrics = {
+        "tradingchassis_ops_lab_backtest_bars_processed_total",
+        "tradingchassis_ops_lab_backtest_engine_duration_seconds",
+        "tradingchassis_ops_lab_backtest_input_candles_total",
+        "tradingchassis_ops_lab_journal_event_total",
+        "tradingchassis_ops_lab_kill_switch_state",
+        "tradingchassis_ops_lab_paper_heartbeat_total",
+        "tradingchassis_ops_lab_run_duration_seconds",
+        "tradingchassis_ops_lab_run_info",
+    }
+    assert referenced_metrics <= supported_metrics

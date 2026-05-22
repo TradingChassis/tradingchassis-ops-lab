@@ -131,6 +131,64 @@
     },
     {
       "datasource": null,
+      "description": "Local file-based safety snapshot from run metadata. This does not imply order cancellation, position flattening, or production safety guarantees.",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "options": {
+                "-1": {
+                  "text": "unknown"
+                },
+                "0": {
+                  "text": "absent"
+                },
+                "1": {
+                  "text": "cleared"
+                },
+                "2": {
+                  "text": "active"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 13
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "tradingchassis_ops_lab_kill_switch_state{run_id=\"$run_id\"}",
+          "refId": "A"
+        }
+      ],
+      "title": "Kill Switch State",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "unit": "short"
