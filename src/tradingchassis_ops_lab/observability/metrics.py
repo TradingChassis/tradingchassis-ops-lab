@@ -168,6 +168,29 @@ def _append_metric(
     lines.append(f"{name}{{{_format_labels(labels)}}} {_format_metric_value(value)}")
 
 
+def _kill_switch_state_from_metadata(metadata: dict[str, Any]) -> str | None:
+    safety = metadata.get("safety")
+    if not isinstance(safety, dict):
+        return None
+    kill_switch = safety.get("kill_switch")
+    if not isinstance(kill_switch, dict):
+        return None
+    state = kill_switch.get("state")
+    if isinstance(state, str) and state.strip():
+        return state.strip()
+    return "unknown"
+
+
+def _kill_switch_state_value(state: str) -> int:
+    if state == "absent":
+        return 0
+    if state == "cleared":
+        return 1
+    if state == "active":
+        return 2
+    return -1
+
+
 def render_prometheus_text(artifacts: RunObservabilityArtifacts) -> str:
     """Render deterministic Prometheus text exposition from run artifacts."""
     metadata = artifacts.metadata
@@ -199,6 +222,15 @@ def render_prometheus_text(artifacts: RunObservabilityArtifacts) -> str:
 
     lines: list[str] = []
     _append_metric(lines, name="tradingchassis_ops_lab_run_info", labels=run_info_labels, value=1)
+
+    kill_switch_state = _kill_switch_state_from_metadata(metadata)
+    if kill_switch_state is not None:
+        _append_metric(
+            lines,
+            name="tradingchassis_ops_lab_kill_switch_state",
+            labels=[("run_id", run_id), ("state", kill_switch_state)],
+            value=_kill_switch_state_value(kill_switch_state),
+        )
 
     created_ts = _parse_iso8601_to_seconds(metadata.get("created_at_utc"))
     if created_ts is not None:

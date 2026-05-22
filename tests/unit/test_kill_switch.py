@@ -10,6 +10,7 @@ import pytest
 from tradingchassis_ops_lab.safety.kill_switch import (
     KillSwitchValidationError,
     activate_kill_switch,
+    build_safety_snapshot,
     clear_kill_switch,
     get_kill_switch_status,
 )
@@ -225,3 +226,61 @@ def test_activation_succeeds_when_artifacts_journal_absent(tmp_path: Path) -> No
 
     assert state.state == "active"
     assert _state_path(runtime_root, run_id).is_file()
+
+
+def test_build_safety_snapshot_returns_absent_when_state_file_missing(tmp_path: Path) -> None:
+    runtime_root = tmp_path / "runtime" / "kill_switch"
+    snapshot = build_safety_snapshot(
+        run_id="kill-switch-snapshot-absent",
+        runtime_root=runtime_root,
+        checked_at_utc="2026-05-22T12:00:00Z",
+    )
+    assert snapshot == {
+        "kill_switch": {
+            "state": "absent",
+            "checked_at_utc": "2026-05-22T12:00:00Z",
+            "last_reason": None,
+            "source": str(runtime_root),
+        }
+    }
+
+
+def test_build_safety_snapshot_returns_active_state(tmp_path: Path) -> None:
+    runtime_root = tmp_path / "runtime" / "kill_switch"
+    run_id = "kill-switch-snapshot-active"
+    activate_kill_switch(
+        run_id=run_id,
+        reason="manual stop",
+        runtime_root=runtime_root,
+    )
+    snapshot = build_safety_snapshot(
+        run_id=run_id,
+        runtime_root=runtime_root,
+        checked_at_utc="2026-05-22T12:00:00Z",
+    )
+    assert snapshot["kill_switch"]["state"] == "active"
+    assert snapshot["kill_switch"]["last_reason"] == "manual stop"
+    assert snapshot["kill_switch"]["checked_at_utc"] == "2026-05-22T12:00:00Z"
+
+
+def test_build_safety_snapshot_returns_cleared_state(tmp_path: Path) -> None:
+    runtime_root = tmp_path / "runtime" / "kill_switch"
+    run_id = "kill-switch-snapshot-cleared"
+    activate_kill_switch(
+        run_id=run_id,
+        reason="manual stop",
+        runtime_root=runtime_root,
+    )
+    clear_kill_switch(
+        run_id=run_id,
+        reason="manual reset",
+        runtime_root=runtime_root,
+    )
+    snapshot = build_safety_snapshot(
+        run_id=run_id,
+        runtime_root=runtime_root,
+        checked_at_utc="2026-05-22T12:00:00Z",
+    )
+    assert snapshot["kill_switch"]["state"] == "cleared"
+    assert snapshot["kill_switch"]["last_reason"] == "manual reset"
+    assert snapshot["kill_switch"]["checked_at_utc"] == "2026-05-22T12:00:00Z"

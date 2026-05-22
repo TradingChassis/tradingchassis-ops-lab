@@ -112,6 +112,10 @@ def _artifact_journal_path(artifacts_root: Path, run_id: str) -> Path:
     return artifacts_root / run_id / "journal.jsonl"
 
 
+def _artifact_metadata_path(artifacts_root: Path, run_id: str) -> Path:
+    return artifacts_root / run_id / "metadata.json"
+
+
 def _write_state(path: Path, state: KillSwitchState) -> None:
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -227,6 +231,29 @@ def _read_state(state_file: Path) -> KillSwitchState:
     return _parse_state_payload(raw_payload, state_file)
 
 
+def _read_metadata_payload(path: Path) -> dict[str, object]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise KillSwitchReadError(f"Failed to read metadata file {path}: {exc}") from exc
+    except json.JSONDecodeError as exc:
+        raise KillSwitchReadError(f"Malformed JSON in metadata file {path}: {exc}") from exc
+
+    if not isinstance(payload, dict):
+        raise KillSwitchReadError(f"Malformed metadata file {path}: expected a JSON object")
+    return payload
+
+
+def _write_metadata_payload(path: Path, payload: dict[str, object]) -> None:
+    try:
+        path.write_text(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        raise KillSwitchReadError(f"Failed to write metadata file {path}: {exc}") from exc
+
+
 def get_kill_switch_status(
     run_id: str,
     runtime_root: Path = Path("runtime/kill_switch"),
@@ -242,6 +269,56 @@ def get_kill_switch_status(
         )
     state = _read_state(state_file)
     return KillSwitchStatus(**asdict(state))
+
+
+def build_safety_snapshot(
+    run_id: str,
+    runtime_root: Path = Path("runtime/kill_switch"),
+    checked_at_utc: str | None = None,
+) -> dict[str, dict[str, str | None]]:
+    """Build a deterministic safety snapshot payload for metadata artifacts."""
+    status = get_kill_switch_status(run_id=run_id, runtime_root=runtime_root)
+    return {
+        "kill_switch": {
+            "state": status.state,
+            "checked_at_utc": checked_at_utc or _utc_now_iso8601(),
+            "last_reason": status.last_reason,
+            "source": str(runtime_root),
+        }
+    }
+
+
+def update_artifact_metadata_safety_snapshot(
+    run_id: str,
+    *,
+    runtime_root: Path = Path("runtime/kill_switch"),
+    artifacts_root: Path = Path("artifacts/runs"),
+    checked_at_utc: str | None = None,
+) -> bool:
+    """Patch existing metadata.json with a fresh safety snapshot.
+
+    Returns True when metadata was updated. Returns False when run artifacts
+    directory or metadata.json file does not exist.
+    """
+    normalized_run_id = _validate_run_id(run_id)
+    run_dir = artifacts_root / normalized_run_id
+    if not run_dir.is_dir():
+        return False
+
+    metadata_path = _artifact_metadata_path(artifacts_root, normalized_run_id)
+    if not metadata_path.exists():
+        return False
+    if not metadata_path.is_file():
+        raise KillSwitchReadError(f"Expected metadata file at {metadata_path}")
+
+    metadata = _read_metadata_payload(metadata_path)
+    metadata["safety"] = build_safety_snapshot(
+        run_id=normalized_run_id,
+        runtime_root=runtime_root,
+        checked_at_utc=checked_at_utc,
+    )
+    _write_metadata_payload(metadata_path, metadata)
+    return True
 
 
 def activate_kill_switch(

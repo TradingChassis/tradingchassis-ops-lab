@@ -44,6 +44,7 @@ from tradingchassis_ops_lab.safety.kill_switch import (
     activate_kill_switch,
     clear_kill_switch,
     get_kill_switch_status,
+    update_artifact_metadata_safety_snapshot,
 )
 
 app = typer.Typer(help="TradingChassis Ops Lab CLI.")
@@ -335,6 +336,15 @@ def kill_activate(
     except KillSwitchError as exc:
         typer.secho(str(exc), fg=typer.colors.RED, err=True)
         raise typer.Exit(1) from exc
+    try:
+        update_artifact_metadata_safety_snapshot(
+            run_id=state.run_id,
+            runtime_root=runtime_root,
+            artifacts_root=artifacts_root,
+        )
+    except KillSwitchError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
 
     typer.echo(f"run_id={state.run_id}")
     typer.echo("state=active")
@@ -406,6 +416,15 @@ def kill_clear(
             run_id=run_id,
             reason=reason,
             actor=actor,
+            runtime_root=runtime_root,
+            artifacts_root=artifacts_root,
+        )
+    except KillSwitchError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+    try:
+        update_artifact_metadata_safety_snapshot(
+            run_id=state.run_id,
             runtime_root=runtime_root,
             artifacts_root=artifacts_root,
         )
