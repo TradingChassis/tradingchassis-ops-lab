@@ -124,6 +124,102 @@ def test_render_paper_metrics_from_artifacts(tmp_path: Path) -> None:
     assert "tradingchassis_ops_lab_paper_synthetic_duration_seconds" in rendered
 
 
+def test_kill_switch_metric_emitted_when_safety_snapshot_exists(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "metrics-kill-switch-active"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+            "safety": {
+                "kill_switch": {
+                    "state": "active",
+                    "checked_at_utc": "2026-05-22T12:00:00Z",
+                    "last_reason": "manual stop",
+                    "source": "runtime/kill_switch",
+                }
+            },
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+    )
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+    assert "tradingchassis_ops_lab_kill_switch_state{" in rendered
+    assert 'run_id="metrics-kill-switch-active",state="active"} 2' in rendered
+
+
+def test_kill_switch_metric_not_emitted_without_safety_snapshot(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "metrics-no-kill-switch-snapshot"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "backtest",
+            "engine": "nautilus",
+            "venue": "binance",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": False, "engine_executed": True},
+    )
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+    assert "tradingchassis_ops_lab_kill_switch_state{" not in rendered
+
+
+@pytest.mark.parametrize(
+    ("state", "expected_value"),
+    [
+        ("absent", 0),
+        ("cleared", 1),
+        ("active", 2),
+        ("manual_override", -1),
+        ("unknown", -1),
+    ],
+)
+def test_kill_switch_metric_state_encoding(tmp_path: Path, state: str, expected_value: int) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = f"metrics-kill-switch-{state}"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+            "safety": {
+                "kill_switch": {
+                    "state": state,
+                    "checked_at_utc": "2026-05-22T12:00:00Z",
+                    "last_reason": None,
+                    "source": "runtime/kill_switch",
+                }
+            },
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+    )
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+    assert (
+        f'tradingchassis_ops_lab_kill_switch_state{{run_id="{run_id}",state="{state}"}} '
+        f"{expected_value}"
+    ) in rendered
+
+
 def test_journal_metrics_include_total_and_per_event_counts(tmp_path: Path) -> None:
     artifacts_root = tmp_path / "artifacts" / "runs"
     run_id = "metrics-journal"

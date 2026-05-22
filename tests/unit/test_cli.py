@@ -589,6 +589,106 @@ def test_tc_kill_activate_writes_runtime_files(tmp_path: Path, monkeypatch) -> N
     assert (runtime_root / f"{run_id}.events.jsonl").is_file()
 
 
+def test_tc_kill_activate_patches_existing_run_metadata(tmp_path: Path, monkeypatch) -> None:
+    """Kill activate updates safety snapshot in existing run metadata."""
+    runtime_root = tmp_path / "runtime" / "kill_switch"
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_RUNTIME_ROOT", str(runtime_root))
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_ARTIFACTS_ROOT", str(artifacts_root))
+    run_id = "kill-switch-cli-metadata-activate"
+    run_dir = artifacts_root / run_id
+    run_dir.mkdir(parents=True)
+    (run_dir / "metadata.json").write_text(
+        json.dumps({"run_id": run_id, "status": "completed"}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        ["kill", "activate", "--run-id", run_id, "--reason", "manual stop"],
+    )
+    assert result.exit_code == 0
+
+    metadata = json.loads((run_dir / "metadata.json").read_text(encoding="utf-8"))
+    assert metadata["run_id"] == run_id
+    assert metadata["safety"]["kill_switch"]["state"] == "active"
+    assert metadata["safety"]["kill_switch"]["last_reason"] == "manual stop"
+    assert metadata["safety"]["kill_switch"]["source"] == str(runtime_root)
+    assert metadata["safety"]["kill_switch"]["checked_at_utc"]
+
+
+def test_tc_kill_clear_updates_existing_run_metadata(tmp_path: Path, monkeypatch) -> None:
+    """Kill clear updates safety snapshot in existing run metadata."""
+    runtime_root = tmp_path / "runtime" / "kill_switch"
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_RUNTIME_ROOT", str(runtime_root))
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_ARTIFACTS_ROOT", str(artifacts_root))
+    run_id = "kill-switch-cli-metadata-clear"
+    run_dir = artifacts_root / run_id
+    run_dir.mkdir(parents=True)
+    (run_dir / "metadata.json").write_text(
+        json.dumps({"run_id": run_id, "status": "completed"}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    first = runner.invoke(
+        app,
+        ["kill", "activate", "--run-id", run_id, "--reason", "manual stop"],
+    )
+    assert first.exit_code == 0
+
+    second = runner.invoke(
+        app,
+        ["kill", "clear", "--run-id", run_id, "--reason", "manual reset"],
+    )
+    assert second.exit_code == 0
+
+    metadata = json.loads((run_dir / "metadata.json").read_text(encoding="utf-8"))
+    assert metadata["safety"]["kill_switch"]["state"] == "cleared"
+    assert metadata["safety"]["kill_switch"]["last_reason"] == "manual reset"
+    assert metadata["safety"]["kill_switch"]["checked_at_utc"]
+
+
+def test_tc_kill_activate_succeeds_when_run_dir_exists_without_metadata(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Kill activate remains successful when metadata.json is absent."""
+    runtime_root = tmp_path / "runtime" / "kill_switch"
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_RUNTIME_ROOT", str(runtime_root))
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_ARTIFACTS_ROOT", str(artifacts_root))
+    run_id = "kill-switch-cli-no-metadata"
+    (artifacts_root / run_id).mkdir(parents=True)
+
+    result = runner.invoke(
+        app,
+        ["kill", "activate", "--run-id", run_id, "--reason", "manual stop"],
+    )
+    assert result.exit_code == 0
+    assert not (artifacts_root / run_id / "metadata.json").exists()
+
+
+def test_tc_kill_activate_fails_for_malformed_artifact_metadata(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Kill activate fails cleanly when existing metadata.json is malformed."""
+    runtime_root = tmp_path / "runtime" / "kill_switch"
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_RUNTIME_ROOT", str(runtime_root))
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_ARTIFACTS_ROOT", str(artifacts_root))
+    run_id = "kill-switch-cli-malformed-artifact-metadata"
+    run_dir = artifacts_root / run_id
+    run_dir.mkdir(parents=True)
+    (run_dir / "metadata.json").write_text("{bad json", encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        ["kill", "activate", "--run-id", run_id, "--reason", "manual stop"],
+    )
+    assert result.exit_code != 0
+    assert "Malformed JSON in metadata file" in result.stderr
+
+
 def test_tc_kill_status_absent_exits_zero(tmp_path: Path, monkeypatch) -> None:
     """Kill status reports absent when state file does not exist."""
     runtime_root = tmp_path / "runtime" / "kill_switch"
