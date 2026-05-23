@@ -1,6 +1,6 @@
 # TradingChassis Ops Lab
 
-`TradingChassis Ops Lab` is a local-first trading operations lab around [NautilusTrader](https://github.com/nautechsystems/nautilus_trader). It focuses on reproducible, spec-driven `backtest` and `paper` workflows with deterministic local data preparation, artifact-first observability, and file-based operational controls.
+**TradingChassis Ops Lab** is a local-first trading operations lab around [NautilusTrader](https://github.com/nautechsystems/nautilus_trader). It focuses on reproducible, spec-driven **backtest** and **paper** workflows with deterministic local data preparation, artifact-first observability, and file-based operational controls.
 
 The backtest path is a smoke backtest for lifecycle and artifact validation, not a strategy performance report. The paper path is a lifecycle skeleton with no exchange or testnet connectivity.
 
@@ -40,7 +40,7 @@ Verification:
 - Prometheus targets: `http://localhost:${TC_PROMETHEUS_PORT:-9090}/targets`
 - Grafana dashboard: `http://localhost:${TC_GRAFANA_PORT:-3000}` then open `TradingChassis Ops Lab Run Observability`
 
-## Runtime safety integration (`0.3.0`)
+## Runtime safety integration
 
 - Local runtime safety state is artifact-backed and file-based.
 - `tc run paper` deterministically blocks lifecycle start when kill switch state is active.

@@ -103,8 +103,8 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 .runtime/
-data/
-artifacts/runs/
+/data/
+/artifacts/runs/
 runtime/
 
 # ==============================
