@@ -30,9 +30,11 @@ scripts/check.sh
 
 Do not commit generated runtime artifacts:
 
-- `data/`
-- `artifacts/runs/`
-- `runtime/`
+- `/data/` — local prepared datasets and fingerprints (ignored)
+- `/artifacts/runs/` — generated run outputs (ignored)
+- `runtime/` — local runtime state (ignored)
+
+Source helpers for dataset prepare/fingerprint live in `src/tradingchassis_ops_lab/data/` and are tracked.
 
 ## Documentation and claim policy
 
