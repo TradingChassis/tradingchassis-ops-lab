@@ -2,7 +2,7 @@
 
 ## Project scope
 
-`TradingChassis Ops Lab` is a local operations lab around NautilusTrader with explicit current-scope boundaries.
+`TradingChassis Ops Lab` is a local trading infrastructure / operations lab around NautilusTrader (proof-of-skill scope, not strategy/PnL/live trading) with explicit current-scope boundaries.
 Contributions must preserve local-first behavior and the documented non-production scope.
 
 ## Local setup
@@ -30,11 +30,11 @@ scripts/check.sh
 
 Do not commit generated runtime artifacts:
 
-- `/data/` — local prepared datasets and fingerprints (ignored)
-- `/artifacts/runs/` — generated run outputs (ignored)
+- `/data/` — ignored local prepared input (`datasets/`, `fingerprints/`)
+- `/artifacts/runs/` — ignored generated per-run outputs
 - `runtime/` — local runtime state (ignored)
 
-Source helpers for dataset prepare/fingerprint live in `src/tradingchassis_ops_lab/data/` and are tracked.
+Tracked paths: source helpers in `src/tradingchassis_ops_lab/data/`; curated examples in `reports/sample/`.
 
 ## Documentation and claim policy
 

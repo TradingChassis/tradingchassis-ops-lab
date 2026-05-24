@@ -5,7 +5,7 @@
 - Operations-focused run lab around NautilusTrader
 - One engine: NautilusTrader
 - One example instrument: BTCUSDT
-- One intentionally simple toy strategy
+- RunSpec **strategy metadata** (name/version) for traceability; no custom strategy execution surface yet
 - Two run modes: backtest and paper
 - Local-first execution model
 - Reproducible runs from run specs
@@ -13,6 +13,7 @@
 - Predictable artifact layout, operational journal, and basic reports
 - Basic observability hooks
 - Reconciliation checks and kill switch behavior
+- Fixture-backed **1-minute OHLCV candle** data prepare/fingerprint workflow
 - Three failure drills:
   - stale market data
   - forced reconciliation mismatch
@@ -21,7 +22,7 @@
 Implemented in current repository scope:
 
 - Local data prepare/fingerprint workflow
-- Spec-driven backtest smoke run and paper lifecycle skeleton
+- Spec-driven Nautilus smoke backtest and bounded synthetic paper lifecycle skeleton
 - Artifact-driven metrics export
 - File-based kill switch workflow
 - File-based reconciliation checks
@@ -30,7 +31,8 @@ Implemented in current repository scope:
 ## Out of scope (current implementation)
 
 - Building a custom trading engine
-- Building a strategy library or quant research platform
+- Building a strategy library, quant research platform, or custom strategy plugin loader
+- Orderbook / limit-order-book (LOB) data ingestion or replay
 - Live trading with production-grade reliability requirements
 - Low-latency gateway engineering
 - Profitability or alpha claims
