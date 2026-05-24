@@ -3,18 +3,21 @@
 Both modes are first-class run modes in the current implementation and share the same operational framing: specs, run metadata, hashes, artifacts, journal, and reports.
 For runnable commands, see [Quickstart](quickstart.md) and [Demo Flow](demo-flow.md).
 
+Neither mode is real paper trading, live trading, or exchange/testnet connectivity. Paper is a **bounded synthetic lifecycle skeleton** used to exercise local ops workflows.
+
 ## Comparison
 
 | Aspect | Backtest | Paper |
 |---|---|---|
-| time model | Simulated/historical clock | Real-time wall clock |
-| data source | Historical market data | Paper-mode market feed |
-| duration | Finite replay window | Session-oriented runtime window |
-| failure modes | Dataset issues, replay assumptions | Feed interruptions, runtime instability |
-| reconciliation | Compare expected replay state | Compare runtime observed state |
-| observability | Run progress and result signals | Runtime health and progress signals |
-| output artifacts | Replay outputs and summary reports | Session outputs and summary reports |
-| connectivity | Local fixture-driven smoke path | Lifecycle skeleton only, no exchange/testnet connectivity |
+| time model | Simulated/historical replay window | Bounded local session with synthetic heartbeats (wall-clock pacing only) |
+| data source | Prepared local **1m OHLCV candles** from fixtures | No market data feed; no live or historical feed |
+| duration | Finite smoke replay | Short fixed synthetic session |
+| failure modes | Dataset/preparation issues, engine smoke failures | Local lifecycle/safety gate issues (not feed outages) |
+| reconciliation | File-based expected vs observed checks | Same file-based checks (fixture-driven) |
+| observability | Run progress and smoke metrics | Synthetic heartbeat and safety metrics |
+| output artifacts | Smoke run outputs and summary reports | Skeleton session outputs and summary reports |
+| connectivity | Local fixture-driven Nautilus smoke path | No exchange, testnet, or live connectivity |
+| strategy execution | None (engine smoke over bars only) | None (lifecycle skeleton only) |
 
 ## What is shared
 

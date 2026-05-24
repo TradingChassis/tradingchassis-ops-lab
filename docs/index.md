@@ -2,24 +2,25 @@
 
 ## What this project is
 
-**TradingChassis Ops Lab** is a local-first trading operations lab around [NautilusTrader](https://github.com/nautechsystems/nautilus_trader). It is built for reproducible, spec-driven **backtest** and **paper** workflows with deterministic local data preparation, artifact-first observability, and file-based operational controls.
+**TradingChassis Ops Lab** is a local-first **trading infrastructure / operations** lab around [NautilusTrader](https://github.com/nautechsystems/nautilus_trader). It is a **Trading Infrastructure Proof of Skill**: reproducible, spec-driven **backtest** and **paper** workflows with deterministic local data preparation, artifact-first observability, and file-based operational controls.
 
 - A local operations lab for running and inspecting deterministic workflows
 - A repository focused on run lifecycle quality, traceability, and drillability
-- A constrained environment for backtest smoke runs and paper lifecycle rehearsal
+- A constrained environment for Nautilus smoke backtest runs and synthetic paper lifecycle rehearsal
 
 ## What this project is not
 
 - Not a live trading system
 - Not a production-grade safety or reliability platform
 - Not a strategy-performance or profitability benchmark
+- Not a strategy alpha or PnL project
 - Not connected to live exchanges or testnets
 
 ## What it can demonstrate
 
 - Spec validation and deterministic `run_id` flows
-- Local dataset preparation and fingerprinting
-- Smoke backtest and paper lifecycle skeleton runs
+- Local dataset preparation and fingerprinting (1-minute OHLCV candles)
+- Nautilus smoke backtest and bounded synthetic paper lifecycle skeleton runs
 - Metrics export, kill switch controls, reconciliation checks, and failure drills
 - Consistent run artifacts under `artifacts/runs/<run_id>/`
 
@@ -33,6 +34,14 @@
   <a class="ops-card" href="demo-flow/">
     <strong>Full demo flow</strong>
     End-to-end operational walkthrough including paper lifecycle, kill switch, reconciliation, and drills.
+  </a>
+  <a class="ops-card" href="roadmap/">
+    <strong>Roadmap</strong>
+    Completed milestones (0.1.0–0.3.0), gaps, and deferred future work.
+  </a>
+  <a class="ops-card" href="run-model/">
+    <strong>Run model</strong>
+    Run spec, artifacts, journal, metadata, and reproducibility concepts.
   </a>
   <a class="ops-card" href="architecture/">
     <strong>Architecture</strong>

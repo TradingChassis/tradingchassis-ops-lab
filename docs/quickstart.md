@@ -10,7 +10,18 @@ tc data fingerprint --dataset btcusdt-sample
 tc run backtest --spec examples/configs/btcusdt_backtest.yaml
 ```
 
-Expected artifact locations:
+The backtest command runs a **Nautilus engine smoke path** over prepared **1-minute OHLCV candles**. It is not a custom strategy harness; RunSpec `strategy` fields are metadata only.
+
+## Local paths
+
+| Path | Role |
+| --- | --- |
+| `src/tradingchassis_ops_lab/data/` | Tracked source helpers for dataset prepare/fingerprint |
+| `data/` | Ignored local prepared input (`datasets/`, `fingerprints/`) |
+| `artifacts/runs/` | Ignored generated per-run outputs |
+| `reports/sample/` | Tracked curated examples for review |
+
+Expected artifact locations after the commands above:
 
 - `data/datasets/`
 - `data/fingerprints/`
@@ -55,4 +66,4 @@ Overrides:
 - `TC_GRAFANA_PORT`
 - `TC_METRICS_TARGET`
 
-For the complete operational walkthrough, continue to [Demo Flow](demo-flow.md).
+For the complete operational walkthrough (paper skeleton, kill switch, reconciliation, drills), continue to [Demo Flow](demo-flow.md).

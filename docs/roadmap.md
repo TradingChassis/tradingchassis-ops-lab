@@ -220,6 +220,8 @@ Explicitly not included:
 Intentionally not next:
 
 - richer Nautilus smoke/backtest scenario coverage
+- custom strategy loading / plugin-style strategy extension
+- orderbook / LOB data support (current examples are 1m OHLCV candles only)
 - historical data import workflows
 - dedicated data quality checks
 - reconciliation against paper runtime state
