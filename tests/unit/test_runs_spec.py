@@ -16,7 +16,7 @@ def _valid_spec_dict() -> dict:
         "engine": "nautilus",
         "venue": "binance",
         "instrument": "BTCUSDT",
-        "strategy": {"name": "toy_mean_reversion", "version": "0.1.0"},
+        "strategy": {"name": "ops_smoke_demo", "version": "0.1.0"},
         "data": {"dataset": "btcusdt-sample", "fingerprint": "placeholder"},
         "risk": {"profile": "tiny"},
         "observability": {"journal": True, "metrics": False, "report": False},

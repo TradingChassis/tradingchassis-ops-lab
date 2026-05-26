@@ -84,6 +84,147 @@ def test_render_backtest_metrics_from_artifacts(tmp_path: Path) -> None:
     assert "tradingchassis_ops_lab_backtest_engine_duration_seconds" in rendered
 
 
+def test_render_scenario_metrics_from_artifacts(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "metrics-backtest-scenario"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "backtest",
+            "engine": "nautilus",
+            "venue": "binance",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+            "data": {"dataset": "btcusdt-sample"},
+        },
+        metrics={
+            "dataset": "btcusdt-sample",
+            "is_placeholder": False,
+            "engine_executed": True,
+            "input_candles_count": 20,
+            "bars_processed": 20,
+            "engine_duration_ms": 1500,
+            "scenario_name": "ops_smoke_demo",
+            "scenario_version": "0.1.0",
+            "strategy_registered": True,
+            "bars_seen": 20,
+            "orders_submitted": 0,
+            "fills_count": 0,
+            "deterministic_action_triggered": True,
+        },
+        journal_lines=[{"event": "run_started"}, {"event": "run_completed"}],
+    )
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+
+    scenario_labels = (
+        'run_id="metrics-backtest-scenario",scenario_name="ops_smoke_demo",scenario_version="0.1.0"'
+    )
+    assert (
+        f"tradingchassis_ops_lab_backtest_scenario_strategy_registered{{{scenario_labels}}} 1"
+        in rendered
+    )
+    assert (
+        "tradingchassis_ops_lab_backtest_scenario_bars_seen_total"
+        f"{{{scenario_labels}}} 20" in rendered
+    )
+    assert (
+        "tradingchassis_ops_lab_backtest_scenario_orders_submitted_total"
+        f"{{{scenario_labels}}} 0" in rendered
+    )
+    assert (
+        f"tradingchassis_ops_lab_backtest_scenario_fills_total{{{scenario_labels}}} 0" in rendered
+    )
+    assert (
+        "tradingchassis_ops_lab_backtest_scenario_deterministic_action_triggered"
+        f"{{{scenario_labels}}} 1" in rendered
+    )
+    assert "tradingchassis_ops_lab_backtest_input_candles_total" in rendered
+    assert "tradingchassis_ops_lab_backtest_bars_processed_total" in rendered
+    assert "tradingchassis_ops_lab_backtest_engine_duration_seconds" in rendered
+    assert "tradingchassis_ops_lab_backtest_pnl" not in rendered
+    assert "tradingchassis_ops_lab_backtest_returns" not in rendered
+    assert "tradingchassis_ops_lab_backtest_sharpe" not in rendered
+    assert "tradingchassis_ops_lab_backtest_alpha" not in rendered
+    assert "tradingchassis_ops_lab_backtest_profitability" not in rendered
+
+
+def test_render_scenario_metric_booleans_encode_as_zero_or_one(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "metrics-backtest-scenario-bools"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "backtest",
+            "engine": "nautilus",
+            "venue": "binance",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={
+            "is_placeholder": False,
+            "engine_executed": True,
+            "scenario_name": "ops_smoke_demo",
+            "strategy_registered": False,
+            "deterministic_action_triggered": False,
+            "bars_seen": 20,
+            "orders_submitted": 0,
+            "fills_count": 0,
+        },
+    )
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+    assert (
+        'tradingchassis_ops_lab_backtest_scenario_strategy_registered{run_id="metrics-backtest-scenario-bools",'
+        'scenario_name="ops_smoke_demo"} 0' in rendered
+    )
+    assert (
+        "tradingchassis_ops_lab_backtest_scenario_deterministic_action_triggered"
+        '{run_id="metrics-backtest-scenario-bools",scenario_name="ops_smoke_demo"} 0' in rendered
+    )
+
+
+def test_render_scenario_metrics_omitted_without_scenario_fields(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "metrics-backtest-no-scenario"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "backtest",
+            "engine": "nautilus",
+            "venue": "binance",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+            "data": {"dataset": "btcusdt-sample"},
+        },
+        metrics={
+            "dataset": "btcusdt-sample",
+            "is_placeholder": False,
+            "engine_executed": True,
+            "input_candles_count": 20,
+            "bars_processed": 20,
+            "engine_duration_ms": 1500,
+        },
+    )
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+    assert "tradingchassis_ops_lab_backtest_scenario_strategy_registered" not in rendered
+    assert "tradingchassis_ops_lab_backtest_scenario_bars_seen_total" not in rendered
+    assert "tradingchassis_ops_lab_backtest_scenario_orders_submitted_total" not in rendered
+    assert "tradingchassis_ops_lab_backtest_scenario_fills_total" not in rendered
+    assert "tradingchassis_ops_lab_backtest_scenario_deterministic_action_triggered" not in rendered
+    assert "tradingchassis_ops_lab_backtest_input_candles_total" in rendered
+
+
 def test_render_paper_metrics_from_artifacts(tmp_path: Path) -> None:
     artifacts_root = tmp_path / "artifacts" / "runs"
     run_id = "metrics-paper"

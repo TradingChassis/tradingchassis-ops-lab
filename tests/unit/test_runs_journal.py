@@ -19,7 +19,7 @@ def _write_valid_spec(path: Path, run_id: str = "run-spec-journal-run") -> None:
                 "engine": "nautilus",
                 "venue": "binance",
                 "instrument": "BTCUSDT",
-                "strategy": {"name": "toy_mean_reversion", "version": "0.1.0"},
+                "strategy": {"name": "ops_smoke_demo", "version": "0.1.0"},
                 "data": {"dataset": "btcusdt-sample", "fingerprint": "placeholder"},
                 "risk": {"profile": "tiny"},
                 "observability": {"journal": True, "metrics": False, "report": False},

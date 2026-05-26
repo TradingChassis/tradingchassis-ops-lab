@@ -16,9 +16,11 @@ from nautilus_trader.model.objects import Money
 from nautilus_trader.persistence.wranglers import BarDataWrangler
 
 from tradingchassis_ops_lab.engines.nautilus.config import (
+    build_smoke_scenario_strategy,
     resolve_smoke_bar_type,
     resolve_smoke_instrument,
 )
+from tradingchassis_ops_lab.engines.nautilus.strategies.ops_smoke_demo import OpsSmokeDemoStrategy
 
 
 class PreparedBacktestDatasetNotFoundError(FileNotFoundError):
@@ -34,6 +36,13 @@ class NautilusSmokeBacktestResult:
     bars_processed: int
     engine_duration_ms: int
     nautilus_version: str
+    scenario_name: str
+    scenario_version: str
+    strategy_registered: bool
+    bars_seen: int
+    orders_submitted: int
+    fills_count: int
+    deterministic_action_triggered: bool
 
 
 def _load_prepared_candles(*, dataset: str, data_root: Path = Path("data")) -> pd.DataFrame:
@@ -54,9 +63,15 @@ def run_nautilus_backtest_smoke(
     dataset: str,
     venue: str,
     instrument: str,
+    scenario_name: str,
+    scenario_version: str,
     data_root: Path = Path("data"),
 ) -> NautilusSmokeBacktestResult:
-    """Execute the smallest direct BacktestEngine smoke backtest."""
+    """Execute the smallest direct BacktestEngine smoke backtest.
+
+    This path registers exactly one built-in strategy scenario for deterministic
+    local operational backtest validation over prepared candle bars.
+    """
     candles = _load_prepared_candles(dataset=dataset, data_root=data_root)
     input_candles_count = len(candles.index)
     if input_candles_count == 0:
@@ -68,7 +83,18 @@ def run_nautilus_backtest_smoke(
     ohlcv = candles.set_index("timestamp")[["open", "high", "low", "close", "volume"]]
     bars = BarDataWrangler(bar_type=bar_type, instrument=nautilus_instrument).process(ohlcv)
 
+    strategy = build_smoke_scenario_strategy(
+        scenario_name=scenario_name,
+        scenario_version=scenario_version,
+        instrument_id=nautilus_instrument.id,
+        bar_type=bar_type,
+    )
     engine = BacktestEngine(config=BacktestEngineConfig(run_analysis=False))
+    strategy_registered = False
+    bars_seen = 0
+    orders_submitted = 0
+    fills_count = 0
+    deterministic_action_triggered = False
     started = perf_counter()
     try:
         engine.add_venue(
@@ -78,9 +104,17 @@ def run_nautilus_backtest_smoke(
             starting_balances=[Money(1_000_000, USDT)],
         )
         engine.add_instrument(nautilus_instrument)
+        engine.add_strategy(strategy)
+        strategy_registered = True
         engine.add_data(bars)
         engine.run()
         result = engine.get_result()
+        if isinstance(strategy, OpsSmokeDemoStrategy):
+            counters = strategy.counters()
+            bars_seen = counters.bars_seen
+            orders_submitted = counters.orders_submitted
+            fills_count = counters.fills_count
+            deterministic_action_triggered = counters.deterministic_action_triggered
     finally:
         engine.dispose()
     duration_ms = int((perf_counter() - started) * 1000)
@@ -92,4 +126,11 @@ def run_nautilus_backtest_smoke(
         bars_processed=bars_processed,
         engine_duration_ms=duration_ms,
         nautilus_version=nautilus_trader.__version__,
+        scenario_name=scenario_name,
+        scenario_version=scenario_version,
+        strategy_registered=strategy_registered,
+        bars_seen=bars_seen,
+        orders_submitted=orders_submitted,
+        fills_count=fills_count,
+        deterministic_action_triggered=deterministic_action_triggered,
     )

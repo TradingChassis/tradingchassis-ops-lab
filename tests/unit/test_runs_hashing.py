@@ -17,7 +17,7 @@ engine: nautilus
 venue: binance
 instrument: BTCUSDT
 strategy:
-  name: toy_mean_reversion
+  name: ops_smoke_demo
   version: 0.1.0
 data:
   dataset: btcusdt-sample
@@ -43,7 +43,7 @@ risk:
   profile: tiny
 strategy:
   version: 0.1.0
-  name: toy_mean_reversion
+  name: ops_smoke_demo
 observability:
   report: false
   metrics: false
@@ -72,6 +72,20 @@ def test_compute_config_sha256_changes_when_config_changes(tmp_path: Path) -> No
 
     changed = yaml.safe_load(_spec_a())
     changed["risk"]["profile"] = "small"
+    second.write_text(yaml.safe_dump(changed), encoding="utf-8")
+
+    first_hash = compute_config_sha256(load_run_spec(first))
+    second_hash = compute_config_sha256(load_run_spec(second))
+    assert first_hash != second_hash
+
+
+def test_compute_config_sha256_changes_when_strategy_name_changes(tmp_path: Path) -> None:
+    first = tmp_path / "first.yaml"
+    second = tmp_path / "second.yaml"
+    first.write_text(_spec_a(), encoding="utf-8")
+
+    changed = yaml.safe_load(_spec_a())
+    changed["strategy"]["name"] = "ops_smoke_demo_alt"
     second.write_text(yaml.safe_dump(changed), encoding="utf-8")
 
     first_hash = compute_config_sha256(load_run_spec(first))

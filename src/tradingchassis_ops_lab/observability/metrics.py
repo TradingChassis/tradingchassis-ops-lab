@@ -168,6 +168,12 @@ def _append_metric(
     lines.append(f"{name}{{{_format_labels(labels)}}} {_format_metric_value(value)}")
 
 
+def _bool_metric_value(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return 1 if value else 0
+    return None
+
+
 def _kill_switch_state_from_metadata(metadata: dict[str, Any]) -> str | None:
     safety = metadata.get("safety")
     if not isinstance(safety, dict):
@@ -288,6 +294,63 @@ def render_prometheus_text(artifacts: RunObservabilityArtifacts) -> str:
             labels=core_labels,
             value=float(metrics["engine_duration_ms"]) / 1000.0,
         )
+
+    scenario_name = metrics.get("scenario_name")
+    if isinstance(scenario_name, str) and scenario_name.strip():
+        scenario_labels: list[tuple[str, Any]] = [
+            ("run_id", run_id),
+            ("scenario_name", scenario_name),
+        ]
+        scenario_version = metrics.get("scenario_version")
+        if isinstance(scenario_version, str) and scenario_version.strip():
+            scenario_labels.append(("scenario_version", scenario_version))
+
+        strategy_registered = _bool_metric_value(metrics.get("strategy_registered"))
+        if strategy_registered is not None:
+            _append_metric(
+                lines,
+                name="tradingchassis_ops_lab_backtest_scenario_strategy_registered",
+                labels=scenario_labels,
+                value=strategy_registered,
+            )
+
+        deterministic_action_triggered = _bool_metric_value(
+            metrics.get("deterministic_action_triggered")
+        )
+        if deterministic_action_triggered is not None:
+            _append_metric(
+                lines,
+                name="tradingchassis_ops_lab_backtest_scenario_deterministic_action_triggered",
+                labels=scenario_labels,
+                value=deterministic_action_triggered,
+            )
+
+        bars_seen = metrics.get("bars_seen")
+        if isinstance(bars_seen, int):
+            _append_metric(
+                lines,
+                name="tradingchassis_ops_lab_backtest_scenario_bars_seen_total",
+                labels=scenario_labels,
+                value=bars_seen,
+            )
+
+        orders_submitted = metrics.get("orders_submitted")
+        if isinstance(orders_submitted, int):
+            _append_metric(
+                lines,
+                name="tradingchassis_ops_lab_backtest_scenario_orders_submitted_total",
+                labels=scenario_labels,
+                value=orders_submitted,
+            )
+
+        fills_count = metrics.get("fills_count")
+        if isinstance(fills_count, int):
+            _append_metric(
+                lines,
+                name="tradingchassis_ops_lab_backtest_scenario_fills_total",
+                labels=scenario_labels,
+                value=fills_count,
+            )
 
     if isinstance(metrics.get("heartbeat_count"), int):
         _append_metric(

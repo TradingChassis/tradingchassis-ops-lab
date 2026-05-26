@@ -5,6 +5,37 @@ All notable changes to `TradingChassis Ops Lab` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.4.0]
+
+### Added
+
+- Built-in Nautilus demo scenario for local backtest runs: `ops_smoke_demo`.
+- Hardcoded scenario registry with clear validation failure for unknown scenario names.
+- Scenario execution facts in run artifacts (`metadata.json`, `metrics.json`, `journal.jsonl`, `report.md`).
+- Artifact-backed Prometheus scenario metrics derived from `metrics.json`:
+  - `tradingchassis_ops_lab_backtest_scenario_strategy_registered`
+  - `tradingchassis_ops_lab_backtest_scenario_bars_seen_total`
+  - `tradingchassis_ops_lab_backtest_scenario_orders_submitted_total`
+  - `tradingchassis_ops_lab_backtest_scenario_fills_total`
+  - `tradingchassis_ops_lab_backtest_scenario_deterministic_action_triggered`
+
+### Changed
+
+- Renamed example RunSpec scenario identity from `toy_mean_reversion` to `ops_smoke_demo` to avoid implying a real alpha strategy implementation.
+- Clarified RunSpec strategy contract: `strategy.name` / `strategy.version` are scenario identity and traceability metadata in current scope.
+- Updated README, quickstart, demo flow, run model, and roadmap wording for the built-in local scenario behavior and metrics verification path.
+
+### Notes
+
+- No dynamic custom strategy loading/plugin framework is included.
+- No strategy parameters, optimization, or parameter sweeps are included.
+- `ops_smoke_demo` does not submit orders (`orders_submitted = 0`, `fills_count = 0`).
+- No PnL/Sharpe/returns/profitability/alpha metrics are included.
+- No orderbook/L2 support is included.
+- No exchange/testnet/live connectivity is included.
+
 ## [0.3.0]
 
 ### Added

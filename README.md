@@ -1,18 +1,35 @@
 # TradingChassis Ops Lab
 
-**TradingChassis Ops Lab** is a local-first **trading infrastructure / operations** lab around [NautilusTrader](https://github.com/nautechsystems/nautilus_trader). It is a **Trading Infrastructure Proof of Skill**: reproducible, spec-driven run workflows, artifact-first observability, and file-based operational controls—not a strategy alpha, PnL, live trading, or production platform project.
+**TradingChassis Ops Lab** is a local-first **trading infrastructure / operations** lab around [NautilusTrader](https://github.com/nautechsystems/nautilus_trader). It is a **trading infrastructure proof-of-skill** project: reproducible, spec-driven run workflows, artifact-first observability, and file-based operational controls.
 
-The current backtest path is a **Nautilus engine smoke run** over prepared **1-minute OHLCV candle** data for lifecycle and artifact validation, not a strategy performance report or custom strategy harness. RunSpec `strategy` fields are **metadata/traceability** only today. The paper path is a **bounded synthetic lifecycle skeleton** with no market data feed and no exchange or testnet connectivity.
+**What it is not:** an alpha research project, PnL project, production trading system, live trading system, or generic trading platform. It does not claim profitability, alpha, or production-grade safety or latency.
 
-## What you can demo now
+The current backtest path runs the **Nautilus engine** over prepared **1-minute OHLCV candle** data for lifecycle and artifact validation. It registers one built-in local scenario strategy (`strategy.name: ops_smoke_demo`) that counts bars, triggers a deterministic action, and records operational counters—it does not submit orders and does not report PnL, alpha, or performance metrics. Custom strategy loading is deferred. The paper path is a **bounded synthetic lifecycle skeleton** with no market data feed and no exchange or testnet connectivity.
 
-| Release | You can demonstrate |
+## Current capabilities
+
+Local workflows supported today:
+
+| Workflow | What it does |
 | --- | --- |
-| **0.1.0** | Local data prepare/fingerprint; Nautilus smoke backtest; bounded paper skeleton; run artifacts/reports; reconciliation checks; failure drills and runbooks |
-| **0.2.0** | Artifact-backed `tc metrics serve`; local Prometheus + Grafana stack; dashboard visibility for run metrics |
-| **0.3.0** | File-based kill switch safety snapshot; paper lifecycle `safety_blocked` when kill switch is active; safety status in metadata, journal, report, metrics, and Grafana |
+| Data prepare / fingerprint | Prepare sample datasets and record content fingerprints |
+| Nautilus backtest | Run a local smoke backtest over prepared candles with built-in `ops_smoke_demo` |
+| Paper lifecycle | Run a bounded synthetic paper skeleton (no market feed, no exchange connectivity) |
+| Artifacts & reports | Generate per-run artifacts, reports, and reconciliation checks |
+| Metrics | Export run metrics and serve them for scraping |
+| Observability | Run local Prometheus + Grafana against artifact-backed metrics |
+| Runtime safety | File-based kill switch; paper lifecycle blocks when kill switch is active |
 
-Full command sequence: [`docs/demo-flow.md`](docs/demo-flow.md).
+Command walkthrough: [`docs/demo-flow.md`](docs/demo-flow.md). Run model and specs: [`docs/run-model.md`](docs/run-model.md).
+
+### Milestone history
+
+| Version | Summary |
+| --- | --- |
+| `0.1.0` | Local run, artifact, and ops baseline |
+| `0.2.0` | Local observability stack |
+| `0.3.0` | Runtime safety integration |
+| `0.4.0` | Local backtest scenario / strategy contract (`ops_smoke_demo`) |
 
 ## Quickstart summary
 
@@ -24,6 +41,8 @@ tc data fingerprint --dataset btcusdt-sample
 tc run backtest --spec examples/configs/btcusdt_backtest.yaml
 tc metrics export --run-id 2026-05-20-btcusdt-backtest-001
 ```
+
+More detail: [`docs/quickstart.md`](docs/quickstart.md), [`docs/demo-flow.md`](docs/demo-flow.md), and [`docs/run-model.md`](docs/run-model.md).
 
 ## Local paths
 
@@ -48,36 +67,43 @@ Start local Prometheus + Grafana:
 docker compose -f deploy/observability/docker-compose.yml up
 ```
 
+Default verification URLs:
+
+- Prometheus targets: `http://localhost:9090/targets`
+- Grafana: `http://localhost:3000` — open dashboard **TradingChassis Ops Lab Run Observability**
+
+If you use non-default ports, set `TC_PROMETHEUS_PORT` and/or `TC_GRAFANA_PORT` when starting Compose, then open the same paths on your chosen local ports. `TC_METRICS_TARGET` selects which host:port Prometheus scrapes (defaults to the metrics serve endpoint).
+
 Optional local override example:
 
 ```bash
 TC_METRICS_TARGET=<target>:8000 TC_PROMETHEUS_PORT=9091 TC_GRAFANA_PORT=3001 docker compose -f deploy/observability/docker-compose.yml up
 ```
 
-Verification:
-
-- Prometheus targets: `http://localhost:${TC_PROMETHEUS_PORT:-9090}/targets`
-- Grafana dashboard: `http://localhost:${TC_GRAFANA_PORT:-3000}` then open `TradingChassis Ops Lab Run Observability`
+After that override, for example: `http://localhost:9091/targets` and `http://localhost:3001`.
 
 ## Runtime safety integration
 
 - Local runtime safety state is artifact-backed and file-based.
-- `tc run paper` deterministically blocks lifecycle start when kill switch state is active.
-- Grafana includes `Kill Switch State` from `tradingchassis_ops_lab_kill_switch_state`.
+- `tc run paper` blocks lifecycle start when kill switch state is active (`safety_blocked`).
+- Safety status appears in metadata, journal, report, metrics, and Grafana (`Kill Switch State` from `tradingchassis_ops_lab_kill_switch_state`).
 - No real order cancellation or position flattening is included.
 
 ## Documentation
 
 - Documentation is published with GitHub Pages from the MkDocs site (on `main`).
-- Local docs home: [`docs/index.md`](docs/index.md)
-- Local quickstart page: [`docs/quickstart.md`](docs/quickstart.md)
-- Local full walkthrough: [`docs/demo-flow.md`](docs/demo-flow.md)
-- Local roadmap: [`docs/roadmap.md`](docs/roadmap.md)
-- Release changelog: [`CHANGELOG.md`](CHANGELOG.md)
+- Docs home: [`docs/index.md`](docs/index.md)
+- Quickstart: [`docs/quickstart.md`](docs/quickstart.md)
+- Full walkthrough: [`docs/demo-flow.md`](docs/demo-flow.md)
+- Run model: [`docs/run-model.md`](docs/run-model.md)
+- Roadmap: [`docs/roadmap.md`](docs/roadmap.md)
+- Changelog: [`CHANGELOG.md`](CHANGELOG.md)
 
-## Scope guardrails
+## Deferred and out of scope
 
-- Local-only operations lab; no live exchange connectivity
-- Smoke backtest and synthetic paper lifecycle skeleton only; no custom strategy plugin surface yet
-- Example data: 1-minute OHLCV candles only; orderbook/LOB data not supported (deferred)
-- No profitability, alpha, production-safety, or low-latency claims
+- **Not production trading** — local lab only; no live exchange, testnet, or production deployment (Kubernetes/GitOps deferred).
+- **No custom strategy plugins** — built-in `ops_smoke_demo` only; user-provided strategy loading deferred.
+- **No order submission in `ops_smoke_demo`** — deterministic operational counters only.
+- **No PnL / alpha / profitability claims** — not a strategy performance harness.
+- **Candle data only** — example workflows use 1-minute OHLCV; orderbook/L2 deferred.
+- RunSpec `data.fingerprint` and `observability.*` are metadata/reserved fields today, not runtime enforcement toggles.

@@ -19,7 +19,7 @@ def _write_valid_spec(path: Path, run_id: str = "run-spec-metadata-run") -> None
                 "engine": "nautilus",
                 "venue": "binance_testnet",
                 "instrument": "BTCUSDT",
-                "strategy": {"name": "toy_mean_reversion", "version": "0.1.0"},
+                "strategy": {"name": "ops_smoke_demo", "version": "0.1.0"},
                 "data": {"dataset": "btcusdt-sample", "fingerprint": "placeholder"},
                 "risk": {"profile": "tiny"},
                 "observability": {"journal": True, "metrics": False, "report": False},
@@ -52,7 +52,7 @@ def test_write_metadata_contains_required_fields(tmp_path: Path) -> None:
     assert parsed["engine"] == "nautilus"
     assert parsed["status"] == "initialized"
     assert parsed["config_sha256"] == "cafebabe"
-    assert parsed["strategy"]["name"] == "toy_mean_reversion"
+    assert parsed["strategy"]["name"] == "ops_smoke_demo"
     assert parsed["data"]["fingerprint"] == "placeholder"
     assert parsed["risk"]["profile"] == "tiny"
     assert parsed["observability"]["journal"] is True

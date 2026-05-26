@@ -5,7 +5,7 @@
 - Operations-focused run lab around NautilusTrader
 - One engine: NautilusTrader
 - One example instrument: BTCUSDT
-- RunSpec **strategy metadata** (name/version) for traceability; no custom strategy execution surface yet
+- RunSpec **strategy metadata** (name/version) as scenario identity for traceability (e.g. `ops_smoke_demo`) with one built-in local scenario path; no custom strategy execution surface yet
 - Two run modes: backtest and paper
 - Local-first execution model
 - Reproducible runs from run specs
@@ -14,6 +14,7 @@
 - Basic observability hooks
 - Reconciliation checks and kill switch behavior
 - Fixture-backed **1-minute OHLCV candle** data prepare/fingerprint workflow
+- `data.fingerprint` and `observability.*` are currently metadata/reserved fields (not runtime gating toggles)
 - Three failure drills:
   - stale market data
   - forced reconciliation mismatch
