@@ -42,7 +42,8 @@ Optional/additional outputs depending on commands:
 ## Current strategy/scenario contract
 
 - The current backtest path is a Nautilus engine smoke run over prepared 1-minute OHLCV candles.
-- `strategy.name` and `strategy.version` are currently scenario identity/traceability metadata.
+- `strategy.name` and `strategy.version` are used as scenario identity/traceability metadata.
+- Backtest currently supports one built-in scenario mapping: `ops_smoke_demo`.
 - Current runs do not dynamically load custom strategy modules from config.
 - `strategy.name` values such as `ops_smoke_demo` identify local smoke/demo intent, not alpha claims.
 

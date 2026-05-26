@@ -55,6 +55,13 @@ def _write_smoke_metrics(
     input_candles_count: int,
     bars_processed: int,
     engine_duration_ms: int,
+    scenario_name: str,
+    scenario_version: str,
+    strategy_registered: bool,
+    bars_seen: int,
+    orders_submitted: int,
+    fills_count: int,
+    deterministic_action_triggered: bool,
 ) -> None:
     payload = {
         "schema_version": "v1",
@@ -65,9 +72,16 @@ def _write_smoke_metrics(
         "is_placeholder": False,
         "engine_executed": True,
         "dataset": spec.data.dataset,
+        "scenario_name": scenario_name,
+        "scenario_version": scenario_version,
+        "strategy_registered": strategy_registered,
         "input_candles_count": input_candles_count,
         "bars_processed": bars_processed,
         "engine_duration_ms": engine_duration_ms,
+        "bars_seen": bars_seen,
+        "orders_submitted": orders_submitted,
+        "fills_count": fills_count,
+        "deterministic_action_triggered": deterministic_action_triggered,
         "metrics": {},
     }
     path.write_text(
@@ -79,9 +93,8 @@ def _write_smoke_metrics(
 def run_backtest_lifecycle(spec_path: Path) -> tuple[Path, str]:
     """Run minimal NautilusTrader smoke backtest lifecycle and persist artifacts.
 
-    Current behavior intentionally executes an engine smoke path only. RunSpec
-    ``strategy`` fields are recorded for traceability but are not used to load
-    custom strategy behavior in this lifecycle.
+    Current behavior executes one built-in Nautilus smoke demo scenario based
+    on RunSpec strategy identity fields. Custom strategy loading is deferred.
     """
     spec = load_run_spec(spec_path)
     if spec.mode != "backtest":
@@ -110,6 +123,13 @@ def run_backtest_lifecycle(spec_path: Path) -> tuple[Path, str]:
     metadata["engine_execution"] = {
         "status": "running",
         "engine": "nautilus",
+        "scenario_name": spec.strategy.name,
+        "scenario_version": spec.strategy.version,
+        "strategy_registered": False,
+        "bars_seen": 0,
+        "orders_submitted": 0,
+        "fills_count": 0,
+        "deterministic_action_triggered": False,
         "nautilus_version": None,
         "started_at_utc": engine_started_at,
         "completed_at_utc": None,
@@ -145,6 +165,8 @@ def run_backtest_lifecycle(spec_path: Path) -> tuple[Path, str]:
             dataset=spec.data.dataset,
             venue=spec.venue,
             instrument=spec.instrument,
+            scenario_name=spec.strategy.name,
+            scenario_version=spec.strategy.version,
         )
     except Exception as exc:
         failed_at = _utc_now_iso8601()
@@ -153,6 +175,13 @@ def run_backtest_lifecycle(spec_path: Path) -> tuple[Path, str]:
         metadata["engine_execution"] = {
             "status": "failed",
             "engine": "nautilus",
+            "scenario_name": spec.strategy.name,
+            "scenario_version": spec.strategy.version,
+            "strategy_registered": False,
+            "bars_seen": 0,
+            "orders_submitted": 0,
+            "fills_count": 0,
+            "deterministic_action_triggered": False,
             "nautilus_version": None,
             "started_at_utc": engine_started_at,
             "completed_at_utc": failed_at,
@@ -184,6 +213,13 @@ def run_backtest_lifecycle(spec_path: Path) -> tuple[Path, str]:
                 "result": "engine_smoke_completed",
                 "input_candles_count": smoke_result.input_candles_count,
                 "bars_processed": smoke_result.bars_processed,
+                "scenario_name": smoke_result.scenario_name,
+                "scenario_version": smoke_result.scenario_version,
+                "strategy_registered": smoke_result.strategy_registered,
+                "bars_seen": smoke_result.bars_seen,
+                "orders_submitted": smoke_result.orders_submitted,
+                "fills_count": smoke_result.fills_count,
+                "deterministic_action_triggered": smoke_result.deterministic_action_triggered,
             },
         ),
     )
@@ -194,6 +230,13 @@ def run_backtest_lifecycle(spec_path: Path) -> tuple[Path, str]:
         input_candles_count=smoke_result.input_candles_count,
         bars_processed=smoke_result.bars_processed,
         engine_duration_ms=smoke_result.engine_duration_ms,
+        scenario_name=smoke_result.scenario_name,
+        scenario_version=smoke_result.scenario_version,
+        strategy_registered=smoke_result.strategy_registered,
+        bars_seen=smoke_result.bars_seen,
+        orders_submitted=smoke_result.orders_submitted,
+        fills_count=smoke_result.fills_count,
+        deterministic_action_triggered=smoke_result.deterministic_action_triggered,
     )
     (artifacts_dir / "report.md").write_text(
         render_backtest_nautilus_smoke_report(
@@ -203,6 +246,13 @@ def run_backtest_lifecycle(spec_path: Path) -> tuple[Path, str]:
             input_candles_count=smoke_result.input_candles_count,
             bars_processed=smoke_result.bars_processed,
             engine_duration_ms=smoke_result.engine_duration_ms,
+            scenario_name=smoke_result.scenario_name,
+            scenario_version=smoke_result.scenario_version,
+            strategy_registered=smoke_result.strategy_registered,
+            bars_seen=smoke_result.bars_seen,
+            orders_submitted=smoke_result.orders_submitted,
+            fills_count=smoke_result.fills_count,
+            deterministic_action_triggered=smoke_result.deterministic_action_triggered,
         ),
         encoding="utf-8",
     )
@@ -213,6 +263,13 @@ def run_backtest_lifecycle(spec_path: Path) -> tuple[Path, str]:
     metadata["engine_execution"] = {
         "status": "completed",
         "engine": "nautilus",
+        "scenario_name": smoke_result.scenario_name,
+        "scenario_version": smoke_result.scenario_version,
+        "strategy_registered": smoke_result.strategy_registered,
+        "bars_seen": smoke_result.bars_seen,
+        "orders_submitted": smoke_result.orders_submitted,
+        "fills_count": smoke_result.fills_count,
+        "deterministic_action_triggered": smoke_result.deterministic_action_triggered,
         "nautilus_version": smoke_result.nautilus_version,
         "started_at_utc": engine_started_at,
         "completed_at_utc": completed_at,

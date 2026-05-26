@@ -17,8 +17,8 @@ Neither mode is real paper trading, live trading, or exchange/testnet connectivi
 | observability | Run progress and smoke metrics | Synthetic heartbeat and safety metrics |
 | output artifacts | Smoke run outputs and summary reports | Skeleton session outputs and summary reports |
 | connectivity | Local fixture-driven Nautilus smoke path | No exchange, testnet, or live connectivity |
-| strategy execution | None (engine smoke over bars only) | None (lifecycle skeleton only) |
-| `strategy` config semantics | Scenario identity metadata only (e.g. `ops_smoke_demo`); no dynamic custom loading | Same metadata-only semantics |
+| strategy execution | One built-in local scenario strategy (`ops_smoke_demo`) over bars | None (lifecycle skeleton only) |
+| `strategy` config semantics | Scenario identity metadata; selects only built-in scenarios (no dynamic custom loading) | Same metadata semantics, no execution |
 
 ## What is shared
 

@@ -39,6 +39,13 @@ def render_backtest_nautilus_smoke_report(
     input_candles_count: int,
     bars_processed: int,
     engine_duration_ms: int,
+    scenario_name: str,
+    scenario_version: str,
+    strategy_registered: bool,
+    bars_seen: int,
+    orders_submitted: int,
+    fills_count: int,
+    deterministic_action_triggered: bool,
 ) -> str:
     """Render the minimal NautilusTrader smoke backtest report markdown."""
     return (
@@ -46,18 +53,28 @@ def render_backtest_nautilus_smoke_report(
         f"- status: {status}\n"
         f"- engine: nautilus\n"
         f"- dataset: {dataset}\n"
+        f"- scenario_name: {scenario_name}\n"
+        f"- scenario_version: {scenario_version}\n"
+        f"- strategy_registered: {strategy_registered}\n"
         f"- input_candles_count: {input_candles_count}\n"
         f"- bars_processed: {bars_processed}\n"
         f"- engine_duration_ms: {engine_duration_ms}\n\n"
+        "## Built-in Scenario Execution\n\n"
+        f"- bars_seen: {bars_seen}\n"
+        f"- orders_submitted: {orders_submitted}\n"
+        f"- fills_count: {fills_count}\n"
+        f"- deterministic_action_triggered: {deterministic_action_triggered}\n\n"
         "## Smoke Backtest Summary\n\n"
         "This run executed a minimal NautilusTrader engine smoke backtest.\n"
         "The fixture dataset candles were loaded from prepared local data and converted to "
         "Nautilus bars before engine execution.\n"
+        f"The built-in `{scenario_name}` scenario strategy was registered for deterministic "
+        "operational validation.\n"
         "The engine completed successfully for smoke validation.\n\n"
         "## Disclaimer\n\n"
         "This is not a validated strategy performance report.\n"
         "No profitability claims are made.\n"
-        "No orders, fills, or PnL metrics are produced by this artifact contract.\n"
+        "No PnL metrics are produced by this artifact contract.\n"
     )
 
 

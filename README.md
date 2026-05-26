@@ -2,7 +2,7 @@
 
 **TradingChassis Ops Lab** is a local-first **trading infrastructure / operations** lab around [NautilusTrader](https://github.com/nautechsystems/nautilus_trader). It is a **Trading Infrastructure Proof of Skill**: reproducible, spec-driven run workflows, artifact-first observability, and file-based operational controls—not a strategy alpha, PnL, live trading, or production platform project.
 
-The current backtest path is a **Nautilus engine smoke run** over prepared **1-minute OHLCV candle** data for lifecycle and artifact validation, not a strategy performance report or custom strategy harness. RunSpec `strategy` fields are currently **scenario identity / traceability metadata** only (for example `strategy.name: ops_smoke_demo`) and do not dynamically load user-provided strategy code. The paper path is a **bounded synthetic lifecycle skeleton** with no market data feed and no exchange or testnet connectivity.
+The current backtest path is a **Nautilus engine smoke run** over prepared **1-minute OHLCV candle** data for lifecycle and artifact validation. It registers one built-in local scenario strategy (`strategy.name: ops_smoke_demo`) for deterministic operational counters. It is not a strategy performance harness and does not dynamically load user-provided strategy code. The paper path is a **bounded synthetic lifecycle skeleton** with no market data feed and no exchange or testnet connectivity.
 
 ## What you can demo now
 

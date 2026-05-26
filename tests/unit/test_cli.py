@@ -30,6 +30,7 @@ def _write_valid_spec(
     path: Path,
     run_id: str = "run-spec-cli-run",
     mode: str = "backtest",
+    strategy_name: str = "ops_smoke_demo",
 ) -> None:
     spec = {
         "spec_version": "v1",
@@ -38,7 +39,7 @@ def _write_valid_spec(
         "engine": "nautilus",
         "venue": "binance",
         "instrument": "BTCUSDT",
-        "strategy": {"name": "ops_smoke_demo", "version": "0.1.0"},
+        "strategy": {"name": strategy_name, "version": "0.1.0"},
         "data": {"dataset": "btcusdt-sample", "fingerprint": "placeholder"},
         "risk": {"profile": "tiny"},
         "observability": {"journal": True, "metrics": False, "report": False},
@@ -130,6 +131,13 @@ def test_tc_run_backtest_creates_lifecycle_artifacts(tmp_path: Path, monkeypatch
     assert metadata["is_placeholder"] is False
     assert metadata["engine_execution"]["status"] == "completed"
     assert metadata["engine_execution"]["engine"] == "nautilus"
+    assert metadata["engine_execution"]["scenario_name"] == "ops_smoke_demo"
+    assert metadata["engine_execution"]["scenario_version"] == "0.1.0"
+    assert metadata["engine_execution"]["strategy_registered"] is True
+    assert metadata["engine_execution"]["bars_seen"] == 20
+    assert metadata["engine_execution"]["orders_submitted"] == 0
+    assert metadata["engine_execution"]["fills_count"] == 0
+    assert metadata["engine_execution"]["deterministic_action_triggered"] is True
     assert metadata["engine_execution"]["nautilus_version"] == "1.227.0"
     assert metadata["engine_execution"]["error"] is None
 
@@ -147,12 +155,26 @@ def test_tc_run_backtest_creates_lifecycle_artifacts(tmp_path: Path, monkeypatch
     assert journal[2]["result"] == "engine_smoke_completed"
     assert journal[2]["input_candles_count"] == 20
     assert journal[2]["bars_processed"] == 20
+    assert journal[2]["scenario_name"] == "ops_smoke_demo"
+    assert journal[2]["scenario_version"] == "0.1.0"
+    assert journal[2]["strategy_registered"] is True
+    assert journal[2]["bars_seen"] == 20
+    assert journal[2]["orders_submitted"] == 0
+    assert journal[2]["fills_count"] == 0
+    assert journal[2]["deterministic_action_triggered"] is True
 
     metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
     assert metrics["engine_executed"] is True
     assert metrics["is_placeholder"] is False
+    assert metrics["scenario_name"] == "ops_smoke_demo"
+    assert metrics["scenario_version"] == "0.1.0"
+    assert metrics["strategy_registered"] is True
     assert metrics["input_candles_count"] == 20
     assert metrics["bars_processed"] == 20
+    assert metrics["bars_seen"] == 20
+    assert metrics["orders_submitted"] == 0
+    assert metrics["fills_count"] == 0
+    assert metrics["deterministic_action_triggered"] is True
     assert isinstance(metrics["engine_duration_ms"], int)
     assert metrics["metrics"] == {}
 
@@ -160,7 +182,12 @@ def test_tc_run_backtest_creates_lifecycle_artifacts(tmp_path: Path, monkeypatch
     assert "minimal NautilusTrader engine smoke backtest" in report
     assert "not a validated strategy performance report" in report
     assert "No profitability claims are made" in report
-    assert "No orders, fills, or PnL metrics are produced" in report
+    assert "Built-in Scenario Execution" in report
+    assert "bars_seen: 20" in report
+    assert "orders_submitted: 0" in report
+    assert "fills_count: 0" in report
+    assert "deterministic_action_triggered: True" in report
+    assert "No PnL metrics are produced" in report
     assert "Sharpe" not in report
 
 
@@ -188,6 +215,23 @@ def test_tc_run_backtest_fails_for_paper_mode(tmp_path: Path, monkeypatch) -> No
     assert "Spec mode must be backtest" in result.stderr
 
 
+def test_tc_run_backtest_fails_for_unknown_strategy_name(tmp_path: Path, monkeypatch) -> None:
+    """Backtest command fails clearly for unknown built-in scenario names."""
+    monkeypatch.chdir(tmp_path)
+    prepare_dataset(dataset="btcusdt-sample", data_root=Path("data"))
+    spec_path = tmp_path / "unknown-strategy.yaml"
+    _write_valid_spec(
+        spec_path,
+        run_id="smoke-backtest-unknown-strategy",
+        strategy_name="unknown_demo_scenario",
+    )
+
+    result = runner.invoke(app, ["run", "backtest", "--spec", str(spec_path)])
+    assert result.exit_code != 0
+    assert "Unsupported backtest scenario strategy.name" in result.stderr
+    assert "Allowed built-in scenarios: ops_smoke_demo" in result.stderr
+
+
 def test_tc_run_backtest_fails_for_duplicate_run_id(tmp_path: Path, monkeypatch) -> None:
     """Backtest command fails cleanly when run artifacts already exist."""
     monkeypatch.chdir(tmp_path)
@@ -202,6 +246,13 @@ def test_tc_run_backtest_fails_for_duplicate_run_id(tmp_path: Path, monkeypatch)
             bars_processed=20,
             engine_duration_ms=1,
             nautilus_version="1.227.0",
+            scenario_name="ops_smoke_demo",
+            scenario_version="0.1.0",
+            strategy_registered=True,
+            bars_seen=20,
+            orders_submitted=0,
+            fills_count=0,
+            deterministic_action_triggered=True,
         )
 
     monkeypatch.setattr(

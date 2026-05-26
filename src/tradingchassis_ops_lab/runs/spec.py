@@ -22,10 +22,10 @@ class StrictBaseModel(BaseModel):
 class StrategySpec(StrictBaseModel):
     """Scenario identity metadata for the v1 run spec.
 
-    This model is intentionally metadata-only in the current implementation:
-    values are used for traceability in run metadata and config hashing, not
-    dynamic custom strategy loading. Future built-in scenario wiring may use
-    ``name`` as a stable scenario identifier.
+    Values are used for traceability in run metadata and config hashing.
+    Backtest uses ``name`` to select from a tiny set of built-in scenarios.
+    Dynamic custom strategy loading and plugin/module paths are intentionally
+    out of scope.
     """
 
     name: str

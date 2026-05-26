@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clarified docs and RunSpec model comments that current `strategy` fields are scenario identity/traceability metadata and do not dynamically load custom strategy code.
 - Clarified docs that `data.fingerprint` and `observability.*` are currently metadata/reserved fields, and current lifecycle paths still emit standard artifact sets.
 - Roadmap now positions `0.4.0 Local Backtest Scenario / Strategy Contract` before Paper/Testnet Connectivity Probe.
+- Backtest now registers one built-in scenario strategy for `strategy.name=ops_smoke_demo`, with deterministic operational counters in artifacts.
 
 ## [0.3.0]
 

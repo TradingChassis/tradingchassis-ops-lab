@@ -10,7 +10,7 @@ tc data fingerprint --dataset btcusdt-sample
 tc run backtest --spec examples/configs/btcusdt_backtest.yaml
 ```
 
-The backtest command runs a **Nautilus engine smoke path** over prepared **1-minute OHLCV candles**. It is not a custom strategy harness; RunSpec `strategy` fields (for example `ops_smoke_demo`) are currently scenario identity/traceability metadata only.
+The backtest command runs a **Nautilus engine smoke path** over prepared **1-minute OHLCV candles** with one built-in local scenario (`ops_smoke_demo`). It is not a custom strategy harness and does not dynamically load user strategy modules.
 
 ## Local paths
 
