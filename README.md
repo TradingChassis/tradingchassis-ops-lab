@@ -11,6 +11,7 @@ The current backtest path is a **Nautilus engine smoke run** over prepared **1-m
 | **0.1.0** | Local data prepare/fingerprint; Nautilus smoke backtest; bounded paper skeleton; run artifacts/reports; reconciliation checks; failure drills and runbooks |
 | **0.2.0** | Artifact-backed `tc metrics serve`; local Prometheus + Grafana stack; dashboard visibility for run metrics |
 | **0.3.0** | File-based kill switch safety snapshot; paper lifecycle `safety_blocked` when kill switch is active; safety status in metadata, journal, report, metrics, and Grafana |
+| **0.4.0** | Built-in local Nautilus backtest scenario `ops_smoke_demo`; deterministic scenario counters in artifacts and Prometheus export; no order submission or PnL/alpha reporting |
 
 Full command sequence: [`docs/demo-flow.md`](docs/demo-flow.md).
 
@@ -24,6 +25,10 @@ tc data fingerprint --dataset btcusdt-sample
 tc run backtest --spec examples/configs/btcusdt_backtest.yaml
 tc metrics export --run-id 2026-05-20-btcusdt-backtest-001
 ```
+
+`0.4.0` backtest behavior: one built-in `ops_smoke_demo` scenario is registered in the local Nautilus path, counts bars, triggers one deterministic action, records operational counters in run artifacts/metrics, submits no orders, and does not report PnL/alpha/performance metrics. Custom strategy loading remains deferred.
+
+Details: [`docs/demo-flow.md`](docs/demo-flow.md) and [`docs/run-model.md`](docs/run-model.md).
 
 ## Local paths
 
@@ -78,7 +83,7 @@ Verification:
 ## Scope guardrails
 
 - Local-only operations lab; no live exchange connectivity
-- Smoke backtest and synthetic paper lifecycle skeleton only; no custom strategy plugin surface yet
+- Smoke backtest and synthetic paper lifecycle skeleton only; built-in `ops_smoke_demo` scenario only (no custom strategy plugin surface yet)
 - RunSpec `data.fingerprint` and `observability.*` are currently metadata/reserved fields and are not runtime enforcement toggles
 - Example data: 1-minute OHLCV candles only; orderbook/LOB data not supported (deferred)
 - No profitability, alpha, production-safety, or low-latency claims

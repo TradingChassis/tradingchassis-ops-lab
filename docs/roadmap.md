@@ -16,12 +16,12 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 |---|---|---|
 | Run control | Spec-driven runs with deterministic artifacts, metadata, journal, and reports | implemented (`0.1.0`) |
 | Data workflow | Local synthetic dataset prepare and deterministic fingerprint workflow | implemented (`0.1.0`) |
-| Engine paths | Nautilus smoke backtest and bounded paper lifecycle skeleton | implemented (`0.1.0`) |
+| Engine paths | Nautilus smoke backtest with built-in `ops_smoke_demo` scenario and bounded paper lifecycle skeleton | implemented (`0.1.0`, `0.4.0`) |
 | Observability | Artifact-driven metrics server, local Prometheus/Grafana Compose stack, and provisioned dashboard | implemented (`0.2.0`) |
 | Safety and control | File-based kill switch state/events, paper lifecycle safety gate, and safety visibility in metrics/report/dashboard | implemented (`0.3.0`) |
 | Reconciliation | File-based expected vs observed checks with reconciliation artifact output | implemented (`0.1.0`) |
 | Runbooks | Deterministic runbooks for stale data, mismatch, and restart recovery | implemented (`0.1.0`) |
-| Documentation | MkDocs Material site, demo flow, scope/limitations, roadmap | implemented (`0.1.0`; updated through `0.3.0`) |
+| Documentation | MkDocs Material site, demo flow, scope/limitations, roadmap | implemented (`0.1.0`; updated through `0.4.0`) |
 | Local ops stack | Runnable local Prometheus/Grafana stack for artifact-backed metrics | implemented (`0.2.0`) |
 | Kubernetes/GitOps | No cluster manifests or GitOps workflow in current repository | deferred |
 
@@ -30,7 +30,7 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 | Capability area | Current implementation | Gap | Recommended direction |
 |---|---|---|---|
 | Run control and reproducibility | RunSpec validation, config hash, artifact contract, metadata, journal, and reports are in place (`implemented`) | Data fingerprint is not yet automatically linked into run metadata; event and artifact semantics can be clearer | Keep schema stable; document reproducibility workflow and artifact/journal reference conventions |
-| Engine integration | Nautilus smoke backtest and paper lifecycle skeleton exist (`implemented`/`partial`) | Backtest scenarios are narrow; paper path remains synthetic with no connectivity or runtime-state ingestion | Land `0.4.0` backtest scenario/contract clarity first, then defer connectivity to the Paper/Testnet Connectivity Probe milestone |
+| Engine integration | Nautilus smoke backtest now includes one built-in local scenario (`ops_smoke_demo`) and paper lifecycle skeleton exists (`implemented`/`partial`) | Backtest scenario depth remains intentionally narrow; paper path remains synthetic with no connectivity or runtime-state ingestion | Keep scenario scope deterministic and local; defer connectivity to the Paper/Testnet Connectivity Probe milestone |
 | Data layer | Fixture-backed prepare and fingerprint are in place (`implemented`) | No real historical import pipeline and no dedicated data quality checks | Preserve local deterministic fixtures now; add QA and import paths only after core ops gaps close |
 | Observability | `tc metrics serve` plus local Prometheus/Grafana Compose stack and provisioning are in place (`implemented`) | Alerting and deeper operational rule coverage are not in scope yet | Keep the current local stack stable; add only narrow follow-up hardening post-0.3.0 |
 | Safety and control | File-based kill switch is integrated into paper lifecycle state checks with artifact-backed visibility (`implemented`) | Scope intentionally remains local and file-based with no order cancellation/flattening | Keep the deterministic local safety gate stable while documenting boundaries before connectivity work |
@@ -50,7 +50,7 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 
 #### Engine integration
 
-- Implemented now: minimal Nautilus smoke backtest and paper lifecycle skeleton.
+- Implemented now: minimal Nautilus smoke backtest with built-in `ops_smoke_demo` and paper lifecycle skeleton.
 - Open gap: no paper/testnet connectivity path and limited scenario depth.
 - Direction: expand deterministic operational scenarios before connectivity.
 
@@ -163,28 +163,27 @@ Explicitly not included:
 - production risk engine behavior
 - exchange/testnet/live connectivity
 
-## Near-term milestones
+### 0.4.0 Local Backtest Scenario / Strategy Contract
 
-### 0.4.0 Local Backtest Scenario / Strategy Contract (planned)
+Implemented in current repository scope:
 
-Goal:
-
-- Clarify the backtest/strategy contract and keep local smoke usage concrete without expanding into alpha or plugin scope.
-
-Includes:
-
-- clear docs for strategy-as-scenario metadata semantics (`strategy.name`/`strategy.version`)
-- one canonical local smoke scenario identity (`ops_smoke_demo`) across examples/tests/docs
-- explicit current-state wording: Nautilus engine smoke path over prepared 1-minute candles
-- explicit deferred wording for custom strategy loading and plugin-style extension
+- canonical scenario identity renamed to `ops_smoke_demo`
+- clarified `strategy.name` / `strategy.version` as scenario identity and traceability metadata
+- built-in Nautilus backtest scenario registration in the local backtest path
+- hardcoded scenario registry with clear failure on unknown scenario names
+- deterministic scenario execution counters in artifacts and report
+- artifact-backed Prometheus scenario metrics derived from `metrics.json`
+- docs/demo flow updates for scenario execution and metrics verification
 
 Explicitly not included:
 
-- dynamic custom strategy loading/plugin framework
-- strategy optimization/parameter sweeps
+- dynamic custom strategy loading or plugin framework
+- strategy parameters, optimization, or parameter sweeps
 - orderbook / LOB data support
 - exchange/testnet/live connectivity
-- profitability/alpha claims
+- profitability/alpha claims or strategy-performance reporting
+
+## Near-term milestones
 
 ### 1. Paper/Testnet Connectivity Probe
 
@@ -269,7 +268,6 @@ Intentionally not next:
 
 ## Current recommended sequence
 
-1. `0.4.0` Local Backtest Scenario / Strategy Contract
-2. Paper/Testnet Connectivity Probe
-3. Expanded Failure Modes
-4. Kubernetes / GitOps Lab
+1. Paper/Testnet Connectivity Probe
+2. Expanded Failure Modes
+3. Kubernetes / GitOps Lab

@@ -40,6 +40,7 @@ flowchart LR
 - Applies the same operational model across both modes where possible
 - Produces run lifecycle events for downstream tracking
 - Backtest mode currently executes a Nautilus engine smoke path over prepared 1-minute candles
+- Backtest currently registers one built-in local scenario strategy (`ops_smoke_demo`)
 - RunSpec `strategy` fields are currently scenario identity metadata, not custom strategy loading
 
 ### Journal / Metadata / Artifacts

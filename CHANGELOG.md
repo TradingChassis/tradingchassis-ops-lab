@@ -7,13 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0]
+
+### Added
+
+- Built-in Nautilus demo scenario for local backtest runs: `ops_smoke_demo`.
+- Hardcoded scenario registry with clear validation failure for unknown scenario names.
+- Scenario execution facts in run artifacts (`metadata.json`, `metrics.json`, `journal.jsonl`, `report.md`).
+- Artifact-backed Prometheus scenario metrics derived from `metrics.json`:
+  - `tradingchassis_ops_lab_backtest_scenario_strategy_registered`
+  - `tradingchassis_ops_lab_backtest_scenario_bars_seen_total`
+  - `tradingchassis_ops_lab_backtest_scenario_orders_submitted_total`
+  - `tradingchassis_ops_lab_backtest_scenario_fills_total`
+  - `tradingchassis_ops_lab_backtest_scenario_deterministic_action_triggered`
+
 ### Changed
 
 - Renamed example RunSpec scenario identity from `toy_mean_reversion` to `ops_smoke_demo` to avoid implying a real alpha strategy implementation.
-- Clarified docs and RunSpec model comments that current `strategy` fields are scenario identity/traceability metadata and do not dynamically load custom strategy code.
-- Clarified docs that `data.fingerprint` and `observability.*` are currently metadata/reserved fields, and current lifecycle paths still emit standard artifact sets.
-- Roadmap now positions `0.4.0 Local Backtest Scenario / Strategy Contract` before Paper/Testnet Connectivity Probe.
-- Backtest now registers one built-in scenario strategy for `strategy.name=ops_smoke_demo`, with deterministic operational counters in artifacts.
+- Clarified RunSpec strategy contract: `strategy.name` / `strategy.version` are scenario identity and traceability metadata in current scope.
+- Updated README, quickstart, demo flow, run model, and roadmap wording for the built-in local scenario behavior and metrics verification path.
+
+### Notes
+
+- No dynamic custom strategy loading/plugin framework is included.
+- No strategy parameters, optimization, or parameter sweeps are included.
+- `ops_smoke_demo` does not submit orders (`orders_submitted = 0`, `fills_count = 0`).
+- No PnL/Sharpe/returns/profitability/alpha metrics are included.
+- No orderbook/L2 support is included.
+- No exchange/testnet/live connectivity is included.
 
 ## [0.3.0]
 

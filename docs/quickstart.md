@@ -10,7 +10,13 @@ tc data fingerprint --dataset btcusdt-sample
 tc run backtest --spec examples/configs/btcusdt_backtest.yaml
 ```
 
-The backtest command runs a **Nautilus engine smoke path** over prepared **1-minute OHLCV candles** with one built-in local scenario (`ops_smoke_demo`). It is not a custom strategy harness and does not dynamically load user strategy modules.
+The backtest command runs a **Nautilus engine smoke path** over prepared **1-minute OHLCV candles** with one built-in local scenario (`ops_smoke_demo`). It registers a strategy, increments `bars_seen`, triggers one deterministic scenario action, and writes operational counters to run artifacts (`metadata.json`, `metrics.json`, `journal.jsonl`, `report.md`). It is not a custom strategy harness and does not dynamically load user strategy modules.
+
+Current demo boundaries for this command:
+
+- `orders_submitted = 0`
+- `fills_count = 0`
+- no PnL/Sharpe/returns/profitability/alpha reporting
 
 ## Local paths
 

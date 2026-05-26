@@ -29,21 +29,58 @@ Expected artifact locations:
 - `data/datasets/`
 - `data/fingerprints/`
 
-## 3) Run backtest smoke run
+## 3) Run backtest scenario demo (`ops_smoke_demo`)
 
 ```bash
 tc run backtest --spec examples/configs/btcusdt_backtest.yaml
 ```
 
-This backtest remains an engine smoke run over prepared 1-minute candles. The spec's
-`strategy.name` (for example `ops_smoke_demo`) is currently scenario identity metadata,
-not dynamic custom strategy loading.
+This backtest remains an engine smoke run over prepared 1-minute candles and currently maps
+to one built-in local scenario (`ops_smoke_demo`). The spec's `strategy.name` / `strategy.version`
+are scenario identity and traceability metadata, not dynamic custom strategy loading.
+
+Scenario behavior shown in this run:
+
+- Nautilus strategy registration for `ops_smoke_demo`
+- deterministic `bars_seen` counting
+- one deterministic action trigger at a fixed bar index
+- operational counters persisted in artifacts
+- `orders_submitted = 0` and `fills_count = 0`
+- no PnL/Sharpe/returns/profitability/alpha performance claims
 
 Expected artifact location:
 
 - `artifacts/runs/2026-05-20-btcusdt-backtest-001/`
 
-## 4) Run paper lifecycle skeleton
+## 4) Inspect backtest scenario artifacts
+
+Inspect the run directory:
+
+- `artifacts/runs/2026-05-20-btcusdt-backtest-001/metadata.json`
+- `artifacts/runs/2026-05-20-btcusdt-backtest-001/metrics.json`
+- `artifacts/runs/2026-05-20-btcusdt-backtest-001/journal.jsonl`
+- `artifacts/runs/2026-05-20-btcusdt-backtest-001/report.md`
+
+Confirm the scenario execution facts are present and consistent (`strategy_registered`,
+`bars_seen`, deterministic action, `orders_submitted`, `fills_count`).
+
+## 5) Export and verify backtest scenario Prometheus metrics
+
+```bash
+tc metrics export --run-id 2026-05-20-btcusdt-backtest-001
+```
+
+Verify scenario metrics are emitted from artifact-backed counters:
+
+- `tradingchassis_ops_lab_backtest_scenario_strategy_registered`
+- `tradingchassis_ops_lab_backtest_scenario_bars_seen_total`
+- `tradingchassis_ops_lab_backtest_scenario_orders_submitted_total`
+- `tradingchassis_ops_lab_backtest_scenario_fills_total`
+- `tradingchassis_ops_lab_backtest_scenario_deterministic_action_triggered`
+
+This is an operational scenario demo, not a strategy-performance demo.
+
+## 6) Run paper lifecycle skeleton
 
 ```bash
 tc run paper --spec examples/configs/btcusdt_paper.yaml
@@ -53,7 +90,7 @@ Expected artifact location:
 
 - `artifacts/runs/2026-05-20-btcusdt-paper-001/`
 
-## 5) Export metrics
+## 7) Export paper metrics (optional file output)
 
 ```bash
 tc metrics export --run-id 2026-05-20-btcusdt-backtest-001
@@ -64,7 +101,7 @@ Expected artifact location:
 
 - `artifacts/runs/<run_id>/`
 
-## 6) Local observability stack demo
+## 8) Local observability stack demo
 
 Artifact-backed run outputs under `artifacts/runs/<run_id>/` are rendered as Prometheus text by `tc metrics serve`. Prometheus scrapes that local endpoint, and Grafana visualizes run and operational state from those scraped metrics.
 
@@ -96,7 +133,7 @@ Verification:
 
 This demo flow is local-only and artifact-backed. It is not live production monitoring, and it does not imply exchange/testnet connectivity or strategy-performance tracking.
 
-## 7) Runtime safety demo flow (paper)
+## 9) Runtime safety demo flow (paper)
 
 ```bash
 tc kill activate --run-id 2026-05-20-btcusdt-paper-001 --reason "demo block"
@@ -131,7 +168,7 @@ Expected artifact location for kill-switch state files:
 
 - `runtime/kill_switch/`
 
-## 8) Reconciliation check
+## 10) Reconciliation check
 
 ```bash
 tc reconcile check --run-id 2026-05-20-btcusdt-paper-001 --expected examples/reconciliation/expected_match.json --observed examples/reconciliation/observed_match.json
@@ -141,7 +178,7 @@ Expected artifact location:
 
 - `artifacts/runs/2026-05-20-btcusdt-paper-001/`
 
-## 9) Failure drills
+## 11) Failure drills
 
 ```bash
 tc drill stale-market-data --run-id 2026-05-20-btcusdt-paper-001

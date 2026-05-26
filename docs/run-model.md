@@ -44,6 +44,11 @@ Optional/additional outputs depending on commands:
 - The current backtest path is a Nautilus engine smoke run over prepared 1-minute OHLCV candles.
 - `strategy.name` and `strategy.version` are used as scenario identity/traceability metadata.
 - Backtest currently supports one built-in scenario mapping: `ops_smoke_demo`.
+- The backtest path registers the built-in Nautilus strategy for `ops_smoke_demo`.
+- Scenario execution records deterministic operational counters (`strategy_registered`, `bars_seen`, `deterministic_action_triggered`, `orders_submitted`, `fills_count`) in `metadata.json`, `metrics.json`, `journal.jsonl`, and `report.md`.
+- Scenario metrics export is artifact-backed via `tc metrics export --run-id <run_id>`.
+- `ops_smoke_demo` does not submit orders (`orders_submitted = 0`, `fills_count = 0`).
+- No PnL/Sharpe/returns/profitability/alpha performance reporting is included in the current scenario contract.
 - Current runs do not dynamically load custom strategy modules from config.
 - `strategy.name` values such as `ops_smoke_demo` identify local smoke/demo intent, not alpha claims.
 
