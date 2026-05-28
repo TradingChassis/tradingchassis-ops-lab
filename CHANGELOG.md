@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0]
+
 ### Added
 
+- Grafana connectivity readiness dashboard panel: `Connectivity Readiness`.
 - Local loopback-only connectivity probe command:
   - `tc connectivity probe --spec <path> --url <loopback-url> [--timeout-ms <int>]`
 - Deterministic probe artifact output: `artifacts/runs/<run_id>/connectivity_probe.json`.
@@ -23,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Grafana probe panels:
   - `Connectivity Probe State`
   - `Connectivity Probe Latency`
+- Local probe docs/demo flow updates for loopback probe workflow and artifact inspection.
 - Connectivity probe failure runbook: `docs/runbooks/connectivity-probe-failed.md`.
 
 ### Changed
@@ -33,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 
+- `0.6.0` is the local loopback connectivity probe milestone.
 - Probe is local-only and loopback-only; no real Binance/testnet/live connectivity is included.
 - No non-loopback network access is included.
 - Probe remains read-only and does not submit/cancel/flatten orders.

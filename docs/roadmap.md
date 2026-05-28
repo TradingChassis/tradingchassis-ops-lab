@@ -31,7 +31,7 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 | Capability area | Current implementation | Gap | Recommended direction |
 |---|---|---|---|
 | Run control and reproducibility | RunSpec validation, config hash, artifact contract, metadata, journal, and reports are in place (`implemented`) | Data fingerprint is not yet automatically linked into run metadata; event and artifact semantics can be clearer | Keep schema stable; document reproducibility workflow and artifact/journal reference conventions |
-| Engine integration | Nautilus smoke backtest includes one built-in local scenario (`ops_smoke_demo`), paper lifecycle skeleton exists, and local loopback probe contract is implemented (`implemented`/`partial`) | Backtest scenario depth remains intentionally narrow; paper path remains synthetic and local probe remains loopback-only (no external runtime-state ingestion) | Keep scenario scope deterministic and local; decide separately whether optional external read-only probe belongs in `0.6.0` or later |
+| Engine integration | Nautilus smoke backtest includes one built-in local scenario (`ops_smoke_demo`), paper lifecycle skeleton exists, and local loopback probe contract is implemented (`implemented`/`partial`) | Backtest scenario depth remains intentionally narrow; paper path remains synthetic and local probe remains loopback-only (no external runtime-state ingestion) | Keep scenario scope deterministic and local; defer optional external read-only probe to a later version |
 | Data layer | Fixture-backed prepare and fingerprint are in place (`implemented`) | No real historical import pipeline and no dedicated data quality checks | Preserve local deterministic fixtures now; add QA and import paths only after core ops gaps close |
 | Observability | `tc metrics serve` plus local Prometheus/Grafana Compose stack and provisioning are in place (`implemented`) | Alerting and deeper operational rule coverage are not in scope yet | Keep the current local stack stable; add only narrow follow-up hardening post-0.3.0 |
 | Safety and control | File-based kill switch is integrated into paper lifecycle state checks with artifact-backed visibility (`implemented`) | Scope intentionally remains local and file-based with no order cancellation/flattening | Keep the deterministic local safety gate stable while documenting boundaries before connectivity work |
@@ -53,7 +53,7 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 
 - Implemented now: minimal Nautilus smoke backtest with built-in `ops_smoke_demo`, paper lifecycle skeleton, and local loopback connectivity probe command/artifacts/metrics/dashboard visibility.
 - Open gap: no external exchange/testnet/live connectivity path and limited scenario depth.
-- Direction: keep local loopback probe stable and decide whether optional external read-only probe belongs in this milestone or a later version.
+- Direction: keep local loopback probe stable; optional external read-only probe is deferred to a later version.
 
 #### Data layer
 
@@ -237,15 +237,15 @@ Explicitly not included:
 
 ## Near-term milestones
 
-### 1. External Probe Decision
+### 1. External Read-Only Probe (Deferred)
 
 Goal:
 
-- Decide whether optional external read-only testnet probing remains in `0.6.0` or moves to a later version after local loopback probe completion.
+- Decide whether and when to add optional external read-only testnet probing after the completed `0.6.0` local loopback probe milestone.
 
 Decision options:
 
-- close `0.6.0` as local-only connectivity probe milestone
+- defer external probe to a later version (current default)
 - or add one optional read-only external probe unit under explicit non-goals
 
 Explicitly not included:
@@ -319,6 +319,6 @@ Intentionally not next:
 
 ## Current recommended sequence
 
-1. External probe decision (close `0.6.0` local-only or add optional read-only external unit)
+1. External read-only probe decision (deferred from completed `0.6.0` local-only milestone)
 2. Expanded Failure Modes
 3. Kubernetes / GitOps Lab
