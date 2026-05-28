@@ -1,6 +1,9 @@
 """CLI tests for core commands and run/data workflows."""
 
 import json
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import yaml
@@ -63,6 +66,27 @@ def _write_valid_spec(
     path.write_text(yaml.safe_dump(spec), encoding="utf-8")
 
 
+def _start_connectivity_probe_test_server(
+    *, status_code: int = 200, delay_seconds: float = 0.0
+) -> tuple[ThreadingHTTPServer, str]:
+    class _Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:  # noqa: N802
+            if delay_seconds > 0:
+                time.sleep(delay_seconds)
+            self.send_response(status_code)
+            self.end_headers()
+            self.wfile.write(b"cli-probe-body")
+
+        def log_message(self, _format: str, *args: object) -> None:
+            del args
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    port = int(server.server_address[1])
+    return server, f"http://127.0.0.1:{port}/health"
+
+
 def test_tc_spec_validate_succeeds_for_valid_spec(tmp_path: Path) -> None:
     """Validate command exits successfully for valid run spec."""
     spec_path = tmp_path / "valid.yaml"
@@ -123,6 +147,7 @@ def test_tc_connectivity_help_exits_successfully() -> None:
     result = runner.invoke(app, ["connectivity", "--help"])
     assert result.exit_code == 0
     assert "readiness" in result.stdout
+    assert "probe" in result.stdout
 
 
 def test_tc_connectivity_readiness_help_exits_successfully() -> None:
@@ -130,6 +155,13 @@ def test_tc_connectivity_readiness_help_exits_successfully() -> None:
     result = runner.invoke(app, ["connectivity", "readiness", "--help"])
     assert result.exit_code == 0
     assert "local env placeholder readiness" in result.stdout.lower()
+
+
+def test_tc_connectivity_probe_help_exits_successfully() -> None:
+    """Connectivity probe help output is available."""
+    result = runner.invoke(app, ["connectivity", "probe", "--help"])
+    assert result.exit_code == 0
+    assert "loopback http url" in result.stdout.lower()
 
 
 def test_tc_connectivity_readiness_requires_initialized_artifacts(
@@ -149,6 +181,180 @@ def test_tc_connectivity_readiness_requires_initialized_artifacts(
     assert result.exit_code != 0
     assert "Run artifacts directory not found" in result.stderr
     assert "tc run init --spec <path>" in result.stderr
+
+
+def test_tc_connectivity_probe_requires_initialized_artifacts(tmp_path: Path, monkeypatch) -> None:
+    """Connectivity probe fails clearly if run artifacts are missing."""
+    monkeypatch.chdir(tmp_path)
+    spec_path = tmp_path / "connectivity-probe-missing-init.yaml"
+    _write_valid_spec(
+        spec_path,
+        run_id="connectivity-probe-missing-init",
+        mode="paper",
+        include_connectivity_readiness=True,
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "connectivity",
+            "probe",
+            "--spec",
+            str(spec_path),
+            "--url",
+            "http://127.0.0.1:9999/health",
+        ],
+    )
+    assert result.exit_code != 0
+    assert "Run artifacts directory not found" in result.stderr
+    assert "tc run init --spec <path>" in result.stderr
+
+
+def test_tc_connectivity_probe_rejects_non_loopback_target(tmp_path: Path, monkeypatch) -> None:
+    """Connectivity probe rejects non-loopback targets and avoids artifact writes."""
+    monkeypatch.chdir(tmp_path)
+    spec_path = tmp_path / "connectivity-probe-invalid-target.yaml"
+    run_id = "connectivity-probe-invalid-target"
+    _write_valid_spec(
+        spec_path,
+        run_id=run_id,
+        mode="paper",
+        include_connectivity_readiness=True,
+    )
+    init_result = runner.invoke(app, ["run", "init", "--spec", str(spec_path)])
+    assert init_result.exit_code == 0
+
+    result = runner.invoke(
+        app,
+        [
+            "connectivity",
+            "probe",
+            "--spec",
+            str(spec_path),
+            "--url",
+            "https://testnet.binance.vision/api/v3/time",
+        ],
+    )
+    assert result.exit_code != 0
+    assert "Probe URL must use http://" in result.stderr
+
+    run_dir = tmp_path / "artifacts" / "runs" / run_id
+    assert not (run_dir / "connectivity_probe.json").exists()
+
+
+def test_tc_connectivity_probe_probe_ok_writes_artifacts(tmp_path: Path, monkeypatch) -> None:
+    """Connectivity probe writes artifact/metadata/journal and never stores response body."""
+    monkeypatch.chdir(tmp_path)
+    spec_path = tmp_path / "connectivity-probe-ok.yaml"
+    run_id = "connectivity-probe-ok"
+    _write_valid_spec(
+        spec_path,
+        run_id=run_id,
+        mode="paper",
+        include_connectivity_readiness=True,
+    )
+    init_result = runner.invoke(app, ["run", "init", "--spec", str(spec_path)])
+    assert init_result.exit_code == 0
+
+    run_dir = tmp_path / "artifacts" / "runs" / run_id
+    (run_dir / "report.md").write_text("# Existing report\n", encoding="utf-8")
+
+    server, url = _start_connectivity_probe_test_server(status_code=200)
+    try:
+        result = runner.invoke(
+            app,
+            [
+                "connectivity",
+                "probe",
+                "--spec",
+                str(spec_path),
+                "--url",
+                url,
+                "--timeout-ms",
+                "1000",
+            ],
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    assert result.exit_code == 0
+    assert f"run_id={run_id}" in result.stdout
+    assert "state=probe_ok" in result.stdout
+    assert "probe_performed=true" in result.stdout
+    assert "network_scope=loopback_only" in result.stdout
+
+    artifact_path = run_dir / "connectivity_probe.json"
+    assert artifact_path.is_file()
+    payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+    assert payload["state"] == "probe_ok"
+    assert payload["probe_performed"] is True
+    assert payload["network_scope"] == "loopback_only"
+    assert payload["response_body_stored"] is False
+    rendered = json.dumps(payload, sort_keys=True)
+    assert "cli-probe-body" not in rendered
+
+    metadata = json.loads((run_dir / "metadata.json").read_text(encoding="utf-8"))
+    assert metadata["connectivity_probe"]["state"] == "probe_ok"
+    assert metadata["connectivity_probe"]["probe_performed"] is True
+    assert metadata["connectivity_probe"]["network_scope"] == "loopback_only"
+
+    journal_lines = (run_dir / "journal.jsonl").read_text(encoding="utf-8").splitlines()
+    assert len(journal_lines) == 2
+    journal_payload = json.loads(journal_lines[-1])
+    assert journal_payload["event"] == "connectivity_probe_evaluated"
+    assert journal_payload["state"] == "probe_ok"
+
+    report = (run_dir / "report.md").read_text(encoding="utf-8")
+    assert "## Connectivity probe" in report
+    assert "external connectivity: not used" in report
+
+
+def test_tc_connectivity_probe_http_error_exits_zero_after_recording_artifact(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Executed non-ok probe states exit 0 once probe outcome artifacts are written."""
+    monkeypatch.chdir(tmp_path)
+    spec_path = tmp_path / "connectivity-probe-http-error.yaml"
+    run_id = "connectivity-probe-http-error"
+    _write_valid_spec(
+        spec_path,
+        run_id=run_id,
+        mode="paper",
+        include_connectivity_readiness=True,
+    )
+    init_result = runner.invoke(app, ["run", "init", "--spec", str(spec_path)])
+    assert init_result.exit_code == 0
+
+    run_dir = tmp_path / "artifacts" / "runs" / run_id
+    server, url = _start_connectivity_probe_test_server(status_code=500)
+    try:
+        result = runner.invoke(
+            app,
+            [
+                "connectivity",
+                "probe",
+                "--spec",
+                str(spec_path),
+                "--url",
+                url,
+                "--timeout-ms",
+                "1000",
+            ],
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    assert result.exit_code == 0
+    assert "state=probe_http_error" in result.stdout
+
+    artifact_path = run_dir / "connectivity_probe.json"
+    assert artifact_path.is_file()
+    payload = json.loads(artifact_path.read_text(encoding="utf-8"))
+    assert payload["state"] == "probe_http_error"
+    assert payload["response_body_stored"] is False
+    assert "cli-probe-body" not in json.dumps(payload, sort_keys=True)
 
 
 def test_tc_connectivity_readiness_missing_credentials_writes_artifacts(

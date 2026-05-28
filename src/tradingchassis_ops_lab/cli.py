@@ -7,6 +7,15 @@ from pathlib import Path
 import typer
 
 from tradingchassis_ops_lab import __version__
+from tradingchassis_ops_lab.connectivity.probe import (
+    ConnectivityProbeArtifactsError,
+    ConnectivityProbeInvalidTargetError,
+    evaluate_connectivity_probe,
+    patch_connectivity_probe_section,
+    update_connectivity_probe_metadata_summary,
+    write_connectivity_probe_artifact,
+    write_connectivity_probe_journal_event,
+)
 from tradingchassis_ops_lab.connectivity.readiness import (
     ConnectivityReadinessArtifactsError,
     evaluate_connectivity_readiness,
@@ -66,7 +75,7 @@ metrics_app = typer.Typer(
 kill_app = typer.Typer(help="File-based kill switch safety commands.")
 reconcile_app = typer.Typer(help="File-based reconciliation commands.")
 drill_app = typer.Typer(help="Deterministic local failure drills.")
-connectivity_app = typer.Typer(help="Local-only connectivity readiness commands.")
+connectivity_app = typer.Typer(help="Local-only connectivity readiness and probe commands.")
 app.add_typer(spec_app, name="spec")
 app.add_typer(run_app, name="run")
 app.add_typer(data_app, name="data")
@@ -251,6 +260,90 @@ def connectivity_readiness(
     typer.echo(f"state={payload['state']}")
     typer.echo(f"artifact_path={artifact_path.resolve()}")
     typer.echo("probe_performed=false")
+
+
+@connectivity_app.command("probe")
+def connectivity_probe(
+    spec: Path = typer.Option(..., "--spec", help="Path to run spec YAML."),
+    url: str = typer.Option(..., "--url", help="Loopback HTTP URL to probe."),
+    timeout_ms: int = typer.Option(
+        1000,
+        "--timeout-ms",
+        min=1,
+        help="Probe timeout in milliseconds.",
+    ),
+) -> None:
+    """Probe local fake loopback HTTP endpoint and persist connectivity probe artifact.
+
+    Exit code 0 means the probe command completed and recorded an outcome artifact.
+    Non-ok probe states such as probe_http_error, probe_timeout, and probe_unreachable
+    still exit 0 after artifacts are written. Invalid targets and artifact I/O failures
+    remain command failures (non-zero exit).
+    """
+    try:
+        parsed = load_run_spec(spec)
+    except RunSpecLoadError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+
+    artifacts_root = _resolve_artifacts_root()
+    run_dir = get_run_artifacts_dir(run_id=parsed.run_id, artifacts_root=artifacts_root)
+    if not run_dir.is_dir():
+        typer.secho(
+            (
+                f"Run artifacts directory not found: {run_dir}. "
+                "Initialize artifacts first with `tc run init --spec <path>`."
+            ),
+            fg=typer.colors.RED,
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    metadata_path = run_dir / "metadata.json"
+    journal_path = run_dir / "journal.jsonl"
+    if not metadata_path.is_file():
+        typer.secho(
+            (
+                f"metadata.json not found at {metadata_path}. "
+                "Re-initialize run artifacts with `tc run init --spec <path>`."
+            ),
+            fg=typer.colors.RED,
+            err=True,
+        )
+        raise typer.Exit(1)
+    if not journal_path.is_file():
+        typer.secho(
+            (
+                f"journal.jsonl not found at {journal_path}. "
+                "Re-initialize run artifacts with `tc run init --spec <path>`."
+            ),
+            fg=typer.colors.RED,
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    try:
+        payload = evaluate_connectivity_probe(parsed, url=url, timeout_ms=timeout_ms)
+        artifact_path = run_dir / "connectivity_probe.json"
+        write_connectivity_probe_artifact(artifact_path, payload)
+        update_connectivity_probe_metadata_summary(metadata_path, state=payload["state"])
+        write_connectivity_probe_journal_event(journal_path, payload)
+        patch_connectivity_probe_section(run_dir / "report.md", payload)
+    except ConnectivityProbeInvalidTargetError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+    except ConnectivityProbeArtifactsError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+    except Exception as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+
+    typer.echo(f"run_id={parsed.run_id}")
+    typer.echo(f"state={payload['state']}")
+    typer.echo(f"artifact_path={artifact_path.resolve()}")
+    typer.echo("probe_performed=true")
+    typer.echo(f"network_scope={payload['network_scope']}")
 
 
 def _resolve_data_root() -> Path:
