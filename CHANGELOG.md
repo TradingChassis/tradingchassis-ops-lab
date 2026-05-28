@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0]
+
+### Added
+
+- RunSpec `connectivity_readiness` contract block for local-only readiness metadata.
+- Validation for readiness placeholder env names, duplicate/overlap placeholders, and readiness venue matching top-level venue.
+- Local readiness command: `tc connectivity readiness --spec <path>`.
+- Local readiness states:
+  - `disabled`
+  - `missing_credentials`
+  - `configured`
+  - `invalid_config`
+  - `unknown`
+- Readiness artifact output: `artifacts/runs/<run_id>/connectivity_readiness.json`.
+- Metadata readiness summary patch under `metadata["connectivity_readiness"]`.
+- Journal event append: `connectivity_readiness_evaluated`.
+- Report readiness section update behavior when `report.md` already exists.
+- Artifact-backed readiness Prometheus metrics:
+  - `tradingchassis_ops_lab_connectivity_readiness_state`
+  - `tradingchassis_ops_lab_connectivity_readiness_enabled`
+  - `tradingchassis_ops_lab_connectivity_readiness_missing_required_env_total`
+  - `tradingchassis_ops_lab_connectivity_readiness_probe_performed`
+
+### Notes
+
+- Readiness is local preflight only; no network calls are performed.
+- Env var values are never stored in readiness artifacts, metadata, journal, reports, or metrics output.
+- Readiness metrics do not expose env var names.
+- `tc metrics export` still requires `metrics.json`; readiness-only `tc run init` + `tc connectivity readiness` runs do not create `metrics.json`.
+- No exchange/testnet/live connectivity is included.
+- No provider API calls are included.
+- No real credential validation is included.
+- No account/balance/position fetching is included.
+- No order submission/cancel/flatten behavior is included.
+- No external reconciliation is included.
+- No adapter framework is included.
+- No dashboard/alerting expansion is included.
+- No Kubernetes/GitOps work is included.
+
 ## [0.4.0]
 
 ### Added

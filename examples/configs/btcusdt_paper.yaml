@@ -16,3 +16,13 @@ observability:
   journal: true
   metrics: false
   report: false
+connectivity_readiness:
+  enabled: true
+  target: paper_testnet_probe
+  venue: binance_testnet
+  credential_placeholders:
+    required_env:
+      - TRADINGCHASSIS_PAPER_API_KEY
+      - TRADINGCHASSIS_PAPER_API_SECRET
+    optional_env: []
+  notes: "Local readiness contract only; no network calls."

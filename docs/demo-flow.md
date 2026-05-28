@@ -101,7 +101,55 @@ Expected artifact location:
 
 - `artifacts/runs/<run_id>/`
 
-## 8) Local observability stack demo
+## 8) Connectivity readiness demo (local preflight only)
+
+Use a spec that includes `connectivity_readiness` (for example `examples/configs/btcusdt_paper.yaml`).
+
+Initialize run artifacts first (required):
+
+```bash
+tc run init --spec examples/configs/btcusdt_paper.yaml
+```
+
+Run readiness without env vars:
+
+```bash
+tc connectivity readiness --spec examples/configs/btcusdt_paper.yaml
+```
+
+Inspect readiness outputs:
+
+- `artifacts/runs/2026-05-20-btcusdt-paper-001/connectivity_readiness.json`
+- `artifacts/runs/2026-05-20-btcusdt-paper-001/metadata.json`
+- `artifacts/runs/2026-05-20-btcusdt-paper-001/journal.jsonl`
+- `artifacts/runs/2026-05-20-btcusdt-paper-001/report.md` (updated only when report exists)
+
+Expected local-only behavior:
+
+- readiness state vocabulary is finite: `disabled`, `missing_credentials`, `configured`, `invalid_config`, `unknown`
+- state is typically `missing_credentials` without required env vars
+- `probe_performed=false`
+- no network calls
+
+Run readiness with dummy non-empty env vars:
+
+```bash
+TRADINGCHASSIS_PAPER_API_KEY=dummy TRADINGCHASSIS_PAPER_API_SECRET=dummy tc connectivity readiness --spec examples/configs/btcusdt_paper.yaml
+```
+
+Expected result:
+
+- state changes to `configured`
+- dummy env values are not written into artifacts, journal, report, or command output
+
+Readiness metrics caveat:
+
+- `tc metrics export` reads run artifacts and requires the usual `metrics.json` artifact.
+- A readiness-only sequence (`tc run init` + `tc connectivity readiness`) does not create `metrics.json`.
+- For readiness-only runs, use artifact inspection as the primary validation path.
+- Export readiness metrics after a lifecycle that creates `metrics.json`; creating a minimal `metrics.json` is test/dev-only, not the default user workflow.
+
+## 9) Local observability stack demo
 
 Artifact-backed run outputs under `artifacts/runs/<run_id>/` are rendered as Prometheus text by `tc metrics serve`. Prometheus scrapes that local endpoint, and Grafana visualizes run and operational state from those scraped metrics.
 
@@ -133,7 +181,7 @@ Verification:
 
 This demo flow is local-only and artifact-backed. It is not live production monitoring, and it does not imply exchange/testnet connectivity or strategy-performance tracking.
 
-## 9) Runtime safety demo flow (paper)
+## 10) Runtime safety demo flow (paper)
 
 ```bash
 tc kill activate --run-id 2026-05-20-btcusdt-paper-001 --reason "demo block"
@@ -168,7 +216,7 @@ Expected artifact location for kill-switch state files:
 
 - `runtime/kill_switch/`
 
-## 10) Reconciliation check
+## 11) Reconciliation check
 
 ```bash
 tc reconcile check --run-id 2026-05-20-btcusdt-paper-001 --expected examples/reconciliation/expected_match.json --observed examples/reconciliation/observed_match.json
@@ -178,7 +226,7 @@ Expected artifact location:
 
 - `artifacts/runs/2026-05-20-btcusdt-paper-001/`
 
-## 11) Failure drills
+## 12) Failure drills
 
 ```bash
 tc drill stale-market-data --run-id 2026-05-20-btcusdt-paper-001

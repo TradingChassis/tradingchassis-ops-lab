@@ -37,7 +37,7 @@
   </a>
   <a class="ops-card" href="roadmap/">
     <strong>Roadmap</strong>
-    Completed milestones (0.1.0–0.4.0), gaps, and deferred future work.
+    Completed milestones (0.1.0–0.5.0), gaps, and deferred future work.
   </a>
   <a class="ops-card" href="run-model/">
     <strong>Run model</strong>

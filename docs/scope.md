@@ -15,6 +15,9 @@
 - Reconciliation checks and kill switch behavior
 - Fixture-backed **1-minute OHLCV candle** data prepare/fingerprint workflow
 - `data.fingerprint` and `observability.*` are currently metadata/reserved fields (not runtime gating toggles)
+- RunSpec `connectivity_readiness` contract with env placeholder validation and local-only readiness evaluation command
+- Readiness artifacts (`connectivity_readiness.json`), metadata summary patch, journal event, and optional report section update
+- Artifact-backed readiness Prometheus metrics derived from `connectivity_readiness.json`
 - Three failure drills:
   - stale market data
   - forced reconciliation mismatch
@@ -35,6 +38,12 @@ Implemented in current repository scope:
 - Building a strategy library, quant research platform, or custom strategy plugin loader
 - Orderbook / limit-order-book (LOB) data ingestion or replay
 - Live trading with production-grade reliability requirements
+- Real exchange/testnet/live connectivity checks in readiness paths
+- Provider-side credential validation or secret verification
+- Account/balance/position fetching
+- Order submission, cancel/replace, or position flattening
+- External reconciliation against provider APIs
+- Adapter framework and multi-venue architecture
 - Low-latency gateway engineering
 - Profitability or alpha claims
 - Multi-engine or broad multi-instrument framework design

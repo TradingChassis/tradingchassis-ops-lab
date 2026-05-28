@@ -91,3 +91,31 @@ def test_compute_config_sha256_changes_when_strategy_name_changes(tmp_path: Path
     first_hash = compute_config_sha256(load_run_spec(first))
     second_hash = compute_config_sha256(load_run_spec(second))
     assert first_hash != second_hash
+
+
+def test_compute_config_sha256_changes_when_connectivity_readiness_changes(
+    tmp_path: Path,
+) -> None:
+    first = tmp_path / "first.yaml"
+    second = tmp_path / "second.yaml"
+    first.write_text(_spec_a(), encoding="utf-8")
+
+    changed = yaml.safe_load(_spec_a())
+    changed["connectivity_readiness"] = {
+        "enabled": True,
+        "target": "paper_testnet_probe",
+        "venue": "binance",
+        "credential_placeholders": {
+            "required_env": [
+                "TRADINGCHASSIS_PAPER_API_KEY",
+                "TRADINGCHASSIS_PAPER_API_SECRET",
+            ],
+            "optional_env": [],
+        },
+        "notes": "Local readiness contract only; no network calls.",
+    }
+    second.write_text(yaml.safe_dump(changed), encoding="utf-8")
+
+    first_hash = compute_config_sha256(load_run_spec(first))
+    second_hash = compute_config_sha256(load_run_spec(second))
+    assert first_hash != second_hash

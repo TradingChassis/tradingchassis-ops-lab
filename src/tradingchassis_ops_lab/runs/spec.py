@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 
 class RunSpecLoadError(ValueError):
@@ -101,6 +102,87 @@ class ObservabilitySpec(StrictBaseModel):
     report: bool = False
 
 
+_ENV_VAR_NAME_PATTERN = re.compile(r"^[A-Z_][A-Z0-9_]*$")
+
+
+class CredentialPlaceholdersSpec(StrictBaseModel):
+    """Environment variable name placeholders for readiness contract metadata."""
+
+    required_env: list[str] = Field(default_factory=list)
+    optional_env: list[str] = Field(default_factory=list)
+
+    @field_validator("required_env", "optional_env", mode="before")
+    @classmethod
+    def _validate_env_name_lists(cls, value: Any) -> list[str]:
+        if value is None:
+            return []
+        if not isinstance(value, list):
+            raise ValueError("must be a list of environment variable names")
+
+        validated: list[str] = []
+        for item in value:
+            if not isinstance(item, str):
+                raise ValueError("environment variable names must be strings")
+            cleaned = item.strip()
+            if not cleaned:
+                raise ValueError("environment variable names must be non-empty strings")
+            if not _ENV_VAR_NAME_PATTERN.match(cleaned):
+                raise ValueError("environment variable names must match ^[A-Z_][A-Z0-9_]*$")
+            validated.append(cleaned)
+        return validated
+
+    @model_validator(mode="after")
+    def _validate_duplicates_and_overlap(self) -> CredentialPlaceholdersSpec:
+        if len(self.required_env) != len(set(self.required_env)):
+            raise ValueError("required_env cannot contain duplicate names")
+        if len(self.optional_env) != len(set(self.optional_env)):
+            raise ValueError("optional_env cannot contain duplicate names")
+
+        overlapping = sorted(set(self.required_env) & set(self.optional_env))
+        if overlapping:
+            raise ValueError(
+                "required_env and optional_env cannot overlap: " + ", ".join(overlapping)
+            )
+        return self
+
+
+class ConnectivityReadinessSpec(StrictBaseModel):
+    """Reserved local-only connectivity readiness contract metadata.
+
+    This block does not perform network checks or environment validation in the
+    current implementation. It defines schema-only placeholders for later
+    readiness evaluation work.
+    """
+
+    enabled: bool = False
+    target: Literal["paper_testnet_probe"] | None = None
+    venue: str | None = None
+    credential_placeholders: CredentialPlaceholdersSpec = Field(
+        default_factory=CredentialPlaceholdersSpec
+    )
+    notes: str | None = None
+
+    @field_validator("venue", mode="before")
+    @classmethod
+    def _normalize_optional_venue(cls, value: Any) -> str | None:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("must be a string or null")
+        cleaned = value.strip()
+        return cleaned or None
+
+    @field_validator("notes", mode="before")
+    @classmethod
+    def _normalize_optional_notes(cls, value: Any) -> str | None:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("must be a string or null")
+        cleaned = value.strip()
+        return cleaned or None
+
+
 class RunSpec(StrictBaseModel):
     """Validated run specification for initialization workflows."""
 
@@ -114,6 +196,7 @@ class RunSpec(StrictBaseModel):
     data: DataSpec
     risk: RiskSpec
     observability: ObservabilitySpec
+    connectivity_readiness: ConnectivityReadinessSpec | None = None
 
     @field_validator("run_id", "venue", "instrument", mode="before")
     @classmethod
@@ -124,6 +207,18 @@ class RunSpec(StrictBaseModel):
         if not cleaned:
             raise ValueError("must be a non-empty string")
         return cleaned
+
+    @model_validator(mode="after")
+    def _validate_connectivity_readiness_venue(self) -> RunSpec:
+        if (
+            self.connectivity_readiness is not None
+            and self.connectivity_readiness.venue is not None
+            and self.connectivity_readiness.venue != self.venue
+        ):
+            raise ValueError(
+                "connectivity_readiness.venue must match top-level venue when provided"
+            )
+        return self
 
 
 def load_run_spec(path: Path) -> RunSpec:

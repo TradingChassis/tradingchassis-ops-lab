@@ -73,3 +73,25 @@ Overrides:
 - `TC_METRICS_TARGET`
 
 For the complete operational walkthrough (paper skeleton, kill switch, reconciliation, drills), continue to [Demo Flow](demo-flow.md).
+
+## Connectivity readiness quick path (local-only)
+
+Readiness evaluation uses initialized run artifacts, so run `tc run init` first:
+
+```bash
+tc spec validate --spec examples/configs/btcusdt_paper.yaml
+tc run init --spec examples/configs/btcusdt_paper.yaml
+tc connectivity readiness --spec examples/configs/btcusdt_paper.yaml
+```
+
+Expected behavior:
+
+- If required placeholder env vars are absent/empty, readiness state is `missing_credentials`.
+- With non-empty dummy values, readiness state becomes `configured`:
+
+```bash
+TRADINGCHASSIS_PAPER_API_KEY=dummy TRADINGCHASSIS_PAPER_API_SECRET=dummy tc connectivity readiness --spec examples/configs/btcusdt_paper.yaml
+```
+
+- Env var values are never stored in artifacts, journal, report, or metrics output.
+- No network calls are performed by the readiness command.

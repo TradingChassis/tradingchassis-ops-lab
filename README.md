@@ -15,12 +15,15 @@ Local workflows supported today:
 | Data prepare / fingerprint | Prepare sample datasets and record content fingerprints |
 | Nautilus backtest | Run a local smoke backtest over prepared candles with built-in `ops_smoke_demo` |
 | Paper lifecycle | Run a bounded synthetic paper skeleton (no market feed, no exchange connectivity) |
+| Connectivity readiness | Evaluate local env placeholder presence and write deterministic readiness artifacts |
 | Artifacts & reports | Generate per-run artifacts, reports, and reconciliation checks |
 | Metrics | Export run metrics and serve them for scraping |
 | Observability | Run local Prometheus + Grafana against artifact-backed metrics |
 | Runtime safety | File-based kill switch; paper lifecycle blocks when kill switch is active |
 
 Command walkthrough: [`docs/demo-flow.md`](docs/demo-flow.md). Run model and specs: [`docs/run-model.md`](docs/run-model.md).
+
+Connectivity readiness is local-only preflight: `tc connectivity readiness --spec <path>` checks env var placeholder presence (names only), writes `connectivity_readiness.json`, updates metadata/journal (and report section if present), and performs no network calls. It does not validate credentials against providers and does not imply exchange/testnet/live connectivity. Readiness metrics are available through `tc metrics export` once the run has the normal exporter artifacts (including `metrics.json`).
 
 ### Milestone history
 
@@ -30,6 +33,7 @@ Command walkthrough: [`docs/demo-flow.md`](docs/demo-flow.md). Run model and spe
 | `0.2.0` | Local observability stack |
 | `0.3.0` | Runtime safety integration |
 | `0.4.0` | Local backtest scenario / strategy contract (`ops_smoke_demo`) |
+| `0.5.0` | Connectivity readiness contract, local evaluation, and artifact-backed readiness metrics |
 
 ## Quickstart summary
 

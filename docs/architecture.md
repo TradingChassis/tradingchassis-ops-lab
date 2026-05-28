@@ -33,6 +33,7 @@ flowchart LR
 - Defines mode (`backtest` or `paper`) and run intent
 - Captures immutable run inputs (configuration and references)
 - Serves as the versioned source of truth for a run
+- Includes reserved local-only `connectivity_readiness` metadata for env-placeholder preflight intent
 
 ### Nautilus Run Mode
 
@@ -54,12 +55,14 @@ flowchart LR
   - `artifacts/runs/<run_id>/journal.jsonl`
   - `artifacts/runs/<run_id>/metrics.json`
   - `artifacts/runs/<run_id>/report.md`
+  - `artifacts/runs/<run_id>/connectivity_readiness.json` (when readiness is evaluated)
 
 ### Reports / Observability
 
 - Reports summarize run outcomes and key checks
 - Observability hooks expose basic signals for health and run progress
 - Designed for practical inspection, not full production telemetry
+- Readiness metrics are artifact-backed from `connectivity_readiness.json`; they do not perform network probes
 - Static dashboard definition: `dashboards/grafana/tradingchassis-ops-lab-run-observability.json`
 
 ### Safety / Reconciliation / Drills

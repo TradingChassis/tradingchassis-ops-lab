@@ -17,11 +17,12 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 | Run control | Spec-driven runs with deterministic artifacts, metadata, journal, and reports | implemented (`0.1.0`) |
 | Data workflow | Local synthetic dataset prepare and deterministic fingerprint workflow | implemented (`0.1.0`) |
 | Engine paths | Nautilus smoke backtest with built-in `ops_smoke_demo` scenario and bounded paper lifecycle skeleton | implemented (`0.1.0`, `0.4.0`) |
+| Connectivity readiness | RunSpec readiness contract, local env-placeholder preflight command, readiness artifacts, and readiness metrics export | implemented (`0.5.0`) |
 | Observability | Artifact-driven metrics server, local Prometheus/Grafana Compose stack, and provisioned dashboard | implemented (`0.2.0`) |
 | Safety and control | File-based kill switch state/events, paper lifecycle safety gate, and safety visibility in metrics/report/dashboard | implemented (`0.3.0`) |
 | Reconciliation | File-based expected vs observed checks with reconciliation artifact output | implemented (`0.1.0`) |
 | Runbooks | Deterministic runbooks for stale data, mismatch, and restart recovery | implemented (`0.1.0`) |
-| Documentation | MkDocs Material site, demo flow, scope/limitations, roadmap | implemented (`0.1.0`; updated through `0.4.0`) |
+| Documentation | MkDocs Material site, demo flow, scope/limitations, roadmap | implemented (`0.1.0`; updated through `0.5.0`) |
 | Local ops stack | Runnable local Prometheus/Grafana stack for artifact-backed metrics | implemented (`0.2.0`) |
 | Kubernetes/GitOps | No cluster manifests or GitOps workflow in current repository | deferred |
 
@@ -182,6 +183,30 @@ Explicitly not included:
 - orderbook / LOB data support
 - exchange/testnet/live connectivity
 - profitability/alpha claims or strategy-performance reporting
+
+### 0.5.0 Connectivity Readiness Contract
+
+Implemented in current repository scope:
+
+- optional RunSpec `connectivity_readiness` block (reserved local-only contract)
+- validation for env placeholder naming, duplicates/overlap, and readiness venue match
+- local readiness evaluation command: `tc connectivity readiness --spec <path>`
+- deterministic readiness artifact: `artifacts/runs/<run_id>/connectivity_readiness.json`
+- metadata summary patch under `metadata["connectivity_readiness"]`
+- journal event append: `connectivity_readiness_evaluated`
+- report readiness section update when `report.md` already exists
+- artifact-backed Prometheus readiness metrics derived from `connectivity_readiness.json`
+- no network calls in readiness evaluation path
+
+Explicitly not included:
+
+- real exchange/testnet/live connectivity calls
+- provider-side credential validation
+- account/balance/position fetching
+- order submission/cancel/flatten behavior
+- external reconciliation against provider APIs
+- adapter framework or multi-venue architecture
+- dashboard redesign or alerting expansion
 
 ## Near-term milestones
 

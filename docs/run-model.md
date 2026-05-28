@@ -29,6 +29,7 @@ For a given `run_id`, the local artifact contract is:
 
 Optional/additional outputs depending on commands:
 
+- `artifacts/runs/<run_id>/connectivity_readiness.json`
 - `artifacts/runs/<run_id>/reconciliation_result.json`
 - `artifacts/runs/<run_id>/drills/*.json`
 - `artifacts/runs/<run_id>/metrics.prom` (when exported to file)
@@ -57,6 +58,19 @@ Optional/additional outputs depending on commands:
 - `data.fingerprint` is stored for metadata/traceability and is not a runtime gate yet.
 - `observability.journal`, `observability.metrics`, and `observability.report` are stored in metadata;
   current lifecycle paths still write standard artifacts regardless of toggle values.
+- `connectivity_readiness` is a reserved local-only contract for readiness metadata (env var names only).
+- The `connectivity_readiness` block participates in config hashing.
+- RunSpec parsing does not perform env lookup and does not perform network calls.
+- Local env presence evaluation runs via `tc connectivity readiness --spec <path>` (artifact-backed preflight only).
+- The readiness path writes `connectivity_readiness.json`, patches `metadata["connectivity_readiness"]`,
+  appends `connectivity_readiness_evaluated` to `journal.jsonl`, and updates report readiness section only if `report.md` already exists.
+- No env var values are stored in readiness artifacts, metadata, journal, or reports.
+- Readiness state set is finite and local-only: `disabled`, `missing_credentials`, `configured`, `invalid_config`, `unknown`.
+- Readiness metrics are artifact-backed from `connectivity_readiness.json`:
+  - `tradingchassis_ops_lab_connectivity_readiness_state`
+  - `tradingchassis_ops_lab_connectivity_readiness_enabled`
+  - `tradingchassis_ops_lab_connectivity_readiness_missing_required_env_total`
+  - `tradingchassis_ops_lab_connectivity_readiness_probe_performed`
 
 ## Concrete examples
 
