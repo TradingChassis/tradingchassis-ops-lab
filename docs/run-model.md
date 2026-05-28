@@ -30,6 +30,7 @@ For a given `run_id`, the local artifact contract is:
 Optional/additional outputs depending on commands:
 
 - `artifacts/runs/<run_id>/connectivity_readiness.json`
+- `artifacts/runs/<run_id>/connectivity_probe.json`
 - `artifacts/runs/<run_id>/reconciliation_result.json`
 - `artifacts/runs/<run_id>/drills/*.json`
 - `artifacts/runs/<run_id>/metrics.prom` (when exported to file)
@@ -72,6 +73,17 @@ Optional/additional outputs depending on commands:
   - `tradingchassis_ops_lab_connectivity_readiness_enabled`
   - `tradingchassis_ops_lab_connectivity_readiness_missing_required_env_total`
   - `tradingchassis_ops_lab_connectivity_readiness_probe_performed`
+- Local loopback connectivity probe runs via `tc connectivity probe --spec <path> --url <loopback-url>`.
+- Probe validates local-only loopback HTTP targets and executes read-only `GET` only.
+- Probe writes `connectivity_probe.json`, patches `metadata["connectivity_probe"]`, appends `connectivity_probe_evaluated`, and updates report probe section only if `report.md` exists.
+- Probe states are local artifact outcomes: `probe_ok`, `probe_http_error`, `probe_timeout`, `probe_unreachable`, `probe_unknown`.
+- Probe does not store response body and does not perform external exchange/testnet/live connectivity.
+- Probe metrics are artifact-backed from `connectivity_probe.json`:
+  - `tradingchassis_ops_lab_connectivity_probe_state`
+  - `tradingchassis_ops_lab_connectivity_probe_performed`
+  - `tradingchassis_ops_lab_connectivity_probe_latency_seconds`
+  - `tradingchassis_ops_lab_connectivity_probe_http_status`
+- Metrics caveat remains: `tc metrics export` requires `metrics.json`; probe-only init+probe runs do not create `metrics.json`.
 
 ## Concrete examples
 

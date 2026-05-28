@@ -95,3 +95,43 @@ TRADINGCHASSIS_PAPER_API_KEY=dummy TRADINGCHASSIS_PAPER_API_SECRET=dummy tc conn
 
 - Env var values are never stored in artifacts, journal, report, or metrics output.
 - No network calls are performed by the readiness command.
+
+## Connectivity probe quick path (local-only loopback)
+
+Connectivity probe uses initialized run artifacts and only allows loopback HTTP URLs:
+
+```bash
+tc spec validate --spec examples/configs/btcusdt_paper.yaml
+tc run init --spec examples/configs/btcusdt_paper.yaml
+# Terminal 1: return local 200 on /health
+mkdir -p tmp/probe-server && printf "ok\n" > tmp/probe-server/health
+python -m http.server 18082 --bind 127.0.0.1 --directory tmp/probe-server
+
+# Terminal 2:
+tc connectivity probe --spec examples/configs/btcusdt_paper.yaml --url http://127.0.0.1:18082/health
+```
+
+Inspect outputs:
+
+- `artifacts/runs/<run_id>/connectivity_probe.json`
+- `artifacts/runs/<run_id>/metadata.json`
+- `artifacts/runs/<run_id>/journal.jsonl`
+- `artifacts/runs/<run_id>/report.md` (updated only when report exists)
+
+Expected state examples:
+
+- `probe_ok` for local 2xx response
+- `probe_http_error` for local non-2xx response
+- `probe_unreachable` when no local server is listening
+- `probe_timeout` when local probe exceeds timeout
+
+Probe safety boundaries:
+
+- No external network or exchange/testnet/live connectivity is used.
+- Response body is not stored in artifacts, metadata, journal, report, or metrics.
+
+Probe metrics caveat:
+
+- `tc metrics export` still requires `metrics.json`.
+- A probe-only sequence (`tc run init` + `tc connectivity probe`) does not create `metrics.json`.
+- For probe-only runs, use artifact inspection as the primary validation path.

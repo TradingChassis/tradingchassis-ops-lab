@@ -16,6 +16,7 @@ Local workflows supported today:
 | Nautilus backtest | Run a local smoke backtest over prepared candles with built-in `ops_smoke_demo` |
 | Paper lifecycle | Run a bounded synthetic paper skeleton (no market feed, no exchange connectivity) |
 | Connectivity readiness | Evaluate local env placeholder presence and write deterministic readiness artifacts |
+| Connectivity probe | Probe a local loopback fake HTTP endpoint and record deterministic probe artifacts |
 | Artifacts & reports | Generate per-run artifacts, reports, and reconciliation checks |
 | Metrics | Export run metrics and serve them for scraping |
 | Observability | Run local Prometheus + Grafana against artifact-backed metrics |
@@ -24,6 +25,8 @@ Local workflows supported today:
 Command walkthrough: [`docs/demo-flow.md`](docs/demo-flow.md). Run model and specs: [`docs/run-model.md`](docs/run-model.md).
 
 Connectivity readiness is local-only preflight: `tc connectivity readiness --spec <path>` checks env var placeholder presence (names only), writes `connectivity_readiness.json`, updates metadata/journal (and report section if present), and performs no network calls. It does not validate credentials against providers and does not imply exchange/testnet/live connectivity. In current examples, `binance` and `binance_testnet` are RunSpec venue labels only; they do not indicate an active external connection. Readiness metrics are available through `tc metrics export` once the run has the normal exporter artifacts (including `metrics.json`).
+
+Connectivity probe is local-only reachability check: `tc connectivity probe --spec <path> --url http://127.0.0.1:<port>/health` performs a read-only HTTP `GET` to a loopback URL, writes `connectivity_probe.json`, patches metadata, appends a journal event, and patches report section if report exists. It does not use external exchange/testnet/live connectivity, does not submit orders, does not fetch account/balance/position data, and does not store response bodies. Probe metrics and Grafana panels are artifact-backed and visible when normal metrics exporter prerequisites are present (including `metrics.json`).
 
 ### Milestone history
 
@@ -34,6 +37,7 @@ Connectivity readiness is local-only preflight: `tc connectivity readiness --spe
 | `0.3.0` | Runtime safety integration |
 | `0.4.0` | Local backtest scenario / strategy contract (`ops_smoke_demo`) |
 | `0.5.0` | Connectivity readiness contract, local evaluation, and artifact-backed readiness metrics |
+| `0.6.0` | Local loopback connectivity probe contract, artifact-backed probe metrics, and dashboard visibility |
 
 ## Quickstart summary
 

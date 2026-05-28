@@ -71,6 +71,7 @@ nav:
       - Future work: future-work.md
   - Runbooks:
       - Stale market data: runbooks/stale-market-data.md
+      - Connectivity probe failed: runbooks/connectivity-probe-failed.md
       - Reconciliation mismatch: runbooks/reconciliation-mismatch.md
       - Restart recovery: runbooks/restart-recovery.md
   - ADRs:

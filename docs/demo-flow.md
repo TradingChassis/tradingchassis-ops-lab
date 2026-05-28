@@ -149,7 +149,58 @@ Readiness metrics caveat:
 - For readiness-only runs, use artifact inspection as the primary validation path.
 - Export readiness metrics after a lifecycle that creates `metrics.json`; creating a minimal `metrics.json` is test/dev-only, not the default user workflow.
 
-## 9) Local observability stack demo
+## 9) Connectivity probe demo (local loopback only)
+
+Use `examples/configs/btcusdt_paper.yaml` below for a quick, runnable read-through (canonical `run_id`: `2026-05-20-btcusdt-paper-001`). If artifacts for that `run_id` already exist, or you are repeating this demo, copy the example spec to a new path and change `run_id`—do not edit tracked examples in the repository.
+
+Initialize run artifacts first (required):
+
+```bash
+tc run init --spec examples/configs/btcusdt_paper.yaml
+```
+
+Start a local fake HTTP endpoint on loopback:
+
+```bash
+mkdir -p tmp/probe-server && printf "ok\n" > tmp/probe-server/health
+python -m http.server 18082 --bind 127.0.0.1 --directory tmp/probe-server
+```
+
+Run connectivity probe:
+
+```bash
+tc connectivity probe --spec examples/configs/btcusdt_paper.yaml --url http://127.0.0.1:18082/health
+```
+
+Inspect probe outputs:
+
+- `artifacts/runs/2026-05-20-btcusdt-paper-001/connectivity_probe.json`
+- `artifacts/runs/2026-05-20-btcusdt-paper-001/metadata.json`
+- `artifacts/runs/2026-05-20-btcusdt-paper-001/journal.jsonl`
+- `artifacts/runs/2026-05-20-btcusdt-paper-001/report.md` (updated only when report exists)
+
+Expected probe states:
+
+- `probe_ok` for local 2xx response
+- `probe_http_error` for local non-2xx response
+- `probe_unreachable` when no local server is listening
+- `probe_timeout` when probe exceeds timeout
+
+Probe boundaries:
+
+- loopback-only target validation (`127.0.0.1`, `localhost`, `[::1]`)
+- read-only `GET`
+- no response body storage
+- no external exchange/testnet/live connectivity
+
+Probe metrics caveat:
+
+- `tc metrics export` requires `metrics.json`.
+- An init+probe-only sequence does not create `metrics.json`.
+- For probe-only runs, artifact inspection is the primary validation path.
+- For metrics/Grafana demo, use a run that already has `metrics.json` (or a minimal test/dev fixture).
+
+## 10) Local observability stack demo
 
 Artifact-backed run outputs under `artifacts/runs/<run_id>/` are rendered as Prometheus text by `tc metrics serve`. Prometheus scrapes that local endpoint, and Grafana visualizes run and operational state from those scraped metrics.
 
@@ -178,10 +229,11 @@ Verification:
 - Grafana: `http://localhost:${TC_GRAFANA_PORT:-3000}`
 - Open `TradingChassis Ops Lab Run Observability`
 - Confirm panel `Kill Switch State` shows the selected run's local safety snapshot state
+- Confirm panels `Connectivity Probe State` and `Connectivity Probe Latency` show probe artifact-backed values when probe metrics are present
 
 This demo flow is local-only and artifact-backed. It is not live production monitoring, and it does not imply exchange/testnet connectivity or strategy-performance tracking.
 
-## 10) Runtime safety demo flow (paper)
+## 11) Runtime safety demo flow (paper)
 
 ```bash
 tc kill activate --run-id 2026-05-20-btcusdt-paper-001 --reason "demo block"
@@ -216,7 +268,7 @@ Expected artifact location for kill-switch state files:
 
 - `runtime/kill_switch/`
 
-## 11) Reconciliation check
+## 12) Reconciliation check
 
 ```bash
 tc reconcile check --run-id 2026-05-20-btcusdt-paper-001 --expected examples/reconciliation/expected_match.json --observed examples/reconciliation/observed_match.json
@@ -226,7 +278,7 @@ Expected artifact location:
 
 - `artifacts/runs/2026-05-20-btcusdt-paper-001/`
 
-## 12) Failure drills
+## 13) Failure drills
 
 ```bash
 tc drill stale-market-data --run-id 2026-05-20-btcusdt-paper-001

@@ -8,7 +8,7 @@ Released milestones are documented in the repository changelog.
 
 `TradingChassis Ops Lab` is a local-first operations lab around NautilusTrader. It is not a commitment to build a production trading system.
 
-For context, see [Architecture](architecture.md), [Run model](run-model.md), [Limitations](limitations.md), [Runbooks](runbooks/stale-market-data.md), and [Demo flow](demo-flow.md).
+For context, see [Architecture](architecture.md), [Run model](run-model.md), [Limitations](limitations.md), [Runbooks](runbooks/stale-market-data.md), [Connectivity probe runbook](runbooks/connectivity-probe-failed.md), and [Demo flow](demo-flow.md).
 
 ## Current position
 
@@ -17,12 +17,12 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 | Run control | Spec-driven runs with deterministic artifacts, metadata, journal, and reports | implemented (`0.1.0`) |
 | Data workflow | Local synthetic dataset prepare and deterministic fingerprint workflow | implemented (`0.1.0`) |
 | Engine paths | Nautilus smoke backtest with built-in `ops_smoke_demo` scenario and bounded paper lifecycle skeleton | implemented (`0.1.0`, `0.4.0`) |
-| Connectivity readiness | RunSpec readiness contract, local env-placeholder preflight command, readiness artifacts, and readiness metrics export | implemented (`0.5.0`) |
+| Connectivity readiness/probe | RunSpec readiness contract plus local loopback read-only probe command, probe artifacts, and probe metrics/dashboard visibility | implemented (`0.5.0`, `0.6.0`) |
 | Observability | Artifact-driven metrics server, local Prometheus/Grafana Compose stack, and provisioned dashboard | implemented (`0.2.0`) |
 | Safety and control | File-based kill switch state/events, paper lifecycle safety gate, and safety visibility in metrics/report/dashboard | implemented (`0.3.0`) |
 | Reconciliation | File-based expected vs observed checks with reconciliation artifact output | implemented (`0.1.0`) |
-| Runbooks | Deterministic runbooks for stale data, mismatch, and restart recovery | implemented (`0.1.0`) |
-| Documentation | MkDocs Material site, demo flow, scope/limitations, roadmap | implemented (`0.1.0`; updated through `0.5.0`) |
+| Runbooks | Deterministic runbooks for stale data, connectivity probe failed, mismatch, and restart recovery | implemented (`0.1.0`; connectivity probe runbook through `0.6.0`) |
+| Documentation | MkDocs Material site, demo flow, scope/limitations, roadmap, and connectivity probe runbook | implemented (`0.1.0`; updated through `0.6.0`) |
 | Local ops stack | Runnable local Prometheus/Grafana stack for artifact-backed metrics | implemented (`0.2.0`) |
 | Kubernetes/GitOps | No cluster manifests or GitOps workflow in current repository | deferred |
 
@@ -31,7 +31,7 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 | Capability area | Current implementation | Gap | Recommended direction |
 |---|---|---|---|
 | Run control and reproducibility | RunSpec validation, config hash, artifact contract, metadata, journal, and reports are in place (`implemented`) | Data fingerprint is not yet automatically linked into run metadata; event and artifact semantics can be clearer | Keep schema stable; document reproducibility workflow and artifact/journal reference conventions |
-| Engine integration | Nautilus smoke backtest now includes one built-in local scenario (`ops_smoke_demo`) and paper lifecycle skeleton exists (`implemented`/`partial`) | Backtest scenario depth remains intentionally narrow; paper path remains synthetic with no connectivity or runtime-state ingestion | Keep scenario scope deterministic and local; defer connectivity to the Paper/Testnet Connectivity Probe milestone |
+| Engine integration | Nautilus smoke backtest includes one built-in local scenario (`ops_smoke_demo`), paper lifecycle skeleton exists, and local loopback probe contract is implemented (`implemented`/`partial`) | Backtest scenario depth remains intentionally narrow; paper path remains synthetic and local probe remains loopback-only (no external runtime-state ingestion) | Keep scenario scope deterministic and local; decide separately whether optional external read-only probe belongs in `0.6.0` or later |
 | Data layer | Fixture-backed prepare and fingerprint are in place (`implemented`) | No real historical import pipeline and no dedicated data quality checks | Preserve local deterministic fixtures now; add QA and import paths only after core ops gaps close |
 | Observability | `tc metrics serve` plus local Prometheus/Grafana Compose stack and provisioning are in place (`implemented`) | Alerting and deeper operational rule coverage are not in scope yet | Keep the current local stack stable; add only narrow follow-up hardening post-0.3.0 |
 | Safety and control | File-based kill switch is integrated into paper lifecycle state checks with artifact-backed visibility (`implemented`) | Scope intentionally remains local and file-based with no order cancellation/flattening | Keep the deterministic local safety gate stable while documenting boundaries before connectivity work |
@@ -51,9 +51,9 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 
 #### Engine integration
 
-- Implemented now: minimal Nautilus smoke backtest with built-in `ops_smoke_demo` and paper lifecycle skeleton.
-- Open gap: no paper/testnet connectivity path and limited scenario depth.
-- Direction: expand deterministic operational scenarios before connectivity.
+- Implemented now: minimal Nautilus smoke backtest with built-in `ops_smoke_demo`, paper lifecycle skeleton, and local loopback connectivity probe command/artifacts/metrics/dashboard visibility.
+- Open gap: no external exchange/testnet/live connectivity path and limited scenario depth.
+- Direction: keep local loopback probe stable and decide whether optional external read-only probe belongs in this milestone or a later version.
 
 #### Data layer
 
@@ -208,24 +208,50 @@ Explicitly not included:
 - adapter framework or multi-venue architecture
 - dashboard redesign or alerting expansion
 
+### 0.6.0 Local Connectivity Probe Workflow
+
+Implemented in current repository scope:
+
+- local loopback-only connectivity probe command:
+  - `tc connectivity probe --spec <path> --url <loopback-url> [--timeout-ms <int>]`
+- loopback URL validation for local-only targets (`127.0.0.1`, `localhost`, `[::1]`)
+- deterministic probe artifact: `artifacts/runs/<run_id>/connectivity_probe.json`
+- metadata summary patch under `metadata["connectivity_probe"]`
+- journal event append: `connectivity_probe_evaluated`
+- report probe section update when `report.md` already exists
+- artifact-backed Prometheus probe metrics from `connectivity_probe.json`
+- Grafana panels:
+  - `Connectivity Probe State`
+  - `Connectivity Probe Latency`
+- docs/demo flow/quickstart/runbook updates for local probe workflow and caveats
+
+Explicitly not included:
+
+- real Binance/testnet/live connectivity calls
+- non-loopback network access
+- signed endpoint handling
+- account/balance/position fetching
+- order submission/cancel/flatten behavior
+- provider credential validation
+- adapter framework or multi-venue architecture
+
 ## Near-term milestones
 
-### 1. Paper/Testnet Connectivity Probe
+### 1. External Probe Decision
 
 Goal:
 
-- Add one controlled paper/testnet connectivity path after local observability and safety integration are in place.
+- Decide whether optional external read-only testnet probing remains in `0.6.0` or moves to a later version after local loopback probe completion.
 
-Includes:
+Decision options:
 
-- one venue path
-- one instrument path
-- no real capital
-- documented runtime discrepancies
+- close `0.6.0` as local-only connectivity probe milestone
+- or add one optional read-only external probe unit under explicit non-goals
 
 Explicitly not included:
 
 - production live trading claims
+- order/account execution behavior
 - multi-venue execution
 - profitability claims
 
@@ -293,6 +319,6 @@ Intentionally not next:
 
 ## Current recommended sequence
 
-1. Paper/Testnet Connectivity Probe
+1. External probe decision (close `0.6.0` local-only or add optional read-only external unit)
 2. Expanded Failure Modes
 3. Kubernetes / GitOps Lab

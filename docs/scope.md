@@ -18,6 +18,9 @@
 - RunSpec `connectivity_readiness` contract with env placeholder validation and local-only readiness evaluation command
 - Readiness artifacts (`connectivity_readiness.json`), metadata summary patch, journal event, and optional report section update
 - Artifact-backed readiness Prometheus metrics derived from `connectivity_readiness.json`
+- Local loopback connectivity probe command (`tc connectivity probe`) with read-only HTTP `GET`
+- Probe artifacts (`connectivity_probe.json`), metadata summary patch, journal event, and optional report section update
+- Artifact-backed probe Prometheus metrics and Grafana visibility from `connectivity_probe.json`
 - Three failure drills:
   - stale market data
   - forced reconciliation mismatch
@@ -38,7 +41,7 @@ Implemented in current repository scope:
 - Building a strategy library, quant research platform, or custom strategy plugin loader
 - Orderbook / limit-order-book (LOB) data ingestion or replay
 - Live trading with production-grade reliability requirements
-- Real exchange/testnet/live connectivity checks in readiness paths
+- Real exchange/testnet/live connectivity checks in readiness or probe paths
 - Provider-side credential validation or secret verification
 - Account/balance/position fetching
 - Order submission, cancel/replace, or position flattening
@@ -54,4 +57,4 @@ Future work may expand depth, but this repository intentionally keeps the curren
 
 ## Definition of Done (current scope)
 
-The current scope is complete when a user can run one NautilusTrader backtest smoke workflow and one paper lifecycle skeleton workflow from run specs, inspect artifacts/reports, export metrics, exercise file-based safety/reconciliation behavior, and run/read three deterministic failure drills and runbooks.
+The current scope is complete when a user can run one NautilusTrader backtest smoke workflow and one paper lifecycle skeleton workflow from run specs, inspect artifacts/reports, run local readiness/probe checks, export metrics, exercise file-based safety/reconciliation behavior, and run/read deterministic failure drills and runbooks.

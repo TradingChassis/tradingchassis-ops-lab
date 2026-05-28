@@ -58,6 +58,7 @@ flowchart LR
   - `artifacts/runs/<run_id>/metrics.json`
   - `artifacts/runs/<run_id>/report.md`
   - `artifacts/runs/<run_id>/connectivity_readiness.json` (when readiness is evaluated)
+  - `artifacts/runs/<run_id>/connectivity_probe.json` (when loopback probe is evaluated)
 
 ### Reports / Observability
 
@@ -65,6 +66,7 @@ flowchart LR
 - Observability hooks expose basic signals for health and run progress
 - Designed for practical inspection, not full production telemetry
 - Readiness metrics are artifact-backed from `connectivity_readiness.json`; they do not perform network probes
+- Probe metrics are artifact-backed from `connectivity_probe.json`; probe execution remains local loopback-only and read-only
 - Static dashboard definition: `dashboards/grafana/tradingchassis-ops-lab-run-observability.json`
 
 ### Safety / Reconciliation / Drills

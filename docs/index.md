@@ -22,6 +22,7 @@
 - Local dataset preparation and fingerprinting (1-minute OHLCV candles)
 - Nautilus smoke backtest and bounded synthetic paper lifecycle skeleton runs
 - Metrics export, kill switch controls, reconciliation checks, and failure drills
+- Local loopback connectivity readiness/probe workflows with artifact-backed metrics and dashboard panels
 - Consistent run artifacts under `artifacts/runs/<run_id>/`
 
 ## Where to go next
@@ -37,7 +38,7 @@
   </a>
   <a class="ops-card" href="roadmap/">
     <strong>Roadmap</strong>
-    Completed milestones (0.1.0–0.5.0), gaps, and deferred future work.
+    Completed milestones (0.1.0 through 0.6.0), gaps, and deferred future work.
   </a>
   <a class="ops-card" href="run-model/">
     <strong>Run model</strong>
@@ -53,7 +54,7 @@
   </a>
   <a class="ops-card" href="runbooks/stale-market-data">
     <strong>Runbooks</strong>
-    Deterministic failure drill runbooks for stale data, mismatch, and restart recovery.
+    Deterministic runbooks for stale data, connectivity probe failures, mismatch, and restart recovery.
   </a>
   <a class="ops-card" href="https://github.com/TradingChassis/tradingchassis-ops-lab/tree/main/reports/sample">
     <strong>Sample reports</strong>

@@ -13,8 +13,12 @@ This project is intentionally constrained in its current implementation.
 - RunSpec `connectivity_readiness` is local readiness contract metadata (env var names only), not real provider credential validation
 - In current examples, RunSpec venue values `binance` and `binance_testnet` are label-only; they do not indicate active exchange/testnet/live connectivity
 - `tc connectivity readiness` is local preflight only: env placeholder presence check, no network calls, no exchange/testnet/live connectivity
+- `tc connectivity probe` is local loopback-only preflight: read-only HTTP `GET` against loopback URL only, no exchange/testnet/live connectivity
+- Probe results are artifact-backed (`connectivity_probe.json`) and probe metrics are derived from artifacts, not live external telemetry
+- Probe does not store response body, response headers, or secret values
 - Readiness does not fetch balances, positions, account state, or external runtime state
 - Readiness does not submit/cancel orders and does not flatten positions
+- Probe does not submit/cancel orders and does not flatten positions
 - Readiness metrics are artifact-backed and do not expose env var names or env var values
 - No secret storage in readiness artifacts, metadata, journal, report, or metrics
 - Paper path is a **bounded synthetic lifecycle skeleton** with no market data feed and no exchange/testnet connectivity
