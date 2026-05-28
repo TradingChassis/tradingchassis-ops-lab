@@ -36,6 +36,7 @@ class RunObservabilityArtifacts:
     metrics: dict[str, Any]
     journal_events: list[dict[str, Any]]
     reconciliation_result: dict[str, Any] | None
+    connectivity_readiness: dict[str, Any] | None
     include_journal: bool
 
 
@@ -109,6 +110,10 @@ def load_run_observability_artifacts(
         run_dir / "reconciliation_result.json",
         field_name="reconciliation_result.json",
     )
+    connectivity_readiness = _load_json_optional(
+        run_dir / "connectivity_readiness.json",
+        field_name="connectivity_readiness.json",
+    )
 
     return RunObservabilityArtifacts(
         run_id=run_id,
@@ -117,6 +122,7 @@ def load_run_observability_artifacts(
         metrics=metrics,
         journal_events=journal_events,
         reconciliation_result=reconciliation_result,
+        connectivity_readiness=connectivity_readiness,
         include_journal=include_journal,
     )
 
@@ -197,6 +203,20 @@ def _kill_switch_state_value(state: str) -> int:
     return -1
 
 
+def _connectivity_readiness_state_value(state: str) -> int:
+    if state == "disabled":
+        return 0
+    if state == "configured":
+        return 1
+    if state == "missing_credentials":
+        return 2
+    if state == "invalid_config":
+        return 3
+    if state == "unknown":
+        return -1
+    return -1
+
+
 def render_prometheus_text(artifacts: RunObservabilityArtifacts) -> str:
     """Render deterministic Prometheus text exposition from run artifacts."""
     metadata = artifacts.metadata
@@ -228,6 +248,54 @@ def render_prometheus_text(artifacts: RunObservabilityArtifacts) -> str:
 
     lines: list[str] = []
     _append_metric(lines, name="tradingchassis_ops_lab_run_info", labels=run_info_labels, value=1)
+
+    if artifacts.connectivity_readiness is not None:
+        readiness = artifacts.connectivity_readiness
+        state = readiness.get("state")
+        if not isinstance(state, str) or not state.strip():
+            raise RunArtifactsParseError(
+                "Malformed connectivity_readiness.json: state must be a non-empty string."
+            )
+        enabled = readiness.get("enabled")
+        if not isinstance(enabled, bool):
+            raise RunArtifactsParseError(
+                "Malformed connectivity_readiness.json: enabled must be boolean."
+            )
+        missing_required_count = readiness.get("missing_required_count")
+        if not isinstance(missing_required_count, int):
+            raise RunArtifactsParseError(
+                "Malformed connectivity_readiness.json: missing_required_count must be integer."
+            )
+        probe_performed = readiness.get("probe_performed")
+        if not isinstance(probe_performed, bool):
+            raise RunArtifactsParseError(
+                "Malformed connectivity_readiness.json: probe_performed must be boolean."
+            )
+        readiness_labels = core_labels + [("state", state)]
+        _append_metric(
+            lines,
+            name="tradingchassis_ops_lab_connectivity_readiness_state",
+            labels=readiness_labels,
+            value=_connectivity_readiness_state_value(state),
+        )
+        _append_metric(
+            lines,
+            name="tradingchassis_ops_lab_connectivity_readiness_enabled",
+            labels=readiness_labels,
+            value=1 if enabled else 0,
+        )
+        _append_metric(
+            lines,
+            name="tradingchassis_ops_lab_connectivity_readiness_missing_required_env_total",
+            labels=readiness_labels,
+            value=missing_required_count,
+        )
+        _append_metric(
+            lines,
+            name="tradingchassis_ops_lab_connectivity_readiness_probe_performed",
+            labels=readiness_labels,
+            value=1 if probe_performed else 0,
+        )
 
     kill_switch_state = _kill_switch_state_from_metadata(metadata)
     if kill_switch_state is not None:

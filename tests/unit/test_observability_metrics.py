@@ -24,6 +24,7 @@ def _write_run_artifacts(
     metadata: dict,
     metrics: dict,
     journal_lines: list[dict] | None = None,
+    connectivity_readiness: dict | None = None,
 ) -> Path:
     run_dir = artifacts_root / run_id
     run_dir.mkdir(parents=True)
@@ -38,6 +39,11 @@ def _write_run_artifacts(
     if journal_lines is not None:
         (run_dir / "journal.jsonl").write_text(
             "".join(json.dumps(line, sort_keys=True) + "\n" for line in journal_lines),
+            encoding="utf-8",
+        )
+    if connectivity_readiness is not None:
+        (run_dir / "connectivity_readiness.json").write_text(
+            json.dumps(connectivity_readiness, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
     return run_dir
@@ -316,6 +322,183 @@ def test_kill_switch_metric_not_emitted_without_safety_snapshot(tmp_path: Path) 
 
     rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
     assert "tradingchassis_ops_lab_kill_switch_state{" not in rendered
+
+
+def test_connectivity_readiness_metrics_emitted_when_artifact_exists(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "metrics-connectivity-readiness"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance",
+            "instrument": "BTCUSDT",
+            "status": "initialized",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+        connectivity_readiness={
+            "schema_version": "v1",
+            "run_id": run_id,
+            "state": "missing_credentials",
+            "enabled": True,
+            "missing_required_count": 2,
+            "probe_performed": False,
+            "required_env": ["TRADINGCHASSIS_PAPER_API_KEY", "TRADINGCHASSIS_PAPER_API_SECRET"],
+            "present_env": [],
+            "missing_env": ["TRADINGCHASSIS_PAPER_API_KEY", "TRADINGCHASSIS_PAPER_API_SECRET"],
+        },
+    )
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+    labels = (
+        'run_id="metrics-connectivity-readiness",mode="paper",engine="nautilus",'
+        'venue="binance",instrument="BTCUSDT",state="missing_credentials"'
+    )
+    assert f"tradingchassis_ops_lab_connectivity_readiness_state{{{labels}}} 2" in rendered
+    assert f"tradingchassis_ops_lab_connectivity_readiness_enabled{{{labels}}} 1" in rendered
+    assert (
+        f"tradingchassis_ops_lab_connectivity_readiness_missing_required_env_total{{{labels}}} 2"
+        in rendered
+    )
+    assert (
+        f"tradingchassis_ops_lab_connectivity_readiness_probe_performed{{{labels}}} 0" in rendered
+    )
+    assert "tradingchassis_ops_lab_run_info{" in rendered
+
+
+@pytest.mark.parametrize(
+    ("state", "expected_value"),
+    [
+        ("disabled", 0),
+        ("configured", 1),
+        ("missing_credentials", 2),
+        ("invalid_config", 3),
+        ("unknown", -1),
+        ("unexpected_state", -1),
+    ],
+)
+def test_connectivity_readiness_state_metric_encoding(
+    tmp_path: Path,
+    state: str,
+    expected_value: int,
+) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = f"metrics-connectivity-state-{state}"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance",
+            "instrument": "BTCUSDT",
+            "status": "initialized",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+        connectivity_readiness={
+            "state": state,
+            "enabled": False,
+            "missing_required_count": 0,
+            "probe_performed": True,
+        },
+    )
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+    assert (
+        "tradingchassis_ops_lab_connectivity_readiness_state"
+        f'{{run_id="{run_id}",mode="paper",engine="nautilus",venue="binance",'
+        f'instrument="BTCUSDT",state="{state}"}} {expected_value}'
+    ) in rendered
+
+
+def test_connectivity_readiness_metric_text_excludes_env_names_and_values(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "metrics-connectivity-secrets"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance",
+            "instrument": "BTCUSDT",
+            "status": "initialized",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+        connectivity_readiness={
+            "state": "configured",
+            "enabled": True,
+            "missing_required_count": 0,
+            "probe_performed": False,
+            "required_env": ["TRADINGCHASSIS_PAPER_API_KEY"],
+            "present_env": ["TRADINGCHASSIS_PAPER_API_KEY"],
+            "errors": ["dummy-secret-value"],
+        },
+    )
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+    assert "TRADINGCHASSIS_PAPER_API_KEY" not in rendered
+    assert "dummy-secret-value" not in rendered
+
+
+def test_connectivity_readiness_metrics_omitted_when_artifact_is_absent(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "metrics-connectivity-absent"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "backtest",
+            "engine": "nautilus",
+            "venue": "binance",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={
+            "is_placeholder": False,
+            "engine_executed": True,
+            "input_candles_count": 20,
+        },
+    )
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+    assert "tradingchassis_ops_lab_connectivity_readiness_state" not in rendered
+    assert "tradingchassis_ops_lab_backtest_input_candles_total" in rendered
+
+
+def test_malformed_connectivity_readiness_result_fails_clearly(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "metrics-connectivity-malformed"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance",
+            "instrument": "BTCUSDT",
+            "status": "initialized",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+        connectivity_readiness={
+            "state": "configured",
+            "enabled": "yes",
+            "missing_required_count": 0,
+            "probe_performed": False,
+        },
+    )
+
+    with pytest.raises(RunArtifactsParseError):
+        export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
 
 
 @pytest.mark.parametrize(
