@@ -189,6 +189,67 @@
     },
     {
       "datasource": null,
+      "description": "Artifact-backed local readiness state from run artifacts. No network calls, exchange/testnet/live connectivity, or provider credential validation are performed.",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "options": {
+                "-1": {
+                  "text": "unknown"
+                },
+                "0": {
+                  "text": "disabled"
+                },
+                "1": {
+                  "text": "configured"
+                },
+                "2": {
+                  "text": "missing_credentials"
+                },
+                "3": {
+                  "text": "invalid_config"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 13
+      },
+      "id": 8,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "tradingchassis_ops_lab_connectivity_readiness_state{run_id=\"$run_id\"}",
+          "refId": "A"
+        }
+      ],
+      "title": "Connectivity Readiness",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "unit": "short"

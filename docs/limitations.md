@@ -11,6 +11,7 @@ This project is intentionally constrained in its current implementation.
 - RunSpec `data.fingerprint` is metadata/reserved and is not a runtime enforcement gate yet
 - RunSpec `observability.journal|metrics|report` fields are metadata/reserved; current lifecycle paths still write standard artifacts
 - RunSpec `connectivity_readiness` is local readiness contract metadata (env var names only), not real provider credential validation
+- In current examples, RunSpec venue values `binance` and `binance_testnet` are label-only; they do not indicate active exchange/testnet/live connectivity
 - `tc connectivity readiness` is local preflight only: env placeholder presence check, no network calls, no exchange/testnet/live connectivity
 - Readiness does not fetch balances, positions, account state, or external runtime state
 - Readiness does not submit/cancel orders and does not flatten positions

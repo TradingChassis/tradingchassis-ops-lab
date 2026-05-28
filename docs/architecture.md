@@ -34,6 +34,7 @@ flowchart LR
 - Captures immutable run inputs (configuration and references)
 - Serves as the versioned source of truth for a run
 - Includes reserved local-only `connectivity_readiness` metadata for env-placeholder preflight intent
+- Uses venue labels in examples (`binance`, `binance_testnet`) for run metadata and future probe intent only, not active exchange/testnet/live connectivity
 
 ### Nautilus Run Mode
 
@@ -42,6 +43,7 @@ flowchart LR
 - Produces run lifecycle events for downstream tracking
 - Backtest mode currently executes a Nautilus engine smoke path over prepared 1-minute candles
 - Backtest currently registers one built-in local scenario strategy (`ops_smoke_demo`)
+- Backtest `venue: binance` currently maps to Nautilus test instrument context plus local candle fixtures
 - RunSpec `strategy` fields are currently scenario identity metadata, not custom strategy loading
 
 ### Journal / Metadata / Artifacts

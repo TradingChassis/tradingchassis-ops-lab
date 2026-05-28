@@ -55,6 +55,7 @@ Optional/additional outputs depending on commands:
 
 ## Current reserved config fields
 
+- `venue` is a RunSpec venue label in current examples. `binance` on backtest maps to Nautilus test-instrument/local fixture context, and `binance_testnet` on paper/readiness is a future probe label only; neither implies active exchange/testnet/live connectivity today.
 - `data.fingerprint` is stored for metadata/traceability and is not a runtime gate yet.
 - `observability.journal`, `observability.metrics`, and `observability.report` are stored in metadata;
   current lifecycle paths still write standard artifacts regardless of toggle values.

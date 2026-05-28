@@ -23,7 +23,7 @@ Local workflows supported today:
 
 Command walkthrough: [`docs/demo-flow.md`](docs/demo-flow.md). Run model and specs: [`docs/run-model.md`](docs/run-model.md).
 
-Connectivity readiness is local-only preflight: `tc connectivity readiness --spec <path>` checks env var placeholder presence (names only), writes `connectivity_readiness.json`, updates metadata/journal (and report section if present), and performs no network calls. It does not validate credentials against providers and does not imply exchange/testnet/live connectivity. Readiness metrics are available through `tc metrics export` once the run has the normal exporter artifacts (including `metrics.json`).
+Connectivity readiness is local-only preflight: `tc connectivity readiness --spec <path>` checks env var placeholder presence (names only), writes `connectivity_readiness.json`, updates metadata/journal (and report section if present), and performs no network calls. It does not validate credentials against providers and does not imply exchange/testnet/live connectivity. In current examples, `binance` and `binance_testnet` are RunSpec venue labels only; they do not indicate an active external connection. Readiness metrics are available through `tc metrics export` once the run has the normal exporter artifacts (including `metrics.json`).
 
 ### Milestone history
 

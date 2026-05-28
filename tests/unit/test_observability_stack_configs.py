@@ -161,10 +161,12 @@ def test_grafana_dashboard_queries_use_supported_metric_namespace() -> None:
             referenced_metrics.update(metric_pattern.findall(expr))
 
     assert "tradingchassis_ops_lab_kill_switch_state" in referenced_metrics
+    assert "tradingchassis_ops_lab_connectivity_readiness_state" in referenced_metrics
     supported_metrics = {
         "tradingchassis_ops_lab_backtest_bars_processed_total",
         "tradingchassis_ops_lab_backtest_engine_duration_seconds",
         "tradingchassis_ops_lab_backtest_input_candles_total",
+        "tradingchassis_ops_lab_connectivity_readiness_state",
         "tradingchassis_ops_lab_journal_event_total",
         "tradingchassis_ops_lab_kill_switch_state",
         "tradingchassis_ops_lab_paper_heartbeat_total",
@@ -172,3 +174,54 @@ def test_grafana_dashboard_queries_use_supported_metric_namespace() -> None:
         "tradingchassis_ops_lab_run_info",
     }
     assert referenced_metrics <= supported_metrics
+
+
+def test_grafana_dashboard_contains_connectivity_readiness_panel() -> None:
+    dashboard_path = _repo_root() / _DASHBOARD_DIR / _DASHBOARD_FILENAME
+    dashboard = json.loads(dashboard_path.read_text(encoding="utf-8"))
+    panels = dashboard.get("panels", [])
+    assert isinstance(panels, list)
+
+    readiness_panel = next(
+        (panel for panel in panels if panel.get("title") == "Connectivity Readiness"),
+        None,
+    )
+    assert readiness_panel is not None, "Connectivity Readiness panel must exist."
+    assert readiness_panel.get("type") == "stat"
+
+    targets = readiness_panel.get("targets", [])
+    assert isinstance(targets, list)
+    assert targets and isinstance(targets[0], dict)
+    assert (
+        targets[0].get("expr")
+        == 'tradingchassis_ops_lab_connectivity_readiness_state{run_id="$run_id"}'
+    )
+
+    mappings = readiness_panel.get("fieldConfig", {}).get("defaults", {}).get("mappings", [])
+    assert isinstance(mappings, list) and mappings
+    mapping_options = mappings[0].get("options", {})
+    assert mapping_options.get("0", {}).get("text") == "disabled"
+    assert mapping_options.get("1", {}).get("text") == "configured"
+    assert mapping_options.get("2", {}).get("text") == "missing_credentials"
+    assert mapping_options.get("3", {}).get("text") == "invalid_config"
+    assert mapping_options.get("-1", {}).get("text") == "unknown"
+
+
+def test_grafana_dashboard_excludes_alerting_probe_and_env_name_exposure() -> None:
+    dashboard_path = _repo_root() / _DASHBOARD_DIR / _DASHBOARD_FILENAME
+    dashboard = json.loads(dashboard_path.read_text(encoding="utf-8"))
+    panels = dashboard.get("panels", [])
+    assert isinstance(panels, list)
+
+    for panel in panels:
+        assert "alert" not in panel
+        assert "alertThreshold" not in panel
+
+    encoded = json.dumps(dashboard, sort_keys=True)
+    assert "tradingchassis_ops_lab_connectivity_probe_" not in encoded
+    assert "tradingchassis_ops_lab_connectivity_readiness_probe_result" not in encoded
+    assert "required_env" not in encoded
+    assert "optional_env" not in encoded
+    assert "present_env" not in encoded
+    assert "missing_env" not in encoded
+    assert "TRADINGCHASSIS_" not in encoded
