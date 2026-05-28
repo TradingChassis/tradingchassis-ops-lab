@@ -25,6 +25,7 @@ def _write_run_artifacts(
     metrics: dict,
     journal_lines: list[dict] | None = None,
     connectivity_readiness: dict | None = None,
+    connectivity_probe: dict | None = None,
 ) -> Path:
     run_dir = artifacts_root / run_id
     run_dir.mkdir(parents=True)
@@ -44,6 +45,11 @@ def _write_run_artifacts(
     if connectivity_readiness is not None:
         (run_dir / "connectivity_readiness.json").write_text(
             json.dumps(connectivity_readiness, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+    if connectivity_probe is not None:
+        (run_dir / "connectivity_probe.json").write_text(
+            json.dumps(connectivity_probe, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
     return run_dir
@@ -494,6 +500,253 @@ def test_malformed_connectivity_readiness_result_fails_clearly(tmp_path: Path) -
             "enabled": "yes",
             "missing_required_count": 0,
             "probe_performed": False,
+        },
+    )
+
+    with pytest.raises(RunArtifactsParseError):
+        export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+
+
+def test_connectivity_probe_metrics_emitted_when_artifact_exists(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "metrics-connectivity-probe"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "initialized",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+        connectivity_probe={
+            "schema_version": "v1",
+            "run_id": run_id,
+            "target": "local_fake_http",
+            "network_scope": "loopback_only",
+            "probe_performed": True,
+            "state": "probe_ok",
+            "http_status": 200,
+            "latency_ms": 12.3,
+            "error_class": None,
+            "url": "http://127.0.0.1:18081/health",
+            "response_body_stored": False,
+            "errors": [],
+        },
+    )
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+    labels = (
+        'run_id="metrics-connectivity-probe",mode="paper",engine="nautilus",'
+        'venue="binance_testnet",instrument="BTCUSDT",state="probe_ok",'
+        'network_scope="loopback_only"'
+    )
+    assert f"tradingchassis_ops_lab_connectivity_probe_state{{{labels}}} 1" in rendered
+    assert f"tradingchassis_ops_lab_connectivity_probe_performed{{{labels}}} 1" in rendered
+    assert (
+        f"tradingchassis_ops_lab_connectivity_probe_latency_seconds{{{labels}}} 0.0123" in rendered
+    )
+    assert f"tradingchassis_ops_lab_connectivity_probe_http_status{{{labels}}} 200" in rendered
+
+
+@pytest.mark.parametrize(
+    ("state", "expected_value"),
+    [
+        ("probe_ok", 1),
+        ("probe_http_error", 2),
+        ("probe_timeout", 3),
+        ("probe_unreachable", 4),
+        ("probe_unknown", -1),
+        ("unexpected_state", -1),
+    ],
+)
+def test_connectivity_probe_state_metric_encoding(
+    tmp_path: Path,
+    state: str,
+    expected_value: int,
+) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = f"metrics-connectivity-probe-state-{state}"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "initialized",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+        connectivity_probe={
+            "state": state,
+            "probe_performed": True,
+            "network_scope": "loopback_only",
+            "http_status": None,
+            "latency_ms": None,
+            "error_class": None,
+        },
+    )
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+    assert (
+        "tradingchassis_ops_lab_connectivity_probe_state"
+        f'{{run_id="{run_id}",mode="paper",engine="nautilus",venue="binance_testnet",'
+        f'instrument="BTCUSDT",state="{state}",network_scope="loopback_only"}} {expected_value}'
+    ) in rendered
+
+
+def test_connectivity_probe_metrics_omit_http_status_when_null(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "metrics-connectivity-probe-timeout"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "initialized",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+        connectivity_probe={
+            "state": "probe_timeout",
+            "probe_performed": True,
+            "network_scope": "loopback_only",
+            "http_status": None,
+            "latency_ms": 99.0,
+            "error_class": "timeout",
+        },
+    )
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+    assert "tradingchassis_ops_lab_connectivity_probe_http_status" not in rendered
+    assert "tradingchassis_ops_lab_connectivity_probe_latency_seconds" in rendered
+    assert 'error_class="timeout"' in rendered
+
+
+def test_connectivity_probe_performed_boolean_encoding(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "metrics-connectivity-probe-bool"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "initialized",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+        connectivity_probe={
+            "state": "probe_unknown",
+            "probe_performed": False,
+            "network_scope": "loopback_only",
+            "http_status": None,
+            "latency_ms": None,
+            "error_class": "unknown",
+        },
+    )
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+    assert "tradingchassis_ops_lab_connectivity_probe_performed{" in rendered
+    assert f'run_id="{run_id}"' in rendered
+    assert 'state="probe_unknown"' in rendered
+    assert 'network_scope="loopback_only"' in rendered
+    assert 'error_class="unknown"' in rendered
+    assert "} 0" in rendered
+
+
+def test_connectivity_probe_metric_text_excludes_url_response_and_errors(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "metrics-connectivity-probe-safety"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "initialized",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+        connectivity_probe={
+            "state": "probe_http_error",
+            "probe_performed": True,
+            "network_scope": "loopback_only",
+            "http_status": 500,
+            "latency_ms": 10.0,
+            "error_class": "http_error",
+            "url": "http://127.0.0.1:18081/health",
+            "response_body_stored": False,
+            "errors": ["dummy-sensitive-error"],
+        },
+    )
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+    assert "127.0.0.1:18081" not in rendered
+    assert "/health" not in rendered
+    assert "response_body_stored" not in rendered
+    assert "dummy-sensitive-error" not in rendered
+    assert "TRADINGCHASSIS_" not in rendered
+
+
+def test_connectivity_probe_metrics_omitted_when_artifact_is_absent(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "metrics-connectivity-probe-absent"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "backtest",
+            "engine": "nautilus",
+            "venue": "binance",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={
+            "is_placeholder": False,
+            "engine_executed": True,
+            "input_candles_count": 20,
+        },
+    )
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+    assert "tradingchassis_ops_lab_connectivity_probe_state" not in rendered
+    assert "tradingchassis_ops_lab_backtest_input_candles_total" in rendered
+
+
+def test_malformed_connectivity_probe_result_fails_clearly(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "metrics-connectivity-probe-malformed"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "initialized",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+        connectivity_probe={
+            "state": "probe_ok",
+            "probe_performed": "yes",
+            "network_scope": "loopback_only",
         },
     )
 

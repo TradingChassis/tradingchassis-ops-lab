@@ -37,6 +37,7 @@ class RunObservabilityArtifacts:
     journal_events: list[dict[str, Any]]
     reconciliation_result: dict[str, Any] | None
     connectivity_readiness: dict[str, Any] | None
+    connectivity_probe: dict[str, Any] | None
     include_journal: bool
 
 
@@ -114,6 +115,10 @@ def load_run_observability_artifacts(
         run_dir / "connectivity_readiness.json",
         field_name="connectivity_readiness.json",
     )
+    connectivity_probe = _load_json_optional(
+        run_dir / "connectivity_probe.json",
+        field_name="connectivity_probe.json",
+    )
 
     return RunObservabilityArtifacts(
         run_id=run_id,
@@ -123,6 +128,7 @@ def load_run_observability_artifacts(
         journal_events=journal_events,
         reconciliation_result=reconciliation_result,
         connectivity_readiness=connectivity_readiness,
+        connectivity_probe=connectivity_probe,
         include_journal=include_journal,
     )
 
@@ -217,6 +223,20 @@ def _connectivity_readiness_state_value(state: str) -> int:
     return -1
 
 
+def _connectivity_probe_state_value(state: str) -> int:
+    if state == "probe_ok":
+        return 1
+    if state == "probe_http_error":
+        return 2
+    if state == "probe_timeout":
+        return 3
+    if state == "probe_unreachable":
+        return 4
+    if state == "probe_unknown":
+        return -1
+    return -1
+
+
 def render_prometheus_text(artifacts: RunObservabilityArtifacts) -> str:
     """Render deterministic Prometheus text exposition from run artifacts."""
     metadata = artifacts.metadata
@@ -296,6 +316,72 @@ def render_prometheus_text(artifacts: RunObservabilityArtifacts) -> str:
             labels=readiness_labels,
             value=1 if probe_performed else 0,
         )
+
+    if artifacts.connectivity_probe is not None:
+        connectivity_probe = artifacts.connectivity_probe
+        state = connectivity_probe.get("state")
+        if not isinstance(state, str) or not state.strip():
+            raise RunArtifactsParseError(
+                "Malformed connectivity_probe.json: state must be a non-empty string."
+            )
+        probe_performed = connectivity_probe.get("probe_performed")
+        if not isinstance(probe_performed, bool):
+            raise RunArtifactsParseError(
+                "Malformed connectivity_probe.json: probe_performed must be boolean."
+            )
+        network_scope = connectivity_probe.get("network_scope")
+        if not isinstance(network_scope, str) or not network_scope.strip():
+            raise RunArtifactsParseError(
+                "Malformed connectivity_probe.json: network_scope must be a non-empty string."
+            )
+        error_class = connectivity_probe.get("error_class")
+        if error_class is not None and (
+            not isinstance(error_class, str) or not error_class.strip()
+        ):
+            raise RunArtifactsParseError(
+                "Malformed connectivity_probe.json: error_class must be null or non-empty string."
+            )
+        http_status = connectivity_probe.get("http_status")
+        if http_status is not None and not isinstance(http_status, int):
+            raise RunArtifactsParseError(
+                "Malformed connectivity_probe.json: http_status must be integer or null."
+            )
+        latency_ms = connectivity_probe.get("latency_ms")
+        if latency_ms is not None and not isinstance(latency_ms, (int, float)):
+            raise RunArtifactsParseError(
+                "Malformed connectivity_probe.json: latency_ms must be numeric or null."
+            )
+
+        probe_labels = core_labels + [("state", state), ("network_scope", network_scope)]
+        if isinstance(error_class, str):
+            probe_labels.append(("error_class", error_class))
+
+        _append_metric(
+            lines,
+            name="tradingchassis_ops_lab_connectivity_probe_state",
+            labels=probe_labels,
+            value=_connectivity_probe_state_value(state),
+        )
+        _append_metric(
+            lines,
+            name="tradingchassis_ops_lab_connectivity_probe_performed",
+            labels=probe_labels,
+            value=1 if probe_performed else 0,
+        )
+        if latency_ms is not None:
+            _append_metric(
+                lines,
+                name="tradingchassis_ops_lab_connectivity_probe_latency_seconds",
+                labels=probe_labels,
+                value=float(latency_ms) / 1000.0,
+            )
+        if http_status is not None:
+            _append_metric(
+                lines,
+                name="tradingchassis_ops_lab_connectivity_probe_http_status",
+                labels=probe_labels,
+                value=http_status,
+            )
 
     kill_switch_state = _kill_switch_state_from_metadata(metadata)
     if kill_switch_state is not None:

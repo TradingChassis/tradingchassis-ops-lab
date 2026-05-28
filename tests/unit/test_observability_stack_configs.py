@@ -162,10 +162,14 @@ def test_grafana_dashboard_queries_use_supported_metric_namespace() -> None:
 
     assert "tradingchassis_ops_lab_kill_switch_state" in referenced_metrics
     assert "tradingchassis_ops_lab_connectivity_readiness_state" in referenced_metrics
+    assert "tradingchassis_ops_lab_connectivity_probe_state" in referenced_metrics
+    assert "tradingchassis_ops_lab_connectivity_probe_latency_seconds" in referenced_metrics
     supported_metrics = {
         "tradingchassis_ops_lab_backtest_bars_processed_total",
         "tradingchassis_ops_lab_backtest_engine_duration_seconds",
         "tradingchassis_ops_lab_backtest_input_candles_total",
+        "tradingchassis_ops_lab_connectivity_probe_latency_seconds",
+        "tradingchassis_ops_lab_connectivity_probe_state",
         "tradingchassis_ops_lab_connectivity_readiness_state",
         "tradingchassis_ops_lab_journal_event_total",
         "tradingchassis_ops_lab_kill_switch_state",
@@ -207,6 +211,60 @@ def test_grafana_dashboard_contains_connectivity_readiness_panel() -> None:
     assert mapping_options.get("-1", {}).get("text") == "unknown"
 
 
+def test_grafana_dashboard_contains_connectivity_probe_state_panel() -> None:
+    dashboard_path = _repo_root() / _DASHBOARD_DIR / _DASHBOARD_FILENAME
+    dashboard = json.loads(dashboard_path.read_text(encoding="utf-8"))
+    panels = dashboard.get("panels", [])
+    assert isinstance(panels, list)
+
+    probe_state_panel = next(
+        (panel for panel in panels if panel.get("title") == "Connectivity Probe State"),
+        None,
+    )
+    assert probe_state_panel is not None, "Connectivity Probe State panel must exist."
+    assert probe_state_panel.get("type") == "stat"
+
+    targets = probe_state_panel.get("targets", [])
+    assert isinstance(targets, list)
+    assert targets and isinstance(targets[0], dict)
+    assert (
+        targets[0].get("expr")
+        == 'tradingchassis_ops_lab_connectivity_probe_state{run_id="$run_id"}'
+    )
+
+    mappings = probe_state_panel.get("fieldConfig", {}).get("defaults", {}).get("mappings", [])
+    assert isinstance(mappings, list) and mappings
+    mapping_options = mappings[0].get("options", {})
+    assert mapping_options.get("1", {}).get("text") == "probe_ok"
+    assert mapping_options.get("2", {}).get("text") == "probe_http_error"
+    assert mapping_options.get("3", {}).get("text") == "probe_timeout"
+    assert mapping_options.get("4", {}).get("text") == "probe_unreachable"
+    assert mapping_options.get("-1", {}).get("text") == "probe_unknown"
+
+
+def test_grafana_dashboard_contains_connectivity_probe_latency_panel() -> None:
+    dashboard_path = _repo_root() / _DASHBOARD_DIR / _DASHBOARD_FILENAME
+    dashboard = json.loads(dashboard_path.read_text(encoding="utf-8"))
+    panels = dashboard.get("panels", [])
+    assert isinstance(panels, list)
+
+    probe_latency_panel = next(
+        (panel for panel in panels if panel.get("title") == "Connectivity Probe Latency"),
+        None,
+    )
+    assert probe_latency_panel is not None, "Connectivity Probe Latency panel must exist."
+    assert probe_latency_panel.get("type") == "stat"
+    assert probe_latency_panel.get("fieldConfig", {}).get("defaults", {}).get("unit") == "s"
+
+    targets = probe_latency_panel.get("targets", [])
+    assert isinstance(targets, list)
+    assert targets and isinstance(targets[0], dict)
+    assert (
+        targets[0].get("expr")
+        == 'tradingchassis_ops_lab_connectivity_probe_latency_seconds{run_id="$run_id"}'
+    )
+
+
 def test_grafana_dashboard_excludes_alerting_probe_and_env_name_exposure() -> None:
     dashboard_path = _repo_root() / _DASHBOARD_DIR / _DASHBOARD_FILENAME
     dashboard = json.loads(dashboard_path.read_text(encoding="utf-8"))
@@ -218,8 +276,10 @@ def test_grafana_dashboard_excludes_alerting_probe_and_env_name_exposure() -> No
         assert "alertThreshold" not in panel
 
     encoded = json.dumps(dashboard, sort_keys=True)
-    assert "tradingchassis_ops_lab_connectivity_probe_" not in encoded
     assert "tradingchassis_ops_lab_connectivity_readiness_probe_result" not in encoded
+    assert "testnet.binance.vision" not in encoded
+    assert '"url"' not in encoded
+    assert '"response_body"' not in encoded
     assert "required_env" not in encoded
     assert "optional_env" not in encoded
     assert "present_env" not in encoded

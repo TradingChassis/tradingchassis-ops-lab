@@ -250,6 +250,106 @@
     },
     {
       "datasource": null,
+      "description": "Artifact-backed local loopback probe result from run artifacts. No exchange/testnet/live connectivity is used, no orders/account/balance/position behavior is performed, and response body is not stored.",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "options": {
+                "-1": {
+                  "text": "probe_unknown"
+                },
+                "1": {
+                  "text": "probe_ok"
+                },
+                "2": {
+                  "text": "probe_http_error"
+                },
+                "3": {
+                  "text": "probe_timeout"
+                },
+                "4": {
+                  "text": "probe_unreachable"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 13
+      },
+      "id": 9,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "tradingchassis_ops_lab_connectivity_probe_state{run_id=\"$run_id\"}",
+          "refId": "A"
+        }
+      ],
+      "title": "Connectivity Probe State",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "description": "Latency for local loopback read-only connectivity probe. Metric is absent when no connectivity_probe artifact exists.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 17
+      },
+      "id": 10,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "tradingchassis_ops_lab_connectivity_probe_latency_seconds{run_id=\"$run_id\"}",
+          "refId": "A"
+        }
+      ],
+      "title": "Connectivity Probe Latency",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "unit": "short"
