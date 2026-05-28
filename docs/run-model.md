@@ -57,6 +57,8 @@ Optional/additional outputs depending on commands:
 - `data.fingerprint` is stored for metadata/traceability and is not a runtime gate yet.
 - `observability.journal`, `observability.metrics`, and `observability.report` are stored in metadata;
   current lifecycle paths still write standard artifacts regardless of toggle values.
+- `connectivity_readiness` is a reserved local-only contract for readiness metadata (env var names only);
+  current implementation does not perform env checks or network calls.
 
 ## Concrete examples
 
