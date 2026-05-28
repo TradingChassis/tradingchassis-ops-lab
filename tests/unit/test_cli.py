@@ -31,6 +31,8 @@ def _write_valid_spec(
     run_id: str = "run-spec-cli-run",
     mode: str = "backtest",
     strategy_name: str = "ops_smoke_demo",
+    include_connectivity_readiness: bool = False,
+    connectivity_readiness_enabled: bool = True,
 ) -> None:
     spec = {
         "spec_version": "v1",
@@ -44,6 +46,20 @@ def _write_valid_spec(
         "risk": {"profile": "tiny"},
         "observability": {"journal": True, "metrics": False, "report": False},
     }
+    if include_connectivity_readiness:
+        spec["connectivity_readiness"] = {
+            "enabled": connectivity_readiness_enabled,
+            "target": "paper_testnet_probe",
+            "venue": "binance",
+            "credential_placeholders": {
+                "required_env": [
+                    "TRADINGCHASSIS_PAPER_API_KEY",
+                    "TRADINGCHASSIS_PAPER_API_SECRET",
+                ],
+                "optional_env": ["TRADINGCHASSIS_PAPER_PASSPHRASE"],
+            },
+            "notes": "Local readiness contract only; no network calls.",
+        }
     path.write_text(yaml.safe_dump(spec), encoding="utf-8")
 
 
@@ -100,6 +116,194 @@ def test_tc_run_init_fails_for_duplicate_run_id(tmp_path: Path, monkeypatch) -> 
     assert first.exit_code == 0
     assert second.exit_code != 0
     assert "Run artifacts already exist" in second.stderr
+
+
+def test_tc_connectivity_help_exits_successfully() -> None:
+    """Connectivity command group help output is available."""
+    result = runner.invoke(app, ["connectivity", "--help"])
+    assert result.exit_code == 0
+    assert "readiness" in result.stdout
+
+
+def test_tc_connectivity_readiness_help_exits_successfully() -> None:
+    """Connectivity readiness help output is available."""
+    result = runner.invoke(app, ["connectivity", "readiness", "--help"])
+    assert result.exit_code == 0
+    assert "local env placeholder readiness" in result.stdout.lower()
+
+
+def test_tc_connectivity_readiness_requires_initialized_artifacts(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Connectivity readiness fails clearly if run artifacts are missing."""
+    monkeypatch.chdir(tmp_path)
+    spec_path = tmp_path / "connectivity-missing-init.yaml"
+    _write_valid_spec(
+        spec_path,
+        run_id="connectivity-missing-init",
+        mode="paper",
+        include_connectivity_readiness=True,
+    )
+
+    result = runner.invoke(app, ["connectivity", "readiness", "--spec", str(spec_path)])
+    assert result.exit_code != 0
+    assert "Run artifacts directory not found" in result.stderr
+    assert "tc run init --spec <path>" in result.stderr
+
+
+def test_tc_connectivity_readiness_missing_credentials_writes_artifacts(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Connectivity readiness writes artifact/metadata/journal for missing credentials."""
+    monkeypatch.chdir(tmp_path)
+    spec_path = tmp_path / "connectivity-missing-creds.yaml"
+    run_id = "connectivity-missing-creds"
+    _write_valid_spec(
+        spec_path,
+        run_id=run_id,
+        mode="paper",
+        include_connectivity_readiness=True,
+    )
+
+    init_result = runner.invoke(app, ["run", "init", "--spec", str(spec_path)])
+    assert init_result.exit_code == 0
+
+    result = runner.invoke(app, ["connectivity", "readiness", "--spec", str(spec_path)])
+    assert result.exit_code == 0
+    assert f"run_id={run_id}" in result.stdout
+    assert "state=missing_credentials" in result.stdout
+    assert "probe_performed=false" in result.stdout
+
+    run_dir = tmp_path / "artifacts" / "runs" / run_id
+    readiness_path = run_dir / "connectivity_readiness.json"
+    assert readiness_path.is_file()
+    readiness_payload = json.loads(readiness_path.read_text(encoding="utf-8"))
+    assert readiness_payload["state"] == "missing_credentials"
+    assert readiness_payload["probe_performed"] is False
+    assert readiness_payload["probe_deferred_reason"] == "local_only_no_network"
+    assert readiness_payload["present_env"] == []
+    assert readiness_payload["missing_required_count"] == 2
+
+    metadata = json.loads((run_dir / "metadata.json").read_text(encoding="utf-8"))
+    assert metadata["connectivity_readiness"]["state"] == "missing_credentials"
+    assert metadata["connectivity_readiness"]["enabled"] is True
+    assert metadata["connectivity_readiness"]["probe_performed"] is False
+    assert metadata["connectivity_readiness"]["artifact"] == "connectivity_readiness.json"
+
+    journal_lines = (run_dir / "journal.jsonl").read_text(encoding="utf-8").splitlines()
+    assert len(journal_lines) == 2
+    journal_payload = json.loads(journal_lines[-1])
+    assert journal_payload["event"] == "connectivity_readiness_evaluated"
+    assert journal_payload["state"] == "missing_credentials"
+    assert journal_payload["enabled"] is True
+    assert journal_payload["required_env_count"] == 2
+    assert journal_payload["missing_required_count"] == 2
+    assert journal_payload["probe_performed"] is False
+
+
+def test_tc_connectivity_readiness_updates_existing_report_section(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Connectivity readiness appends concise section when report already exists."""
+    monkeypatch.chdir(tmp_path)
+    spec_path = tmp_path / "connectivity-report.yaml"
+    run_id = "connectivity-report"
+    _write_valid_spec(
+        spec_path,
+        run_id=run_id,
+        mode="paper",
+        include_connectivity_readiness=True,
+    )
+
+    init_result = runner.invoke(app, ["run", "init", "--spec", str(spec_path)])
+    assert init_result.exit_code == 0
+    run_dir = tmp_path / "artifacts" / "runs" / run_id
+    (run_dir / "report.md").write_text("# Existing report\n", encoding="utf-8")
+
+    result = runner.invoke(app, ["connectivity", "readiness", "--spec", str(spec_path)])
+    assert result.exit_code == 0
+
+    report = (run_dir / "report.md").read_text(encoding="utf-8")
+    assert "## Connectivity readiness" in report
+    assert "state: missing_credentials" in report
+    assert "No network calls were performed." in report
+
+
+def test_tc_connectivity_readiness_configured_does_not_leak_env_values(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Connectivity readiness stays local-only and never exposes env values."""
+    monkeypatch.chdir(tmp_path)
+    spec_path = tmp_path / "connectivity-configured.yaml"
+    run_id = "connectivity-configured"
+    _write_valid_spec(
+        spec_path,
+        run_id=run_id,
+        mode="paper",
+        include_connectivity_readiness=True,
+    )
+
+    init_result = runner.invoke(app, ["run", "init", "--spec", str(spec_path)])
+    assert init_result.exit_code == 0
+
+    secret_key = "dummy-secret-key"
+    secret_secret = "dummy-secret-secret"
+    result = runner.invoke(
+        app,
+        ["connectivity", "readiness", "--spec", str(spec_path)],
+        env={
+            "TRADINGCHASSIS_PAPER_API_KEY": secret_key,
+            "TRADINGCHASSIS_PAPER_API_SECRET": secret_secret,
+            "TRADINGCHASSIS_PAPER_PASSPHRASE": "dummy-passphrase",
+        },
+    )
+    assert result.exit_code == 0
+    assert "state=configured" in result.stdout
+    assert secret_key not in result.stdout
+    assert secret_secret not in result.stdout
+
+    run_dir = tmp_path / "artifacts" / "runs" / run_id
+    readiness_payload = json.loads(
+        (run_dir / "connectivity_readiness.json").read_text(encoding="utf-8")
+    )
+    assert readiness_payload["state"] == "configured"
+    rendered = json.dumps(readiness_payload, sort_keys=True)
+    assert secret_key not in rendered
+    assert secret_secret not in rendered
+
+
+def test_tc_connectivity_readiness_disabled_exits_zero(tmp_path: Path, monkeypatch) -> None:
+    """Connectivity readiness exits zero with disabled state."""
+    monkeypatch.chdir(tmp_path)
+    spec_path = tmp_path / "connectivity-disabled.yaml"
+    run_id = "connectivity-disabled"
+    _write_valid_spec(
+        spec_path,
+        run_id=run_id,
+        mode="paper",
+        include_connectivity_readiness=False,
+    )
+
+    init_result = runner.invoke(app, ["run", "init", "--spec", str(spec_path)])
+    assert init_result.exit_code == 0
+
+    result = runner.invoke(app, ["connectivity", "readiness", "--spec", str(spec_path)])
+    assert result.exit_code == 0
+    assert "state=disabled" in result.stdout
+
+
+def test_tc_connectivity_readiness_invalid_spec_exits_non_zero(tmp_path: Path, monkeypatch) -> None:
+    """Connectivity readiness returns non-zero when spec validation fails."""
+    monkeypatch.chdir(tmp_path)
+    spec_path = tmp_path / "connectivity-invalid-spec.yaml"
+    spec_path.write_text(
+        yaml.safe_dump({"spec_version": "v1", "run_id": "x", "mode": "invalid"}),
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(app, ["connectivity", "readiness", "--spec", str(spec_path)])
+    assert result.exit_code != 0
+    assert "Spec validation failed" in result.stderr
 
 
 def test_tc_run_backtest_creates_lifecycle_artifacts(tmp_path: Path, monkeypatch) -> None:

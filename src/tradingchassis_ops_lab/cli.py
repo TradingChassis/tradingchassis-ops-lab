@@ -7,6 +7,14 @@ from pathlib import Path
 import typer
 
 from tradingchassis_ops_lab import __version__
+from tradingchassis_ops_lab.connectivity.readiness import (
+    ConnectivityReadinessArtifactsError,
+    evaluate_connectivity_readiness,
+    patch_connectivity_readiness_section,
+    update_connectivity_readiness_metadata_summary,
+    write_connectivity_readiness_artifact,
+    write_connectivity_readiness_journal_event,
+)
 from tradingchassis_ops_lab.data.fingerprint import (
     PreparedDatasetNotFoundError,
     fingerprint_dataset,
@@ -31,6 +39,7 @@ from tradingchassis_ops_lab.reconciliation.checks import (
 )
 from tradingchassis_ops_lab.runs.artifacts import (
     RunArtifactsAlreadyExistError,
+    get_run_artifacts_dir,
     initialize_run_artifacts,
 )
 from tradingchassis_ops_lab.runs.backtest import InvalidBacktestModeError, run_backtest_lifecycle
@@ -57,6 +66,7 @@ metrics_app = typer.Typer(
 kill_app = typer.Typer(help="File-based kill switch safety commands.")
 reconcile_app = typer.Typer(help="File-based reconciliation commands.")
 drill_app = typer.Typer(help="Deterministic local failure drills.")
+connectivity_app = typer.Typer(help="Local-only connectivity readiness commands.")
 app.add_typer(spec_app, name="spec")
 app.add_typer(run_app, name="run")
 app.add_typer(data_app, name="data")
@@ -64,6 +74,7 @@ app.add_typer(metrics_app, name="metrics")
 app.add_typer(kill_app, name="kill")
 app.add_typer(reconcile_app, name="reconcile")
 app.add_typer(drill_app, name="drill")
+app.add_typer(connectivity_app, name="connectivity")
 
 
 @app.callback()
@@ -169,6 +180,77 @@ def run_paper(spec: Path = typer.Option(..., "--spec", help="Path to run spec YA
     typer.echo(f"Paper lifecycle artifacts at {artifacts_dir.resolve()}")
     typer.echo(f"config_sha256={config_sha256}")
     typer.echo(f"status={status}")
+
+
+@connectivity_app.command("readiness")
+def connectivity_readiness(
+    spec: Path = typer.Option(..., "--spec", help="Path to run spec YAML."),
+) -> None:
+    """Evaluate local env placeholder readiness and persist run readiness artifact."""
+    try:
+        parsed = load_run_spec(spec)
+    except RunSpecLoadError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+
+    artifacts_root = _resolve_artifacts_root()
+    run_dir = get_run_artifacts_dir(run_id=parsed.run_id, artifacts_root=artifacts_root)
+    if not run_dir.is_dir():
+        typer.secho(
+            (
+                f"Run artifacts directory not found: {run_dir}. "
+                "Initialize artifacts first with `tc run init --spec <path>`."
+            ),
+            fg=typer.colors.RED,
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    metadata_path = run_dir / "metadata.json"
+    journal_path = run_dir / "journal.jsonl"
+    if not metadata_path.is_file():
+        typer.secho(
+            (
+                f"metadata.json not found at {metadata_path}. "
+                "Re-initialize run artifacts with `tc run init --spec <path>`."
+            ),
+            fg=typer.colors.RED,
+            err=True,
+        )
+        raise typer.Exit(1)
+    if not journal_path.is_file():
+        typer.secho(
+            (
+                f"journal.jsonl not found at {journal_path}. "
+                "Re-initialize run artifacts with `tc run init --spec <path>`."
+            ),
+            fg=typer.colors.RED,
+            err=True,
+        )
+        raise typer.Exit(1)
+
+    try:
+        payload = evaluate_connectivity_readiness(parsed)
+        artifact_path = run_dir / "connectivity_readiness.json"
+        write_connectivity_readiness_artifact(artifact_path, payload)
+        update_connectivity_readiness_metadata_summary(
+            metadata_path,
+            state=payload["state"],
+            enabled=bool(payload["enabled"]),
+        )
+        write_connectivity_readiness_journal_event(journal_path, payload)
+        patch_connectivity_readiness_section(run_dir / "report.md", payload)
+    except ConnectivityReadinessArtifactsError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+    except Exception as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+
+    typer.echo(f"run_id={parsed.run_id}")
+    typer.echo(f"state={payload['state']}")
+    typer.echo(f"artifact_path={artifact_path.resolve()}")
+    typer.echo("probe_performed=false")
 
 
 def _resolve_data_root() -> Path:
