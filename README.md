@@ -18,13 +18,13 @@ Local workflows supported today:
 | Connectivity readiness | Evaluate local env placeholder presence and write deterministic readiness artifacts |
 | Connectivity probe | Probe a local loopback fake HTTP endpoint and record deterministic probe artifacts |
 | Artifacts & reports | Generate per-run artifacts, reports, and reconciliation checks |
-| Metrics | Export run metrics and serve them for scraping |
-| Observability | Run local Prometheus + Grafana against artifact-backed metrics |
+| Metrics | Serve artifact-backed metrics for Prometheus; optionally export for inspection |
+| Observability | Run local Prometheus + Grafana against `tc metrics serve` |
 | Runtime safety | File-based kill switch; paper lifecycle blocks when kill switch is active |
 
 Command walkthrough: [`docs/demo-flow.md`](docs/demo-flow.md). Run model and specs: [`docs/run-model.md`](docs/run-model.md).
 
-Connectivity readiness is local-only preflight: `tc connectivity readiness --spec <path>` checks env var placeholder presence (names only), writes `connectivity_readiness.json`, updates metadata/journal (and report section if present), and performs no network calls. It does not validate credentials against providers and does not imply exchange/testnet/live connectivity. In current examples, `binance` and `binance_testnet` are RunSpec venue labels only; they do not indicate an active external connection. Readiness metrics are available through `tc metrics export` once the run has the normal exporter artifacts (including `metrics.json`).
+Connectivity readiness is local-only preflight: `tc connectivity readiness --spec <path>` checks env var placeholder presence (names only), writes `connectivity_readiness.json`, updates metadata/journal (and report section if present), and performs no network calls. It does not validate credentials against providers and does not imply exchange/testnet/live connectivity. In current examples, `binance` and `binance_testnet` are RunSpec venue labels only; they do not indicate an active external connection. Readiness metrics are available through `tc metrics serve` (and optionally `tc metrics export`) once the run has the normal exporter artifacts (including `metrics.json`).
 
 Connectivity probe is local-only reachability check: `tc connectivity probe --spec <path> --url http://127.0.0.1:<port>/health` performs a read-only HTTP `GET` to a loopback URL, writes `connectivity_probe.json`, patches metadata, appends a journal event, and patches report section if report exists. It does not use external exchange/testnet/live connectivity, does not submit orders, does not fetch account/balance/position data, and does not store response bodies. Probe metrics and Grafana panels are artifact-backed and visible when normal metrics exporter prerequisites are present (including `metrics.json`).
 
@@ -47,7 +47,6 @@ scripts/check.sh
 tc data prepare --dataset btcusdt-sample
 tc data fingerprint --dataset btcusdt-sample
 tc run backtest --spec examples/configs/btcusdt_backtest.yaml
-tc metrics export --run-id 2026-05-20-btcusdt-backtest-001
 ```
 
 More detail: [`docs/quickstart.md`](docs/quickstart.md), [`docs/demo-flow.md`](docs/demo-flow.md), and [`docs/run-model.md`](docs/run-model.md).
@@ -63,17 +62,19 @@ More detail: [`docs/quickstart.md`](docs/quickstart.md), [`docs/demo-flow.md`](d
 
 ## Local observability stack
 
-Run the local metrics endpoint (inside the Dev Container or host shell):
+For Prometheus/Grafana, run the metrics server (inside the Dev Container or host shell):
 
 ```bash
 tc metrics serve --artifacts-root artifacts/runs --host 0.0.0.0 --port 8000
 ```
 
-Start local Prometheus + Grafana:
+Then start the local observability stack:
 
 ```bash
 docker compose -f deploy/observability/docker-compose.yml up
 ```
+
+`tc metrics export --run-id <run_id>` is optional and only renders a one-time Prometheus text snapshot for debugging. It is not required before `tc metrics serve`.
 
 Default verification URLs:
 

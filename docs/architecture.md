@@ -65,6 +65,7 @@ flowchart LR
 - Reports summarize run outcomes and key checks
 - Observability hooks expose basic signals for health and run progress
 - Designed for practical inspection, not full production telemetry
+- `tc metrics export` and `tc metrics serve` use the same artifact-backed renderer; `export` is a one-shot inspection path, and `serve` is the HTTP path (`/metrics`) scraped by Prometheus for Grafana
 - Readiness metrics are artifact-backed from `connectivity_readiness.json`; they do not perform network probes
 - Probe metrics are artifact-backed from `connectivity_probe.json`; probe execution remains local loopback-only and read-only
 - Static dashboard definition: `dashboards/grafana/tradingchassis-ops-lab-run-observability.json`

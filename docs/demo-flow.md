@@ -64,7 +64,9 @@ Inspect the run directory:
 Confirm the scenario execution facts are present and consistent (`strategy_registered`,
 `bars_seen`, deterministic action, `orders_submitted`, `fills_count`).
 
-## 5) Export and verify backtest scenario Prometheus metrics
+## 5) Optional: inspect backtest scenario Prometheus metrics (debug)
+
+This step is optional. It is not required for Grafana or Prometheus — use `tc metrics serve` (section 10) for the dashboard workflow.
 
 ```bash
 tc metrics export --run-id 2026-05-20-btcusdt-backtest-001
@@ -90,7 +92,9 @@ Expected artifact location:
 
 - `artifacts/runs/2026-05-20-btcusdt-paper-001/`
 
-## 7) Export paper metrics (optional file output)
+## 7) Optional: inspect paper metrics (debug)
+
+Optional one-shot inspection only — not a prerequisite for `tc metrics serve` or Grafana.
 
 ```bash
 tc metrics export --run-id 2026-05-20-btcusdt-backtest-001
@@ -144,10 +148,10 @@ Expected result:
 
 Readiness metrics caveat:
 
-- `tc metrics export` reads run artifacts and requires the usual `metrics.json` artifact.
+- The artifact-backed metrics renderer (`tc metrics serve` and `tc metrics export`) requires the usual `metrics.json` artifact.
 - A readiness-only sequence (`tc run init` + `tc connectivity readiness`) does not create `metrics.json`.
 - For readiness-only runs, use artifact inspection as the primary validation path.
-- Export readiness metrics after a lifecycle that creates `metrics.json`; creating a minimal `metrics.json` is test/dev-only, not the default user workflow.
+- Readiness metrics appear in Prometheus/Grafana after a lifecycle that creates `metrics.json`; creating a minimal `metrics.json` is test/dev-only, not the default user workflow.
 
 ## 9) Connectivity probe demo (local loopback only)
 
@@ -195,14 +199,16 @@ Probe boundaries:
 
 Probe metrics caveat:
 
-- `tc metrics export` requires `metrics.json`.
+- The artifact-backed metrics renderer (`tc metrics serve` and `tc metrics export`) requires `metrics.json`.
 - An init+probe-only sequence does not create `metrics.json`.
 - For probe-only runs, artifact inspection is the primary validation path.
-- For metrics/Grafana demo, use a run that already has `metrics.json` (or a minimal test/dev fixture).
+- For the Grafana demo, use a run that already has `metrics.json` (or a minimal test/dev fixture) and start `tc metrics serve` — no prior `export` is needed.
 
 ## 10) Local observability stack demo
 
-Artifact-backed run outputs under `artifacts/runs/<run_id>/` are rendered as Prometheus text by `tc metrics serve`. Prometheus scrapes that local endpoint, and Grafana visualizes run and operational state from those scraped metrics.
+Run artifacts → `tc metrics serve` → Prometheus → Grafana. Sections 5 and 7 (`tc metrics export`) are optional debug checks only; they do not prepare metrics for the dashboard.
+
+Artifact-backed run outputs under `artifacts/runs/<run_id>/` are rendered as Prometheus text by `tc metrics serve`. Prometheus scrapes that local `/metrics` endpoint, and Grafana visualizes run and operational state from those scraped metrics.
 
 Terminal 1:
 

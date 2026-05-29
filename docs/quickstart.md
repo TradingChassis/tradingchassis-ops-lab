@@ -72,6 +72,8 @@ Overrides:
 - `TC_GRAFANA_PORT`
 - `TC_METRICS_TARGET`
 
+You do not need to run `tc metrics export` for Grafana. Use `export` only when you want to inspect the generated Prometheus text directly.
+
 For the complete operational walkthrough (paper skeleton, kill switch, reconciliation, drills), continue to [Demo Flow](demo-flow.md).
 
 ## Connectivity readiness quick path (local-only)
@@ -132,6 +134,6 @@ Probe safety boundaries:
 
 Probe metrics caveat:
 
-- `tc metrics export` still requires `metrics.json`.
+- The artifact-backed metrics renderer (used by `tc metrics serve` and `tc metrics export`) still requires `metrics.json`.
 - A probe-only sequence (`tc run init` + `tc connectivity probe`) does not create `metrics.json`.
 - For probe-only runs, use artifact inspection as the primary validation path.

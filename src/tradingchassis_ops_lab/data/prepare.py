@@ -1,4 +1,4 @@
-"""Local dataset preparation helpers for Slice 3."""
+"""Local dataset preparation helpers."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ _FIXTURES_ROOT = _REPO_ROOT / "fixtures" / "datasets"
 
 
 class UnsupportedDatasetError(ValueError):
-    """Raised when a dataset is not supported in this slice."""
+    """Raised when a dataset is not supported."""
 
 
 @dataclass(frozen=True)

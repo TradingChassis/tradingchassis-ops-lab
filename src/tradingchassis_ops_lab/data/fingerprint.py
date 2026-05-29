@@ -1,4 +1,4 @@
-"""Deterministic local dataset fingerprinting for Slice 3."""
+"""Deterministic local dataset fingerprinting."""
 
 from __future__ import annotations
 

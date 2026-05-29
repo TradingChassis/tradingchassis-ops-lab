@@ -1,1 +1,1 @@
-"""Data pipeline placeholders for future slices."""
+"""Data pipeline placeholders for future versions."""

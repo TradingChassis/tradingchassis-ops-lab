@@ -14,6 +14,8 @@ If `tc` is not on your PATH, re-run the command above from the repository root.
 
 The metrics server runs inside the Dev Container. Prometheus and Grafana can be started with Compose either inside the Dev Container (Workflow A) or on the host (Workflow B).
 
+For Grafana/Prometheus, use `tc metrics serve`. `tc metrics export` is optional and only renders a one-time Prometheus text snapshot for debugging — it is not required before `serve`.
+
 ## Workflow A: Compose available inside Dev Container (Dev-Container-first)
 
 Terminal 1 (inside Dev Container):

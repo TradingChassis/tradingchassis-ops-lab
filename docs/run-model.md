@@ -48,7 +48,7 @@ Optional/additional outputs depending on commands:
 - Backtest currently supports one built-in scenario mapping: `ops_smoke_demo`.
 - The backtest path registers the built-in Nautilus strategy for `ops_smoke_demo`.
 - Scenario execution records deterministic operational counters (`strategy_registered`, `bars_seen`, `deterministic_action_triggered`, `orders_submitted`, `fills_count`) in `metadata.json`, `metrics.json`, `journal.jsonl`, and `report.md`.
-- Scenario metrics export is artifact-backed via `tc metrics export --run-id <run_id>`.
+- Scenario metrics are artifact-backed: `tc metrics export --run-id <run_id>` renders a one-shot Prometheus text snapshot; `tc metrics serve` exposes the same renderer over HTTP for Prometheus/Grafana.
 - `ops_smoke_demo` does not submit orders (`orders_submitted = 0`, `fills_count = 0`).
 - No PnL/Sharpe/returns/profitability/alpha performance reporting is included in the current scenario contract.
 - Current runs do not dynamically load custom strategy modules from config.
@@ -83,7 +83,15 @@ Optional/additional outputs depending on commands:
   - `tradingchassis_ops_lab_connectivity_probe_performed`
   - `tradingchassis_ops_lab_connectivity_probe_latency_seconds`
   - `tradingchassis_ops_lab_connectivity_probe_http_status`
-- Metrics caveat remains: `tc metrics export` requires `metrics.json`; probe-only init+probe runs do not create `metrics.json`.
+- Metrics caveat remains: the artifact-backed metrics renderer requires `metrics.json` (applies to both `tc metrics export` and `tc metrics serve`); probe-only init+probe runs do not create `metrics.json`.
+
+## Metrics serve vs export
+
+`tc metrics export` and `tc metrics serve` use the same artifact-backed renderer.
+
+- `export` is a one-shot inspection path (stdout or file).
+- `serve` is the HTTP path used by Prometheus/Grafana (`/metrics`).
+- `serve` does not require a prior `export`; `export` does not prepare metrics for `serve`.
 
 ## Concrete examples
 

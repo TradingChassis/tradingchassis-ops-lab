@@ -74,7 +74,7 @@ Scope reminder:
 ## Case 8: Grafana probe panels show no data
 
 - **Symptom:** `Connectivity Probe State` or `Connectivity Probe Latency` panels are empty.
-- **Likely cause:** Missing scrape data for selected run or missing probe metrics due to `metrics.json` prerequisite.
-- **Check command:** `tc metrics export --run-id <run_id>`
-- **Safe next action:** verify probe artifact + metrics export output first, then confirm selected `run_id` in Grafana.
+- **Likely cause:** `tc metrics serve` is not running, Prometheus is not scraping `/metrics`, missing scrape data for selected run, or missing probe metrics due to `metrics.json` prerequisite.
+- **Check command:** confirm `tc metrics serve` is up; optionally `tc metrics export --run-id <run_id>` to inspect rendered Prometheus text
+- **Safe next action:** verify metrics serve + Prometheus target health, probe artifact presence, and selected `run_id` in Grafana.
 - **What not to do:** Do not switch to live/external endpoints to populate panels.
