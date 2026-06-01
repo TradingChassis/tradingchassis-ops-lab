@@ -1556,6 +1556,7 @@ def test_tc_metrics_serve_help_exits_successfully() -> None:
     result = runner.invoke(app, ["metrics", "serve", "--help"])
     assert result.exit_code == 0
     assert "artifact-derived metrics" in result.stdout
+    assert "--evidence-root" in result.stdout
 
 
 def test_tc_kill_activate_writes_runtime_files(tmp_path: Path, monkeypatch) -> None:

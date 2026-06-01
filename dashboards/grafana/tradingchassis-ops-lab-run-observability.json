@@ -350,6 +350,85 @@
     },
     {
       "datasource": null,
+      "description": "Aggregate artifact-backed backtest-vs-paper operational evidence status across artifacts/evidence. This is operational evidence only, not strategy performance.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 17
+      },
+      "id": 11,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "tradingchassis_ops_lab_evidence_backtest_vs_paper_status_total",
+          "legendFormat": "{{comparison_status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Backtest vs Paper Evidence Status",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "description": "Aggregate known-gap count from evidence artifacts. Non-zero is expected in this local operational scope.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 17
+      },
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "tradingchassis_ops_lab_evidence_known_gaps_total",
+          "refId": "A"
+        }
+      ],
+      "title": "Evidence Known Gaps",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
       "fieldConfig": {
         "defaults": {
           "unit": "short"

@@ -14,16 +14,20 @@ PROMETHEUS_TEXT_CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"
 def build_metrics_renderer(
     *,
     artifacts_root: Path,
+    evidence_root: Path,
     run_id: str | None,
     include_journal: bool = True,
+    include_evidence: bool = True,
 ) -> Callable[[], str]:
     """Build a no-argument renderer used by the HTTP request handler."""
 
     def _render() -> str:
         return render_metrics_text(
             artifacts_root=artifacts_root,
+            evidence_root=evidence_root,
             run_id=run_id,
             include_journal=include_journal,
+            include_evidence=include_evidence,
         )
 
     return _render
@@ -59,16 +63,20 @@ def make_metrics_handler(render_metrics: Callable[[], str]) -> type[BaseHTTPRequ
 def serve_metrics(
     *,
     artifacts_root: Path,
+    evidence_root: Path = Path("artifacts/evidence"),
     host: str = "127.0.0.1",
     port: int = 8000,
     run_id: str | None = None,
     include_journal: bool = True,
+    include_evidence: bool = True,
 ) -> None:
     """Serve local artifact-derived Prometheus metrics over HTTP."""
     renderer = build_metrics_renderer(
         artifacts_root=artifacts_root,
+        evidence_root=evidence_root,
         run_id=run_id,
         include_journal=include_journal,
+        include_evidence=include_evidence,
     )
     handler_class = make_metrics_handler(renderer)
     with ThreadingHTTPServer((host, port), handler_class) as server:

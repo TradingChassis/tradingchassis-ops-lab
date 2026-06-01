@@ -563,6 +563,11 @@ def metrics_serve(
         "--run-id",
         help="Optional run ID filter. If omitted, serves all discovered runs.",
     ),
+    evidence_root: Path = typer.Option(
+        Path("artifacts/evidence"),
+        "--evidence-root",
+        help="Root directory containing evidence artifact subdirectories.",
+    ),
 ) -> None:
     """Serve local artifact-derived metrics at /metrics for local scraping."""
     target = f"http://{host}:{port}/metrics"
@@ -574,6 +579,7 @@ def metrics_serve(
     try:
         serve_metrics(
             artifacts_root=artifacts_root,
+            evidence_root=evidence_root,
             host=host,
             port=port,
             run_id=run_id,
