@@ -36,8 +36,18 @@ def _start_server(handler_class: type) -> tuple[ThreadingHTTPServer, threading.T
     return server, thread
 
 
+def _write_evidence_artifact(*, evidence_root: Path, pair_id: str, payload: dict) -> None:
+    pair_dir = evidence_root / pair_id
+    pair_dir.mkdir(parents=True)
+    (pair_dir / "backtest_vs_paper_evidence.json").write_text(
+        json.dumps(payload),
+        encoding="utf-8",
+    )
+
+
 def test_metrics_handler_returns_prometheus_text_for_metrics_endpoint(tmp_path: Path) -> None:
     artifacts_root = tmp_path / "artifacts" / "runs"
+    evidence_root = tmp_path / "artifacts" / "evidence"
     _write_run_artifacts(
         artifacts_root=artifacts_root,
         run_id="serve-metrics",
@@ -53,7 +63,23 @@ def test_metrics_handler_returns_prometheus_text_for_metrics_endpoint(tmp_path: 
         },
         metrics={"is_placeholder": False, "engine_executed": True, "input_candles_count": 20},
     )
-    renderer = build_metrics_renderer(artifacts_root=artifacts_root, run_id=None)
+    _write_evidence_artifact(
+        evidence_root=evidence_root,
+        pair_id="bt-1__paper-1",
+        payload={
+            "schema_version": "v1",
+            "comparison_status": "differences_expected",
+            "known_gaps": [],
+            "artifact_presence": {"backtest": {}, "paper": {}},
+            "journal_summary": {"shared_events": []},
+            "compared_fields": [],
+        },
+    )
+    renderer = build_metrics_renderer(
+        artifacts_root=artifacts_root,
+        evidence_root=evidence_root,
+        run_id=None,
+    )
     handler_class = make_metrics_handler(renderer)
     server, thread = _start_server(handler_class)
 
@@ -65,6 +91,7 @@ def test_metrics_handler_returns_prometheus_text_for_metrics_endpoint(tmp_path: 
             assert response.headers["Content-Type"] == PROMETHEUS_TEXT_CONTENT_TYPE
             assert "tradingchassis_ops_lab_run_info{" in body
             assert 'run_id="serve-metrics"' in body
+            assert "tradingchassis_ops_lab_evidence_" in body
     finally:
         server.shutdown()
         server.server_close()

@@ -18,7 +18,8 @@ Local workflows supported today:
 | Connectivity readiness | Evaluate local env placeholder presence and write deterministic readiness artifacts |
 | Connectivity probe | Probe a local loopback fake HTTP endpoint and record deterministic probe artifacts |
 | Artifacts & reports | Generate per-run artifacts, reports, and reconciliation checks |
-| Metrics | Serve artifact-backed metrics for Prometheus; optionally export for inspection |
+| Evidence comparison | Create artifact-backed backtest vs paper operational evidence (`tc evidence compare`) |
+| Metrics | Serve artifact-backed metrics for Prometheus/Grafana; optionally export for inspection |
 | Observability | Run local Prometheus + Grafana against `tc metrics serve` |
 | Runtime safety | File-based kill switch; paper lifecycle blocks when kill switch is active |
 
@@ -38,6 +39,7 @@ Connectivity probe is local-only reachability check: `tc connectivity probe --sp
 | `0.4.0` | Local backtest scenario / strategy contract (`ops_smoke_demo`) |
 | `0.5.0` | Connectivity readiness contract, local evaluation, and artifact-backed readiness metrics |
 | `0.6.0` | Local loopback connectivity probe contract, artifact-backed probe metrics, and dashboard visibility |
+| `0.7.0` | Backtest vs paper operational evidence artifacts, aggregate evidence metrics, and dashboard visibility |
 
 ## Quickstart summary
 
@@ -47,9 +49,19 @@ scripts/check.sh
 tc data prepare --dataset btcusdt-sample
 tc data fingerprint --dataset btcusdt-sample
 tc run backtest --spec examples/configs/btcusdt_backtest.yaml
+tc run paper --spec examples/configs/btcusdt_paper.yaml
+tc evidence compare --backtest-run-id <backtest_run_id> --paper-run-id <paper_run_id>
 ```
 
 More detail: [`docs/quickstart.md`](docs/quickstart.md), [`docs/demo-flow.md`](docs/demo-flow.md), and [`docs/run-model.md`](docs/run-model.md).
+
+Backtest vs paper evidence outputs are written under `artifacts/evidence/<backtest_run_id>__<paper_run_id>/`:
+
+- `backtest_vs_paper_evidence.json`
+- `backtest_vs_paper_evidence.md`
+
+Use `tc metrics serve --artifacts-root artifacts/runs --evidence-root artifacts/evidence` to expose aggregate evidence metrics and visualize them in Grafana panels `Backtest vs Paper Evidence Status` and `Evidence Known Gaps`.
+This workflow is operational evidence only: not strategy performance, not PnL/Sharpe/returns, and not live/testnet paper trading.
 
 ## Local paths
 
@@ -58,6 +70,7 @@ More detail: [`docs/quickstart.md`](docs/quickstart.md), [`docs/demo-flow.md`](d
 | `src/tradingchassis_ops_lab/data/` | Tracked source helpers for dataset prepare/fingerprint |
 | `data/` | Ignored local prepared input (`datasets/`, `fingerprints/`) |
 | `artifacts/runs/` | Ignored generated per-run outputs |
+| `artifacts/evidence/` | Ignored generated Backtest vs Paper Evidence JSON/Markdown (`tc evidence compare`) |
 | `reports/sample/` | Tracked curated examples for review (not full runtime trees) |
 
 ## Local observability stack
@@ -65,7 +78,7 @@ More detail: [`docs/quickstart.md`](docs/quickstart.md), [`docs/demo-flow.md`](d
 For Prometheus/Grafana, run the metrics server (inside the Dev Container or host shell):
 
 ```bash
-tc metrics serve --artifacts-root artifacts/runs --host 0.0.0.0 --port 8000
+tc metrics serve --artifacts-root artifacts/runs --evidence-root artifacts/evidence --host 0.0.0.0 --port 8000
 ```
 
 Then start the local observability stack:
@@ -79,7 +92,7 @@ docker compose -f deploy/observability/docker-compose.yml up
 Default verification URLs:
 
 - Prometheus targets: `http://localhost:9090/targets`
-- Grafana: `http://localhost:3000` — open dashboard **TradingChassis Ops Lab Run Observability**
+- Grafana: `http://localhost:3000` — open dashboard **TradingChassis Ops Lab Run Observability** ([how to read panel values](docs/demo-flow.md#reading-the-grafana-dashboard))
 
 If you use non-default ports, set `TC_PROMETHEUS_PORT` and/or `TC_GRAFANA_PORT` when starting Compose, then open the same paths on your chosen local ports. `TC_METRICS_TARGET` selects which host:port Prometheus scrapes (defaults to the metrics serve endpoint).
 
@@ -100,11 +113,13 @@ After that override, for example: `http://localhost:9091/targets` and `http://lo
 
 ## Documentation
 
+- Local MkDocs build requires the docs extra: `pip install -e ".[docs]"` (contributors may use `pip install -e ".[dev,docs]"`). Then run `mkdocs build --strict`.
 - Documentation is published with GitHub Pages from the MkDocs site (on `main`).
 - Docs home: [`docs/index.md`](docs/index.md)
 - Quickstart: [`docs/quickstart.md`](docs/quickstart.md)
 - Full walkthrough: [`docs/demo-flow.md`](docs/demo-flow.md)
 - Run model: [`docs/run-model.md`](docs/run-model.md)
+- Backtest vs paper evidence: [`docs/backtest-vs-paper.md`](docs/backtest-vs-paper.md)
 - Roadmap: [`docs/roadmap.md`](docs/roadmap.md)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
 

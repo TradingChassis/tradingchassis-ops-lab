@@ -164,6 +164,8 @@ def test_grafana_dashboard_queries_use_supported_metric_namespace() -> None:
     assert "tradingchassis_ops_lab_connectivity_readiness_state" in referenced_metrics
     assert "tradingchassis_ops_lab_connectivity_probe_state" in referenced_metrics
     assert "tradingchassis_ops_lab_connectivity_probe_latency_seconds" in referenced_metrics
+    assert "tradingchassis_ops_lab_evidence_backtest_vs_paper_status_total" in referenced_metrics
+    assert "tradingchassis_ops_lab_evidence_known_gaps_total" in referenced_metrics
     supported_metrics = {
         "tradingchassis_ops_lab_backtest_bars_processed_total",
         "tradingchassis_ops_lab_backtest_engine_duration_seconds",
@@ -171,6 +173,8 @@ def test_grafana_dashboard_queries_use_supported_metric_namespace() -> None:
         "tradingchassis_ops_lab_connectivity_probe_latency_seconds",
         "tradingchassis_ops_lab_connectivity_probe_state",
         "tradingchassis_ops_lab_connectivity_readiness_state",
+        "tradingchassis_ops_lab_evidence_backtest_vs_paper_status_total",
+        "tradingchassis_ops_lab_evidence_known_gaps_total",
         "tradingchassis_ops_lab_journal_event_total",
         "tradingchassis_ops_lab_kill_switch_state",
         "tradingchassis_ops_lab_paper_heartbeat_total",
@@ -285,3 +289,49 @@ def test_grafana_dashboard_excludes_alerting_probe_and_env_name_exposure() -> No
     assert "present_env" not in encoded
     assert "missing_env" not in encoded
     assert "TRADINGCHASSIS_" not in encoded
+    assert "pnl" not in encoded.lower()
+    assert "sharpe" not in encoded.lower()
+    assert "returns" not in encoded.lower()
+
+
+def test_grafana_dashboard_contains_evidence_status_panel() -> None:
+    dashboard_path = _repo_root() / _DASHBOARD_DIR / _DASHBOARD_FILENAME
+    dashboard = json.loads(dashboard_path.read_text(encoding="utf-8"))
+    panels = dashboard.get("panels", [])
+    assert isinstance(panels, list)
+
+    evidence_panel = next(
+        (panel for panel in panels if panel.get("title") == "Backtest vs Paper Evidence Status"),
+        None,
+    )
+    assert evidence_panel is not None, "Backtest vs Paper Evidence Status panel must exist."
+    assert evidence_panel.get("type") == "stat"
+    description = evidence_panel.get("description", "")
+    assert isinstance(description, str)
+    assert "operational evidence only" in description.lower()
+    assert "not strategy performance" in description.lower()
+
+    targets = evidence_panel.get("targets", [])
+    assert isinstance(targets, list)
+    assert targets and isinstance(targets[0], dict)
+    assert (
+        targets[0].get("expr") == "tradingchassis_ops_lab_evidence_backtest_vs_paper_status_total"
+    )
+
+
+def test_grafana_dashboard_contains_evidence_known_gaps_panel() -> None:
+    dashboard_path = _repo_root() / _DASHBOARD_DIR / _DASHBOARD_FILENAME
+    dashboard = json.loads(dashboard_path.read_text(encoding="utf-8"))
+    panels = dashboard.get("panels", [])
+    assert isinstance(panels, list)
+
+    evidence_panel = next(
+        (panel for panel in panels if panel.get("title") == "Evidence Known Gaps"),
+        None,
+    )
+    assert evidence_panel is not None, "Evidence Known Gaps panel must exist."
+    assert evidence_panel.get("type") == "stat"
+    targets = evidence_panel.get("targets", [])
+    assert isinstance(targets, list)
+    assert targets and isinstance(targets[0], dict)
+    assert targets[0].get("expr") == "tradingchassis_ops_lab_evidence_known_gaps_total"

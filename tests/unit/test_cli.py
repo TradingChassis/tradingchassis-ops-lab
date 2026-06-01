@@ -12,6 +12,7 @@ from typer.testing import CliRunner
 from tradingchassis_ops_lab.cli import app
 from tradingchassis_ops_lab.data.prepare import prepare_dataset
 from tradingchassis_ops_lab.engines.nautilus.backtest import NautilusSmokeBacktestResult
+from tradingchassis_ops_lab.evidence import build_backtest_paper_pair_id
 
 runner = CliRunner()
 
@@ -26,7 +27,7 @@ def test_tc_version_outputs_package_version() -> None:
     """Verify the CLI version command prints the current package version."""
     result = runner.invoke(app, ["version"])
     assert result.exit_code == 0
-    assert "0.6.0" in result.stdout
+    assert "0.7.0" in result.stdout
 
 
 def _write_valid_spec(
@@ -85,6 +86,119 @@ def _start_connectivity_probe_test_server(
     thread.start()
     port = int(server.server_address[1])
     return server, f"http://127.0.0.1:{port}/health"
+
+
+def _write_evidence_run_artifacts(
+    *,
+    root: Path,
+    run_id: str,
+    mode: str,
+    status: str = "completed",
+    with_report: bool = True,
+) -> Path:
+    run_dir = root / run_id
+    run_dir.mkdir(parents=True)
+    if mode == "backtest":
+        metadata = {
+            "schema_version": "v1",
+            "run_id": run_id,
+            "mode": "backtest",
+            "engine": "nautilus",
+            "status": status,
+            "config_sha256": "bt-hash",
+            "venue": "binance",
+            "instrument": "BTCUSDT",
+            "strategy": {"name": "ops_smoke_demo", "version": "0.1.0"},
+            "data": {"dataset": "btcusdt-sample", "fingerprint": "placeholder"},
+            "lifecycle": "backtest_nautilus_smoke",
+            "is_placeholder": False,
+        }
+        metrics = {
+            "schema_version": "v1",
+            "run_id": run_id,
+            "mode": "backtest",
+            "engine": "nautilus",
+            "status": status,
+            "is_placeholder": False,
+            "engine_executed": True,
+            "dataset": "btcusdt-sample",
+            "scenario_name": "ops_smoke_demo",
+            "scenario_version": "0.1.0",
+            "strategy_registered": True,
+            "input_candles_count": 20,
+            "bars_processed": 20,
+            "engine_duration_ms": 1200,
+            "bars_seen": 20,
+            "orders_submitted": 0,
+            "fills_count": 0,
+            "deterministic_action_triggered": True,
+            "metrics": {},
+        }
+        journal = [
+            {"event": "run_started"},
+            {"event": "backtest_started"},
+            {"event": "backtest_completed"},
+            {"event": "run_completed"},
+        ]
+    else:
+        metadata = {
+            "schema_version": "v1",
+            "run_id": run_id,
+            "mode": "paper",
+            "engine": "nautilus",
+            "status": status,
+            "config_sha256": "paper-hash",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "strategy": {"name": "ops_smoke_demo", "version": "0.1.0"},
+            "data": {"dataset": "btcusdt-sample", "fingerprint": "placeholder"},
+            "lifecycle": "paper_skeleton",
+            "is_placeholder": True,
+            "safety": {
+                "kill_switch": {"state": "absent"},
+                "lifecycle_outcome": "checked_continue",
+            },
+        }
+        metrics = {
+            "schema_version": "v1",
+            "run_id": run_id,
+            "mode": "paper",
+            "engine": "nautilus",
+            "status": status,
+            "is_placeholder": True,
+            "engine_executed": False,
+            "connectivity": "none",
+            "paper_lifecycle": "synthetic_heartbeat",
+            "heartbeat_count": 3,
+            "synthetic_duration_seconds": 3,
+            "metrics": {},
+        }
+        journal = [
+            {"event": "run_started"},
+            {"event": "paper_safety_checked"},
+            {"event": "paper_started"},
+            {"event": "paper_heartbeat"},
+            {"event": "paper_heartbeat"},
+            {"event": "paper_heartbeat"},
+            {"event": "paper_completed"},
+            {"event": "run_completed"},
+        ]
+
+    (run_dir / "metadata.json").write_text(
+        json.dumps(metadata, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    (run_dir / "metrics.json").write_text(
+        json.dumps(metrics, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    (run_dir / "journal.jsonl").write_text(
+        "".join(json.dumps(item, sort_keys=True) + "\n" for item in journal),
+        encoding="utf-8",
+    )
+    if with_report:
+        (run_dir / "report.md").write_text("# Run report\n", encoding="utf-8")
+    return run_dir
 
 
 def test_tc_spec_validate_succeeds_for_valid_spec(tmp_path: Path) -> None:
@@ -162,6 +276,412 @@ def test_tc_connectivity_probe_help_exits_successfully() -> None:
     result = runner.invoke(app, ["connectivity", "probe", "--help"])
     assert result.exit_code == 0
     assert "loopback http url" in result.stdout.lower()
+
+
+def test_tc_evidence_help_exits_successfully() -> None:
+    """Evidence command group help output is available."""
+    result = runner.invoke(app, ["evidence", "--help"])
+    assert result.exit_code == 0
+    assert "compare" in result.stdout
+
+
+def test_tc_evidence_compare_help_exits_successfully() -> None:
+    """Evidence compare command help output is available."""
+    result = runner.invoke(app, ["evidence", "compare", "--help"])
+    assert result.exit_code == 0
+    assert "backtest run id" in result.stdout.lower()
+    assert "paper run id" in result.stdout.lower()
+
+
+def test_tc_evidence_compare_writes_json_and_markdown_artifacts(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Evidence compare writes deterministic JSON and markdown outputs."""
+    monkeypatch.chdir(tmp_path)
+    runs_root = tmp_path / "runs"
+    evidence_root = tmp_path / "evidence"
+    backtest_run_id = "evidence-backtest-ok"
+    paper_run_id = "evidence-paper-ok"
+    _write_evidence_run_artifacts(root=runs_root, run_id=backtest_run_id, mode="backtest")
+    _write_evidence_run_artifacts(root=runs_root, run_id=paper_run_id, mode="paper")
+
+    result = runner.invoke(
+        app,
+        [
+            "evidence",
+            "compare",
+            "--backtest-run-id",
+            backtest_run_id,
+            "--paper-run-id",
+            paper_run_id,
+            "--artifacts-root",
+            str(runs_root),
+            "--evidence-root",
+            str(evidence_root),
+        ],
+    )
+    assert result.exit_code == 0
+    assert "comparison_status=differences_expected" in result.stdout
+    assert "evidence_dir=" in result.stdout
+    assert "json=" in result.stdout
+    assert "report=" in result.stdout
+
+    pair_id = build_backtest_paper_pair_id(
+        backtest_run_id=backtest_run_id,
+        paper_run_id=paper_run_id,
+    )
+    evidence_dir = evidence_root / pair_id
+    json_path = evidence_dir / "backtest_vs_paper_evidence.json"
+    report_path = evidence_dir / "backtest_vs_paper_evidence.md"
+    assert json_path.is_file()
+    assert report_path.is_file()
+
+    evidence_payload = json.loads(json_path.read_text(encoding="utf-8"))
+    assert evidence_payload["comparison_status"] == "differences_expected"
+    assert evidence_payload["schema_version"] == "v1"
+    report = report_path.read_text(encoding="utf-8")
+    assert "Backtest vs Paper Operational Evidence" in report
+    assert "This is operational evidence, not strategy performance." in report
+    assert "## Known gaps" in report
+    assert "## Non-goals" in report
+    assert "no PnL reporting" in report
+    assert "no Sharpe/returns reporting" in report
+
+
+def test_tc_evidence_compare_missing_core_artifact_writes_missing_artifacts_outcome(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Missing core artifact remains a successful evidence command with missing status."""
+    monkeypatch.chdir(tmp_path)
+    runs_root = tmp_path / "runs"
+    evidence_root = tmp_path / "evidence"
+    backtest_run_id = "evidence-backtest-missing"
+    paper_run_id = "evidence-paper-missing"
+    _write_evidence_run_artifacts(root=runs_root, run_id=backtest_run_id, mode="backtest")
+    paper_dir = _write_evidence_run_artifacts(root=runs_root, run_id=paper_run_id, mode="paper")
+    (paper_dir / "report.md").unlink()
+
+    result = runner.invoke(
+        app,
+        [
+            "evidence",
+            "compare",
+            "--backtest-run-id",
+            backtest_run_id,
+            "--paper-run-id",
+            paper_run_id,
+            "--artifacts-root",
+            str(runs_root),
+            "--evidence-root",
+            str(evidence_root),
+        ],
+    )
+    assert result.exit_code == 0
+    assert "comparison_status=missing_artifacts" in result.stdout
+
+    pair_id = build_backtest_paper_pair_id(
+        backtest_run_id=backtest_run_id,
+        paper_run_id=paper_run_id,
+    )
+    json_path = evidence_root / pair_id / "backtest_vs_paper_evidence.json"
+    report_path = evidence_root / pair_id / "backtest_vs_paper_evidence.md"
+    payload = json.loads(json_path.read_text(encoding="utf-8"))
+    report = report_path.read_text(encoding="utf-8")
+    assert payload["comparison_status"] == "missing_artifacts"
+    assert "missing required artifacts" in " ".join(payload["notes"])
+    assert "missing required artifacts" in report
+
+
+def test_tc_evidence_compare_wrong_modes_writes_incompatible_runs_outcome(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Wrong mode pairing should produce incompatible_runs and still exit zero."""
+    monkeypatch.chdir(tmp_path)
+    runs_root = tmp_path / "runs"
+    evidence_root = tmp_path / "evidence"
+    left_run_id = "evidence-left"
+    right_run_id = "evidence-right"
+    _write_evidence_run_artifacts(root=runs_root, run_id=left_run_id, mode="backtest")
+    right_dir = _write_evidence_run_artifacts(root=runs_root, run_id=right_run_id, mode="paper")
+    metadata_path = right_dir / "metadata.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    metadata["mode"] = "backtest"
+    metadata_path.write_text(
+        json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "evidence",
+            "compare",
+            "--backtest-run-id",
+            left_run_id,
+            "--paper-run-id",
+            right_run_id,
+            "--artifacts-root",
+            str(runs_root),
+            "--evidence-root",
+            str(evidence_root),
+        ],
+    )
+    assert result.exit_code == 0
+    assert "comparison_status=incompatible_runs" in result.stdout
+
+    pair_id = build_backtest_paper_pair_id(
+        backtest_run_id=left_run_id,
+        paper_run_id=right_run_id,
+    )
+    payload = json.loads(
+        (evidence_root / pair_id / "backtest_vs_paper_evidence.json").read_text(encoding="utf-8")
+    )
+    assert payload["comparison_status"] == "incompatible_runs"
+
+
+def test_tc_evidence_compare_parse_error_exits_non_zero(tmp_path: Path, monkeypatch) -> None:
+    """Malformed required JSON should fail command with clear error and no success output."""
+    monkeypatch.chdir(tmp_path)
+    runs_root = tmp_path / "runs"
+    evidence_root = tmp_path / "evidence"
+    backtest_run_id = "evidence-backtest-broken"
+    paper_run_id = "evidence-paper-broken"
+    backtest_dir = _write_evidence_run_artifacts(
+        root=runs_root, run_id=backtest_run_id, mode="backtest"
+    )
+    _write_evidence_run_artifacts(root=runs_root, run_id=paper_run_id, mode="paper")
+    (backtest_dir / "metadata.json").write_text("{broken-json", encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "evidence",
+            "compare",
+            "--backtest-run-id",
+            backtest_run_id,
+            "--paper-run-id",
+            paper_run_id,
+            "--artifacts-root",
+            str(runs_root),
+            "--evidence-root",
+            str(evidence_root),
+        ],
+    )
+    assert result.exit_code != 0
+    assert "Malformed JSON in metadata.json" in result.stderr
+    assert "comparison_status=" not in result.stdout
+
+    pair_id = build_backtest_paper_pair_id(
+        backtest_run_id=backtest_run_id,
+        paper_run_id=paper_run_id,
+    )
+    evidence_dir = evidence_root / pair_id
+    assert not evidence_dir.exists()
+
+
+def test_tc_evidence_compare_is_idempotent_for_same_pair(tmp_path: Path, monkeypatch) -> None:
+    """Running compare twice for same pair should overwrite deterministically."""
+    monkeypatch.chdir(tmp_path)
+    runs_root = tmp_path / "runs"
+    evidence_root = tmp_path / "evidence"
+    backtest_run_id = "evidence-backtest-repeat"
+    paper_run_id = "evidence-paper-repeat"
+    _write_evidence_run_artifacts(root=runs_root, run_id=backtest_run_id, mode="backtest")
+    _write_evidence_run_artifacts(root=runs_root, run_id=paper_run_id, mode="paper")
+    args = [
+        "evidence",
+        "compare",
+        "--backtest-run-id",
+        backtest_run_id,
+        "--paper-run-id",
+        paper_run_id,
+        "--artifacts-root",
+        str(runs_root),
+        "--evidence-root",
+        str(evidence_root),
+    ]
+    first = runner.invoke(app, args)
+    second = runner.invoke(app, args)
+    assert first.exit_code == 0
+    assert second.exit_code == 0
+
+    pair_id = build_backtest_paper_pair_id(
+        backtest_run_id=backtest_run_id,
+        paper_run_id=paper_run_id,
+    )
+    json_path = evidence_root / pair_id / "backtest_vs_paper_evidence.json"
+    report_path = evidence_root / pair_id / "backtest_vs_paper_evidence.md"
+    assert json_path.is_file()
+    assert report_path.is_file()
+    payload = json.loads(json_path.read_text(encoding="utf-8"))
+    assert payload["comparison_status"] == "differences_expected"
+
+
+def test_tc_evidence_compare_default_evidence_root_and_scope_safety(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Default evidence root should be artifacts/evidence with scope-safe report wording."""
+    monkeypatch.chdir(tmp_path)
+    runs_root = tmp_path / "runs"
+    backtest_run_id = "evidence-backtest-default"
+    paper_run_id = "evidence-paper-default"
+    backtest_dir = _write_evidence_run_artifacts(
+        root=runs_root, run_id=backtest_run_id, mode="backtest"
+    )
+    paper_dir = _write_evidence_run_artifacts(root=runs_root, run_id=paper_run_id, mode="paper")
+    backtest_report_before = (backtest_dir / "report.md").read_text(encoding="utf-8")
+    paper_report_before = (paper_dir / "report.md").read_text(encoding="utf-8")
+
+    result = runner.invoke(
+        app,
+        [
+            "evidence",
+            "compare",
+            "--backtest-run-id",
+            backtest_run_id,
+            "--paper-run-id",
+            paper_run_id,
+            "--artifacts-root",
+            str(runs_root),
+        ],
+    )
+    assert result.exit_code == 0
+    pair_id = build_backtest_paper_pair_id(
+        backtest_run_id=backtest_run_id,
+        paper_run_id=paper_run_id,
+    )
+    evidence_dir = tmp_path / "artifacts" / "evidence" / pair_id
+    report_path = evidence_dir / "backtest_vs_paper_evidence.md"
+    assert report_path.is_file()
+    report = report_path.read_text(encoding="utf-8")
+    assert "profitability claims" not in report
+    assert "No profitability claims are made" not in report
+    assert "strategy_optimization" in report
+    assert "no live/testnet/exchange evidence" in report
+    assert "no real orders, fills, balances, positions, or account state" in report
+
+    assert (backtest_dir / "report.md").read_text(encoding="utf-8") == backtest_report_before
+    assert (paper_dir / "report.md").read_text(encoding="utf-8") == paper_report_before
+
+
+def test_tc_evidence_compare_rejects_backtest_run_id_path_traversal(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Path traversal run IDs must fail fast and not write evidence artifacts."""
+    monkeypatch.chdir(tmp_path)
+    runs_root = tmp_path / "runs"
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_run_artifacts(root=runs_root, run_id="paper-ok", mode="paper")
+
+    result = runner.invoke(
+        app,
+        [
+            "evidence",
+            "compare",
+            "--backtest-run-id",
+            "../outside",
+            "--paper-run-id",
+            "paper-ok",
+            "--artifacts-root",
+            str(runs_root),
+            "--evidence-root",
+            str(evidence_root),
+        ],
+    )
+    assert result.exit_code != 0
+    assert "must not contain '..'" in result.stderr
+    assert not evidence_root.exists()
+
+
+def test_tc_evidence_compare_rejects_paper_run_id_with_separator(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Run IDs with path separators must be rejected."""
+    monkeypatch.chdir(tmp_path)
+    runs_root = tmp_path / "runs"
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_run_artifacts(root=runs_root, run_id="bt-ok", mode="backtest")
+
+    result = runner.invoke(
+        app,
+        [
+            "evidence",
+            "compare",
+            "--backtest-run-id",
+            "bt-ok",
+            "--paper-run-id",
+            "foo/bar",
+            "--artifacts-root",
+            str(runs_root),
+            "--evidence-root",
+            str(evidence_root),
+        ],
+    )
+    assert result.exit_code != 0
+    assert "must not contain path separators" in result.stderr
+    assert not evidence_root.exists()
+
+
+def test_tc_evidence_compare_rejects_backslash_run_id(tmp_path: Path, monkeypatch) -> None:
+    """Backslash separators are invalid across platforms."""
+    monkeypatch.chdir(tmp_path)
+    runs_root = tmp_path / "runs"
+    evidence_root = tmp_path / "evidence"
+    _write_evidence_run_artifacts(root=runs_root, run_id="bt-ok", mode="backtest")
+
+    result = runner.invoke(
+        app,
+        [
+            "evidence",
+            "compare",
+            "--backtest-run-id",
+            "bt-ok",
+            "--paper-run-id",
+            "evil\\paper",
+            "--artifacts-root",
+            str(runs_root),
+            "--evidence-root",
+            str(evidence_root),
+        ],
+    )
+    assert result.exit_code != 0
+    assert "must not contain path separators" in result.stderr
+    assert not evidence_root.exists()
+
+
+def test_tc_evidence_compare_uses_env_evidence_root_when_flag_omitted(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Evidence root should follow env override when CLI flag is omitted."""
+    monkeypatch.chdir(tmp_path)
+    runs_root = tmp_path / "runs"
+    env_evidence_root = tmp_path / "env-evidence"
+    monkeypatch.setenv("TRADINGCHASSIS_OPS_LAB_EVIDENCE_ROOT", str(env_evidence_root))
+    backtest_run_id = "evidence-env-backtest"
+    paper_run_id = "evidence-env-paper"
+    _write_evidence_run_artifacts(root=runs_root, run_id=backtest_run_id, mode="backtest")
+    _write_evidence_run_artifacts(root=runs_root, run_id=paper_run_id, mode="paper")
+
+    result = runner.invoke(
+        app,
+        [
+            "evidence",
+            "compare",
+            "--backtest-run-id",
+            backtest_run_id,
+            "--paper-run-id",
+            paper_run_id,
+            "--artifacts-root",
+            str(runs_root),
+        ],
+    )
+    assert result.exit_code == 0
+    pair_id = build_backtest_paper_pair_id(
+        backtest_run_id=backtest_run_id,
+        paper_run_id=paper_run_id,
+    )
+    evidence_dir = env_evidence_root / pair_id
+    assert evidence_dir.is_dir()
+    assert (evidence_dir / "backtest_vs_paper_evidence.json").is_file()
 
 
 def test_tc_connectivity_readiness_requires_initialized_artifacts(
@@ -1036,6 +1556,7 @@ def test_tc_metrics_serve_help_exits_successfully() -> None:
     result = runner.invoke(app, ["metrics", "serve", "--help"])
     assert result.exit_code == 0
     assert "artifact-derived metrics" in result.stdout
+    assert "--evidence-root" in result.stdout
 
 
 def test_tc_kill_activate_writes_runtime_files(tmp_path: Path, monkeypatch) -> None:

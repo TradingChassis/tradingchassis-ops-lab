@@ -11,6 +11,8 @@ Contributions must preserve local-first behavior and the documented non-producti
 python -m pip install -e ".[dev]"
 ```
 
+To build the docs site locally, also install the docs extra: `pip install -e ".[docs]"` (or `pip install -e ".[dev,docs]"`), then run `mkdocs build --strict`.
+
 ## Run checks
 
 Use the repository check script before opening a pull request:

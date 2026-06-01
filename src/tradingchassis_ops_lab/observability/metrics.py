@@ -614,30 +614,192 @@ def _render_comment_only(message: str) -> str:
     return f"# {message}\n"
 
 
+def _evidence_status_value(status: str) -> int:
+    if status == "differences_expected":
+        return 1
+    if status == "matched_operational_context":
+        return 2
+    if status == "missing_artifacts":
+        return 3
+    if status == "incompatible_runs":
+        return 4
+    if status == "unknown":
+        return -1
+    return -1
+
+
+def _iter_evidence_json_paths(evidence_root: Path) -> list[Path]:
+    if not evidence_root.is_dir():
+        return []
+    candidates: list[Path] = []
+    for pair_dir in sorted(path for path in evidence_root.iterdir() if path.is_dir()):
+        evidence_json = pair_dir / "backtest_vs_paper_evidence.json"
+        if evidence_json.is_file():
+            candidates.append(evidence_json)
+    return candidates
+
+
+def _render_evidence_metrics_text(evidence_root: Path = Path("artifacts/evidence")) -> str:
+    paths = _iter_evidence_json_paths(evidence_root)
+    if not paths:
+        return ""
+
+    status_counts: Counter[str] = Counter()
+    artifact_presence_counts: Counter[tuple[str, str]] = Counter()
+    known_gaps_total = 0
+    journal_shared_events_total = 0
+    compared_field_classification_counts: Counter[str] = Counter()
+    skipped_paths: list[Path] = []
+
+    for path in paths:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            skipped_paths.append(path)
+            continue
+        if not isinstance(payload, dict):
+            skipped_paths.append(path)
+            continue
+
+        status = payload.get("comparison_status")
+        if isinstance(status, str) and status.strip():
+            cleaned_status = status.strip()
+            status_counts[cleaned_status] += 1
+
+        known_gaps = payload.get("known_gaps")
+        if isinstance(known_gaps, list):
+            known_gaps_total += len(known_gaps)
+
+        journal_summary = payload.get("journal_summary")
+        if isinstance(journal_summary, dict):
+            shared_events = journal_summary.get("shared_events")
+            if isinstance(shared_events, list):
+                journal_shared_events_total += len(shared_events)
+
+        artifact_presence = payload.get("artifact_presence")
+        if isinstance(artifact_presence, dict):
+            for side in ("backtest", "paper"):
+                side_presence = artifact_presence.get(side)
+                if not isinstance(side_presence, dict):
+                    continue
+                for artifact_name in sorted(side_presence):
+                    if bool(side_presence.get(artifact_name)):
+                        artifact_presence_counts[(side, artifact_name)] += 1
+
+        compared_fields = payload.get("compared_fields")
+        if isinstance(compared_fields, list):
+            for field in compared_fields:
+                if not isinstance(field, dict):
+                    continue
+                comparable = field.get("comparable")
+                if isinstance(comparable, str) and comparable.strip():
+                    compared_field_classification_counts[comparable.strip()] += 1
+
+    if (
+        not status_counts
+        and not artifact_presence_counts
+        and known_gaps_total == 0
+        and journal_shared_events_total == 0
+        and not compared_field_classification_counts
+        and not skipped_paths
+    ):
+        return ""
+
+    lines: list[str] = []
+    for status in sorted(status_counts):
+        _append_metric(
+            lines,
+            name="tradingchassis_ops_lab_evidence_backtest_vs_paper_status_total",
+            labels=[("comparison_status", status)],
+            value=status_counts[status],
+        )
+        _append_metric(
+            lines,
+            name="tradingchassis_ops_lab_evidence_backtest_vs_paper_status",
+            labels=[("comparison_status", status)],
+            value=_evidence_status_value(status),
+        )
+
+    for side, artifact in sorted(artifact_presence_counts):
+        _append_metric(
+            lines,
+            name="tradingchassis_ops_lab_evidence_artifacts_present_total",
+            labels=[("side", side), ("artifact", artifact)],
+            value=artifact_presence_counts[(side, artifact)],
+        )
+
+    _append_metric(
+        lines,
+        name="tradingchassis_ops_lab_evidence_known_gaps_total",
+        labels=[],
+        value=known_gaps_total,
+    )
+    _append_metric(
+        lines,
+        name="tradingchassis_ops_lab_evidence_journal_shared_events_total",
+        labels=[],
+        value=journal_shared_events_total,
+    )
+
+    for classification in sorted(compared_field_classification_counts):
+        _append_metric(
+            lines,
+            name="tradingchassis_ops_lab_evidence_compared_fields_total",
+            labels=[("classification", classification)],
+            value=compared_field_classification_counts[classification],
+        )
+
+    if skipped_paths:
+        for skipped_path in skipped_paths:
+            lines.append(
+                _render_comment_only(
+                    (
+                        "tradingchassis_ops_lab: skipped evidence artifact due to malformed JSON "
+                        f"{skipped_path}"
+                    )
+                ).rstrip("\n")
+            )
+
+    return "\n".join(lines) + "\n"
+
+
 def render_metrics_text(
     *,
     artifacts_root: Path = Path("artifacts/runs"),
+    evidence_root: Path = Path("artifacts/evidence"),
     run_id: str | None = None,
     include_journal: bool = True,
+    include_evidence: bool = True,
 ) -> str:
     """Render Prometheus text for one selected run or all discovered runs."""
+    evidence_rendered = (
+        _render_evidence_metrics_text(evidence_root=evidence_root) if include_evidence else ""
+    )
+
     if run_id is not None:
         try:
-            return export_run_metrics(
+            run_rendered = export_run_metrics(
                 run_id=run_id,
                 artifacts_root=artifacts_root,
                 include_journal=include_journal,
             )
+            return run_rendered + evidence_rendered
         except RunObservabilityError:
-            return _render_comment_only(
-                "tradingchassis_ops_lab: run_id "
-                f"{run_id} not found or unreadable under {artifacts_root}"
+            return (
+                _render_comment_only(
+                    "tradingchassis_ops_lab: run_id "
+                    f"{run_id} not found or unreadable under {artifacts_root}"
+                )
+                + evidence_rendered
             )
 
     discovered_run_ids = discover_run_ids(artifacts_root)
     if not discovered_run_ids:
-        return _render_comment_only(
-            f"tradingchassis_ops_lab: no run artifacts found under {artifacts_root}"
+        return (
+            _render_comment_only(
+                f"tradingchassis_ops_lab: no run artifacts found under {artifacts_root}"
+            )
+            + evidence_rendered
         )
 
     rendered_parts: list[str] = []
@@ -660,4 +822,4 @@ def render_metrics_text(
                 )
             )
 
-    return "".join(rendered_parts)
+    return "".join(rendered_parts) + evidence_rendered

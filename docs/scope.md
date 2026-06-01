@@ -21,6 +21,9 @@
 - Local loopback connectivity probe command (`tc connectivity probe`) with read-only HTTP `GET`
 - Probe artifacts (`connectivity_probe.json`), metadata summary patch, journal event, and optional report section update
 - Artifact-backed probe Prometheus metrics and Grafana visibility from `connectivity_probe.json`
+- Backtest-vs-paper operational evidence artifact workflow via `tc evidence compare`
+- Evidence JSON + markdown report under `artifacts/evidence/<backtest_run_id>__<paper_run_id>/`
+- Aggregate artifact-backed evidence metrics and Grafana evidence panels
 - Three failure drills:
   - stale market data
   - forced reconciliation mismatch
@@ -39,13 +42,17 @@ Implemented in current repository scope:
 
 - Building a custom trading engine
 - Building a strategy library, quant research platform, or custom strategy plugin loader
+- PnL/performance comparison between backtest and paper
+- Claims of live/testnet equivalence from synthetic paper evidence
 - Orderbook / limit-order-book (LOB) data ingestion or replay
 - Live trading with production-grade reliability requirements
 - Real exchange/testnet/live connectivity checks in readiness or probe paths
 - Provider-side credential validation or secret verification
 - Account/balance/position fetching
+- Real order/fill quality analysis
 - Order submission, cancel/replace, or position flattening
 - External reconciliation against provider APIs
+- Generic all-purpose run diff framework
 - Adapter framework and multi-venue architecture
 - Low-latency gateway engineering
 - Profitability or alpha claims
@@ -57,4 +64,4 @@ Future work may expand depth, but this repository intentionally keeps the curren
 
 ## Definition of Done (current scope)
 
-The current scope is complete when a user can run one NautilusTrader backtest smoke workflow and one paper lifecycle skeleton workflow from run specs, inspect artifacts/reports, run local readiness/probe checks, export metrics, exercise file-based safety/reconciliation behavior, and run/read deterministic failure drills and runbooks.
+The current scope is complete when a user can run one NautilusTrader backtest smoke workflow and one paper lifecycle skeleton workflow from run specs, generate a backtest-vs-paper operational evidence artifact, inspect artifacts/reports, run local readiness/probe checks, serve artifact-backed metrics for dashboards, exercise file-based safety/reconciliation behavior, and run/read deterministic failure drills and runbooks.

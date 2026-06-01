@@ -15,6 +15,8 @@ This project is intentionally constrained in its current implementation.
 - `tc connectivity readiness` is local preflight only: env placeholder presence check, no network calls, no exchange/testnet/live connectivity
 - `tc connectivity probe` is local loopback-only preflight: read-only HTTP `GET` against loopback URL only, no exchange/testnet/live connectivity
 - Probe results are artifact-backed (`connectivity_probe.json`) and probe metrics are derived from artifacts, not live external telemetry
+- Backtest-vs-paper evidence is artifact-backed operational comparison, not strategy-performance analytics
+- Evidence status/known-gap panels summarize operational state, not profitability or execution quality
 - Probe does not store response body, response headers, or secret values
 - Readiness does not fetch balances, positions, account state, or external runtime state
 - Readiness does not submit/cancel orders and does not flatten positions
@@ -26,6 +28,11 @@ This project is intentionally constrained in its current implementation.
 - Reconciliation is file-based, fixture-driven, and report-only
 - Failure drills are deterministic artifact checks, not real orchestration
 - No profitability/alpha claim
+- No PnL/Sharpe/returns claim
+- No live/testnet paper-trading equivalence claim
+- No real order/fill/account/balance/position state evidence
+- No strategy optimization or plugin framework
+- No generic run-diff framework
 - No production-grade safety, reliability, or low-latency claim
 
 These limitations are deliberate to keep the current implementation focused on operational workflow quality rather than breadth or performance claims.

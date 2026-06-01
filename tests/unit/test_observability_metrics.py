@@ -55,6 +55,22 @@ def _write_run_artifacts(
     return run_dir
 
 
+def _write_evidence_artifact(
+    *,
+    evidence_root: Path,
+    pair_id: str,
+    payload: dict,
+) -> Path:
+    pair_dir = evidence_root / pair_id
+    pair_dir.mkdir(parents=True)
+    path = pair_dir / "backtest_vs_paper_evidence.json"
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return path
+
+
 def test_render_backtest_metrics_from_artifacts(tmp_path: Path) -> None:
     artifacts_root = tmp_path / "artifacts" / "runs"
     run_id = "metrics-backtest"
@@ -1105,3 +1121,319 @@ def test_render_metrics_text_missing_selected_run_returns_comment(tmp_path: Path
     rendered = render_metrics_text(artifacts_root=artifacts_root, run_id="missing-run")
     assert rendered.startswith("#")
     assert "missing-run" in rendered
+
+
+def test_render_evidence_metrics_aggregate_status_counts(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    evidence_root = tmp_path / "artifacts" / "evidence"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id="run-a",
+        metadata={
+            "run_id": "run-a",
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+    )
+    _write_evidence_artifact(
+        evidence_root=evidence_root,
+        pair_id="bt-1__paper-1",
+        payload={
+            "schema_version": "v1",
+            "comparison_status": "differences_expected",
+            "known_gaps": ["pnl_not_available", "paper_no_engine_execution"],
+            "journal_summary": {"shared_events": ["run_started", "run_completed"]},
+            "artifact_presence": {
+                "backtest": {"metadata.json": True, "report.md": True},
+                "paper": {"metadata.json": True, "report.md": True},
+            },
+            "compared_fields": [
+                {"comparable": "direct"},
+                {"comparable": "contextual"},
+                {"comparable": "contextual"},
+            ],
+        },
+    )
+    _write_evidence_artifact(
+        evidence_root=evidence_root,
+        pair_id="bt-2__paper-2",
+        payload={
+            "schema_version": "v1",
+            "comparison_status": "missing_artifacts",
+            "known_gaps": ["pnl_not_available"],
+            "journal_summary": {"shared_events": ["run_started"]},
+            "artifact_presence": {
+                "backtest": {"metadata.json": True, "report.md": False},
+                "paper": {"metadata.json": True, "report.md": True},
+            },
+            "compared_fields": [{"comparable": "gap"}],
+        },
+    )
+
+    rendered = render_metrics_text(artifacts_root=artifacts_root, evidence_root=evidence_root)
+    assert (
+        "tradingchassis_ops_lab_evidence_backtest_vs_paper_status_total"
+        '{comparison_status="differences_expected"} 1' in rendered
+    )
+    assert (
+        "tradingchassis_ops_lab_evidence_backtest_vs_paper_status_total"
+        '{comparison_status="missing_artifacts"} 1' in rendered
+    )
+    assert (
+        "tradingchassis_ops_lab_evidence_backtest_vs_paper_status"
+        '{comparison_status="differences_expected"} 1' in rendered
+    )
+    assert (
+        "tradingchassis_ops_lab_evidence_backtest_vs_paper_status"
+        '{comparison_status="missing_artifacts"} 3' in rendered
+    )
+    assert "tradingchassis_ops_lab_evidence_known_gaps_total{} 3" in rendered
+    assert "tradingchassis_ops_lab_evidence_journal_shared_events_total{} 3" in rendered
+    assert (
+        "tradingchassis_ops_lab_evidence_artifacts_present_total"
+        '{side="backtest",artifact="metadata.json"} 2' in rendered
+    )
+    assert (
+        'tradingchassis_ops_lab_evidence_compared_fields_total{classification="contextual"} 2'
+        in rendered
+    )
+
+
+def test_render_evidence_metrics_status_constant_when_multiple_artifacts_share_status(
+    tmp_path: Path,
+) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    evidence_root = tmp_path / "artifacts" / "evidence"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id="run-a",
+        metadata={
+            "run_id": "run-a",
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+    )
+    for pair_id in ("bt-1__paper-1", "bt-2__paper-2"):
+        _write_evidence_artifact(
+            evidence_root=evidence_root,
+            pair_id=pair_id,
+            payload={
+                "schema_version": "v1",
+                "comparison_status": "differences_expected",
+                "known_gaps": [],
+                "artifact_presence": {"backtest": {}, "paper": {}},
+                "journal_summary": {"shared_events": []},
+                "compared_fields": [],
+            },
+        )
+
+    rendered = render_metrics_text(artifacts_root=artifacts_root, evidence_root=evidence_root)
+    assert (
+        "tradingchassis_ops_lab_evidence_backtest_vs_paper_status_total"
+        '{comparison_status="differences_expected"} 2' in rendered
+    )
+    assert (
+        "tradingchassis_ops_lab_evidence_backtest_vs_paper_status"
+        '{comparison_status="differences_expected"} 1' in rendered
+    )
+
+
+@pytest.mark.parametrize(
+    ("status", "expected_value"),
+    [
+        ("differences_expected", 1),
+        ("matched_operational_context", 2),
+        ("missing_artifacts", 3),
+        ("incompatible_runs", 4),
+        ("unknown", -1),
+        ("not_a_real_status", -1),
+    ],
+)
+def test_evidence_status_encoding_constant_per_status(
+    tmp_path: Path, status: str, expected_value: int
+) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    evidence_root = tmp_path / "artifacts" / "evidence"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id="run-a",
+        metadata={
+            "run_id": "run-a",
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+    )
+    _write_evidence_artifact(
+        evidence_root=evidence_root,
+        pair_id=f"pair-{status}",
+        payload={
+            "schema_version": "v1",
+            "comparison_status": status,
+            "known_gaps": [],
+            "artifact_presence": {"backtest": {}, "paper": {}},
+            "journal_summary": {"shared_events": []},
+            "compared_fields": [],
+        },
+    )
+
+    rendered = render_metrics_text(artifacts_root=artifacts_root, evidence_root=evidence_root)
+    assert (
+        f'tradingchassis_ops_lab_evidence_backtest_vs_paper_status{{comparison_status="{status}"}} '
+        f"{expected_value}" in rendered
+    )
+
+
+def test_evidence_metrics_omit_run_pair_identifiers_and_sensitive_fields(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    evidence_root = tmp_path / "artifacts" / "evidence"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id="run-a",
+        metadata={
+            "run_id": "run-a",
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+    )
+    _write_evidence_artifact(
+        evidence_root=evidence_root,
+        pair_id="bt-unsafe__paper-unsafe",
+        payload={
+            "schema_version": "v1",
+            "comparison_status": "differences_expected",
+            "backtest_run_id": "bt-unsafe",
+            "paper_run_id": "paper-unsafe",
+            "known_gaps": ["pnl_not_available"],
+            "notes": ["sensitive text"],
+            "artifact_presence": {
+                "backtest": {"metadata.json": True},
+                "paper": {"metadata.json": True},
+            },
+            "journal_summary": {"shared_events": []},
+            "compared_fields": [],
+            "mode_summary": {
+                "backtest": {"config_sha256": "secret-hash"},
+                "paper": {"venue": "binance_testnet"},
+            },
+        },
+    )
+
+    rendered = render_metrics_text(artifacts_root=artifacts_root, evidence_root=evidence_root)
+    assert "bt-unsafe" not in rendered
+    assert "paper-unsafe" not in rendered
+    assert "pair_id" not in rendered
+    assert "config_sha256" not in rendered
+    assert "sensitive text" not in rendered
+    assert "tradingchassis_ops_lab_evidence_pnl" not in rendered
+    assert "tradingchassis_ops_lab_evidence_sharpe" not in rendered
+    assert "tradingchassis_ops_lab_evidence_returns" not in rendered
+
+
+def test_malformed_evidence_json_is_skipped_with_comment(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    evidence_root = tmp_path / "artifacts" / "evidence"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id="run-a",
+        metadata={
+            "run_id": "run-a",
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+    )
+    bad_dir = evidence_root / "bad-pair"
+    bad_dir.mkdir(parents=True)
+    (bad_dir / "backtest_vs_paper_evidence.json").write_text("{bad-json", encoding="utf-8")
+
+    rendered = render_metrics_text(artifacts_root=artifacts_root, evidence_root=evidence_root)
+    assert "skipped evidence artifact due to malformed JSON" in rendered
+
+
+def test_empty_evidence_root_adds_no_evidence_metrics(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    evidence_root = tmp_path / "artifacts" / "evidence"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id="run-a",
+        metadata={
+            "run_id": "run-a",
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+    )
+
+    rendered = render_metrics_text(artifacts_root=artifacts_root, evidence_root=evidence_root)
+    assert "tradingchassis_ops_lab_run_info{" in rendered
+    assert "tradingchassis_ops_lab_evidence_" not in rendered
+
+
+def test_render_metrics_text_includes_run_and_evidence_metrics_together(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    evidence_root = tmp_path / "artifacts" / "evidence"
+    _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id="run-a",
+        metadata={
+            "run_id": "run-a",
+            "mode": "backtest",
+            "engine": "nautilus",
+            "venue": "binance",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": False, "engine_executed": True, "input_candles_count": 20},
+    )
+    _write_evidence_artifact(
+        evidence_root=evidence_root,
+        pair_id="bt-1__paper-1",
+        payload={
+            "comparison_status": "differences_expected",
+            "known_gaps": ["pnl_not_available"],
+            "artifact_presence": {
+                "backtest": {"metadata.json": True},
+                "paper": {"metadata.json": True},
+            },
+            "journal_summary": {"shared_events": ["run_started"]},
+            "compared_fields": [],
+        },
+    )
+
+    rendered = render_metrics_text(
+        artifacts_root=artifacts_root,
+        evidence_root=evidence_root,
+        run_id="run-a",
+    )
+    assert "tradingchassis_ops_lab_run_info{" in rendered
+    assert "tradingchassis_ops_lab_backtest_input_candles_total" in rendered
+    assert "tradingchassis_ops_lab_evidence_backtest_vs_paper_status_total" in rendered

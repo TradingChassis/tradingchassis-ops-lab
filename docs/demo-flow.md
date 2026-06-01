@@ -105,6 +105,45 @@ Expected artifact location:
 
 - `artifacts/runs/<run_id>/`
 
+## Backtest vs Paper Evidence
+
+After backtest and paper artifacts exist, generate one cross-run operational evidence artifact:
+
+```bash
+tc evidence compare --backtest-run-id 2026-05-20-btcusdt-backtest-001 --paper-run-id 2026-05-20-btcusdt-paper-001
+```
+
+Inspect outputs:
+
+- `artifacts/evidence/2026-05-20-btcusdt-backtest-001__2026-05-20-btcusdt-paper-001/backtest_vs_paper_evidence.json`
+- `artifacts/evidence/2026-05-20-btcusdt-backtest-001__2026-05-20-btcusdt-paper-001/backtest_vs_paper_evidence.md`
+
+Expected operational result for this local demo path is typically:
+
+- `comparison_status = differences_expected`
+
+Expected differences are useful evidence, not failures:
+
+- backtest executes engine flow over prepared candles
+- paper is a synthetic lifecycle skeleton
+- config hashes or venue labels can differ by design
+- paper includes safety/readiness/probe state artifacts when evaluated
+- backtest includes scenario/bar execution facts
+- known gaps are explicit and expected in this phase
+
+This evidence explains operational comparability boundaries; it is not a strategy performance comparison.
+
+For Grafana visibility, ensure `tc metrics serve` includes evidence root:
+
+```bash
+tc metrics serve --artifacts-root artifacts/runs --evidence-root artifacts/evidence --host 0.0.0.0 --port 8000
+```
+
+Check dashboard panels:
+
+- `Backtest vs Paper Evidence Status`
+- `Evidence Known Gaps`
+
 ## 8) Connectivity readiness demo (local preflight only)
 
 Use a spec that includes `connectivity_readiness` (for example `examples/configs/btcusdt_paper.yaml`).
@@ -213,7 +252,7 @@ Artifact-backed run outputs under `artifacts/runs/<run_id>/` are rendered as Pro
 Terminal 1:
 
 ```bash
-tc metrics serve --artifacts-root artifacts/runs --host 0.0.0.0 --port 8000
+tc metrics serve --artifacts-root artifacts/runs --evidence-root artifacts/evidence --host 0.0.0.0 --port 8000
 ```
 
 Terminal 2:
@@ -236,6 +275,25 @@ Verification:
 - Open `TradingChassis Ops Lab Run Observability`
 - Confirm panel `Kill Switch State` shows the selected run's local safety snapshot state
 - Confirm panels `Connectivity Probe State` and `Connectivity Probe Latency` show probe artifact-backed values when probe metrics are present
+- Confirm evidence panels `Backtest vs Paper Evidence Status` and `Evidence Known Gaps` when evidence artifacts exist under `artifacts/evidence/`
+
+### Reading the Grafana dashboard
+
+The dashboard is artifact-backed. It helps inspect completed local runs and evidence artifacts. It does not stream live trading state. Values should be read as operational signals and known boundaries, not as trading performance.
+
+Use `tc metrics serve` for Prometheus/Grafana. Use `tc metrics export` only for optional one-shot debugging or inspection; `export` is not required before `serve`.
+
+| Panel | What it means | What it does not mean |
+| --- | --- | --- |
+| `Evidence Known Gaps` | Count of explicit known limitations recorded in evidence artifacts (for example no PnL, no slippage, no fill quality, no external venue state, candle-only data, synthetic paper lifecycle). | Errors, test failures, or missing CI checks. |
+| `Backtest vs Paper Evidence Status` | Encoded operational evidence status. `1` means `differences_expected` in the normal demo flow: backtest and paper differ in expected, documented ways. | Strategy performance, profitability, or trading equivalence between modes. |
+| `Paper Heartbeats` | Count of synthetic paper lifecycle heartbeat events from run artifacts. | Market data events, orders, fills, or real paper trading activity. |
+| `Connectivity Readiness` | Local readiness state from env placeholder presence (for example `missing_credentials` or `configured`). | Network connectivity, provider credential validation, or successful exchange/testnet access. |
+| `Connectivity Probe State` | Result of a local loopback read-only HTTP probe (for example `probe_ok`, `probe_http_error`, `probe_timeout`, `probe_unreachable`). | Binance, testnet, or live exchange connectivity. |
+| `Connectivity Probe Latency` | Duration of the local loopback probe in seconds. | Exchange latency or live trading latency. |
+| `Kill Switch State` | Local file-based kill-switch state such as `absent`, `cleared`, or `active`. | Real order cancellation, position flattening, or a production safety guarantee. |
+| Backtest scenario counters (`bars seen`, `orders submitted`, `fills`, deterministic action) | Built-in `ops_smoke_demo` operational counters from artifact-backed metrics. | PnL, alpha, profitability, or custom strategy plugin results. |
+| `Run Info` / `Run Duration` | Selected run metadata and artifact-backed lifecycle timing. | Live process health or real-time runtime monitoring. |
 
 This demo flow is local-only and artifact-backed. It is not live production monitoring, and it does not imply exchange/testnet connectivity or strategy-performance tracking.
 
