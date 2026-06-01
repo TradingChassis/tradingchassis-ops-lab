@@ -28,18 +28,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Grafana evidence panels:
   - `Backtest vs Paper Evidence Status`
   - `Evidence Known Gaps`
+- `tc metrics serve --evidence-root` for aggregate evidence metrics in local Prometheus/Grafana workflows.
 
 ### Changed
 
-- README, quickstart, demo flow, run model, and architecture docs now include the backtest-vs-paper evidence workflow and evidence metrics visibility path.
+- README, quickstart, demo flow, run model, backtest-vs-paper, scope, limitations, and architecture docs now include the backtest-vs-paper evidence workflow and evidence metrics visibility path.
 - Scope/limitations/index/roadmap docs now mark `0.7.0` as implemented and emphasize operational evidence boundaries.
 - `tc metrics serve` guidance now consistently includes `--evidence-root artifacts/evidence` when demonstrating evidence panel visibility.
 
 ### Notes
 
 - `0.7.0` demonstrates operational evidence and expected mode differences between backtest and synthetic paper runs.
-- `0.7.0` does not include PnL/performance analytics (no Sharpe/returns/profitability claims).
+- `0.7.0` does not include PnL/performance analytics (no Sharpe/Sortino/returns/profitability claims).
 - `0.7.0` does not include real orders/fills, live/testnet/exchange evidence, or equivalence claims.
+- `0.7.0` does not include account/balance/position state evidence.
 - `0.7.0` does not include a generic run diff framework.
 - `0.7.0` does not include strategy plugin framework work.
 - `0.7.0` does not include external state reconciliation across venues.

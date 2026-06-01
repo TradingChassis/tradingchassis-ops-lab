@@ -255,12 +255,14 @@ Implemented in current repository scope:
 - Grafana evidence panels:
   - `Backtest vs Paper Evidence Status`
   - `Evidence Known Gaps`
-- docs/demo/run-model updates for evidence workflow
+- `tc metrics serve --evidence-root` for aggregate evidence metrics visibility
+- docs/demo/run-model/backtest-vs-paper updates for evidence workflow
 
 Explicitly not included:
 
-- PnL/performance analytics (including Sharpe/returns/profitability)
+- PnL/performance analytics (including Sharpe/Sortino/returns/profitability)
 - real orders/fills or fill-quality analysis
+- account/balance/position state evidence
 - live/testnet/exchange evidence or equivalence claims
 - generic run-diff framework
 - strategy plugin framework
