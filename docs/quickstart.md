@@ -98,6 +98,8 @@ Overrides:
 
 You do not need to run `tc metrics export` for Grafana. Use `export` only when you want to inspect generated Prometheus text directly for debugging.
 
+To interpret panel values (for example evidence status `1` or `Evidence Known Gaps` counts), see [Reading the Grafana dashboard](demo-flow.md#reading-the-grafana-dashboard) in Demo Flow.
+
 For the complete operational walkthrough (paper skeleton, kill switch, reconciliation, drills), continue to [Demo Flow](demo-flow.md).
 
 ## Connectivity readiness quick path (local-only)

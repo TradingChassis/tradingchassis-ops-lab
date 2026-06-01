@@ -92,7 +92,7 @@ docker compose -f deploy/observability/docker-compose.yml up
 Default verification URLs:
 
 - Prometheus targets: `http://localhost:9090/targets`
-- Grafana: `http://localhost:3000` — open dashboard **TradingChassis Ops Lab Run Observability**
+- Grafana: `http://localhost:3000` — open dashboard **TradingChassis Ops Lab Run Observability** ([how to read panel values](docs/demo-flow.md#reading-the-grafana-dashboard))
 
 If you use non-default ports, set `TC_PROMETHEUS_PORT` and/or `TC_GRAFANA_PORT` when starting Compose, then open the same paths on your chosen local ports. `TC_METRICS_TARGET` selects which host:port Prometheus scrapes (defaults to the metrics serve endpoint).
 
