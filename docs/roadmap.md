@@ -22,7 +22,8 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 | Safety and control | File-based kill switch state/events, paper lifecycle safety gate, and safety visibility in metrics/report/dashboard | implemented (`0.3.0`) |
 | Reconciliation | File-based expected vs observed checks with reconciliation artifact output | implemented (`0.1.0`) |
 | Runbooks | Deterministic runbooks for stale data, connectivity probe failed, mismatch, and restart recovery | implemented (`0.1.0`; connectivity probe runbook through `0.6.0`) |
-| Documentation | MkDocs Material site, demo flow, scope/limitations, roadmap, and connectivity probe runbook | implemented (`0.1.0`; updated through `0.6.0`) |
+| Evidence workflow | Backtest-vs-paper evidence schema, compare CLI, evidence artifacts, aggregate evidence metrics, and Grafana evidence panels | implemented (`0.7.0`) |
+| Documentation | MkDocs Material site, demo flow, scope/limitations, roadmap, and connectivity probe runbook | implemented (`0.1.0`; updated through `0.7.0`) |
 | Local ops stack | Runnable local Prometheus/Grafana stack for artifact-backed metrics | implemented (`0.2.0`) |
 | Kubernetes/GitOps | No cluster manifests or GitOps workflow in current repository | deferred |
 
@@ -235,27 +236,40 @@ Explicitly not included:
 - provider credential validation
 - adapter framework or multi-venue architecture
 
-## Near-term milestones
+### 0.7.0 Backtest vs Paper Evidence
 
-### 1. External Read-Only Probe (Deferred)
+Implemented in current repository scope:
 
-Goal:
-
-- Decide whether and when to add optional external read-only testnet probing after the completed `0.6.0` local loopback probe milestone.
-
-Decision options:
-
-- defer external probe to a later version (current default)
-- or add one optional read-only external probe unit under explicit non-goals
+- evidence schema v1 and pure backtest-vs-paper operational comparison contract
+- `tc evidence compare --backtest-run-id <id> --paper-run-id <id>`
+- evidence artifacts under `artifacts/evidence/<backtest_run_id>__<paper_run_id>/`
+- machine-readable evidence JSON and operator-readable evidence markdown report
+- path-safety validation for run IDs in evidence artifact path handling
+- aggregate artifact-backed evidence metrics:
+  - `tradingchassis_ops_lab_evidence_backtest_vs_paper_status_total`
+  - `tradingchassis_ops_lab_evidence_backtest_vs_paper_status`
+  - `tradingchassis_ops_lab_evidence_artifacts_present_total`
+  - `tradingchassis_ops_lab_evidence_known_gaps_total`
+  - `tradingchassis_ops_lab_evidence_journal_shared_events_total`
+  - `tradingchassis_ops_lab_evidence_compared_fields_total`
+- Grafana evidence panels:
+  - `Backtest vs Paper Evidence Status`
+  - `Evidence Known Gaps`
+- docs/demo/run-model updates for evidence workflow
 
 Explicitly not included:
 
-- production live trading claims
-- order/account execution behavior
-- multi-venue execution
-- profitability claims
+- PnL/performance analytics (including Sharpe/returns/profitability)
+- real orders/fills or fill-quality analysis
+- live/testnet/exchange evidence or equivalence claims
+- generic run-diff framework
+- strategy plugin framework
+- external state reconciliation across venues
+- Kubernetes/GitOps work
 
-### 2. Expanded Failure Modes
+## Near-term milestones
+
+### 1. Expanded Failure Modes
 
 Goal:
 
@@ -268,7 +282,7 @@ Includes:
 - rate-limit exhaustion drill
 - stale orderbook drill
 
-### 3. Kubernetes / GitOps Lab
+### 2. Kubernetes / GitOps Lab
 
 Goal:
 
@@ -319,6 +333,6 @@ Intentionally not next:
 
 ## Current recommended sequence
 
-1. External read-only probe decision (deferred from completed `0.6.0` local-only milestone)
-2. Expanded Failure Modes
-3. Kubernetes / GitOps Lab
+1. Expanded Failure Modes
+2. Kubernetes / GitOps Lab
+3. Optional external read-only probe / orderbook / additional scenarios (deferred)

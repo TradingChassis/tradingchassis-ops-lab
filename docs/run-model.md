@@ -35,6 +35,29 @@ Optional/additional outputs depending on commands:
 - `artifacts/runs/<run_id>/drills/*.json`
 - `artifacts/runs/<run_id>/metrics.prom` (when exported to file)
 
+Evidence comparison artifacts are cross-run outputs (not standalone runs):
+
+- root: `artifacts/evidence/`
+- pair directory: `artifacts/evidence/<backtest_run_id>__<paper_run_id>/`
+- files:
+  - `backtest_vs_paper_evidence.json`
+  - `backtest_vs_paper_evidence.md`
+
+Evidence compare reads from the two run directories and writes only under `artifacts/evidence/...`; it does not mutate compared run directories.
+
+## Backtest vs paper evidence schema (high level)
+
+`backtest_vs_paper_evidence.json` includes operational comparison fields such as:
+
+- `schema_version`
+- `comparison_status`
+- `known_gaps`
+- `journal_summary`
+- `artifact_presence`
+- `compared_fields`
+
+The markdown companion report summarizes those same operational findings in operator-readable form.
+
 ## Why reproducibility and traceability matter
 
 - Reproducibility allows the same run inputs to be rerun with consistent expectations.
@@ -92,6 +115,8 @@ Optional/additional outputs depending on commands:
 - `export` is a one-shot inspection path (stdout or file).
 - `serve` is the HTTP path used by Prometheus/Grafana (`/metrics`).
 - `serve` does not require a prior `export`; `export` does not prepare metrics for `serve`.
+- `serve` can include aggregate evidence metrics when `--evidence-root` points at evidence artifacts.
+- Evidence metrics are aggregate and artifact-backed (no run IDs, run pairs, or config hashes as evidence labels).
 
 ## Concrete examples
 

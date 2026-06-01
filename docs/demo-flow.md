@@ -105,6 +105,45 @@ Expected artifact location:
 
 - `artifacts/runs/<run_id>/`
 
+## Backtest vs Paper Evidence
+
+After backtest and paper artifacts exist, generate one cross-run operational evidence artifact:
+
+```bash
+tc evidence compare --backtest-run-id 2026-05-20-btcusdt-backtest-001 --paper-run-id 2026-05-20-btcusdt-paper-001
+```
+
+Inspect outputs:
+
+- `artifacts/evidence/2026-05-20-btcusdt-backtest-001__2026-05-20-btcusdt-paper-001/backtest_vs_paper_evidence.json`
+- `artifacts/evidence/2026-05-20-btcusdt-backtest-001__2026-05-20-btcusdt-paper-001/backtest_vs_paper_evidence.md`
+
+Expected operational result for this local demo path is typically:
+
+- `comparison_status = differences_expected`
+
+Expected differences are useful evidence, not failures:
+
+- backtest executes engine flow over prepared candles
+- paper is a synthetic lifecycle skeleton
+- config hashes or venue labels can differ by design
+- paper includes safety/readiness/probe state artifacts when evaluated
+- backtest includes scenario/bar execution facts
+- known gaps are explicit and expected in this phase
+
+This evidence explains operational comparability boundaries; it is not a strategy performance comparison.
+
+For Grafana visibility, ensure `tc metrics serve` includes evidence root:
+
+```bash
+tc metrics serve --artifacts-root artifacts/runs --evidence-root artifacts/evidence --host 0.0.0.0 --port 8000
+```
+
+Check dashboard panels:
+
+- `Backtest vs Paper Evidence Status`
+- `Evidence Known Gaps`
+
 ## 8) Connectivity readiness demo (local preflight only)
 
 Use a spec that includes `connectivity_readiness` (for example `examples/configs/btcusdt_paper.yaml`).
@@ -213,7 +252,7 @@ Artifact-backed run outputs under `artifacts/runs/<run_id>/` are rendered as Pro
 Terminal 1:
 
 ```bash
-tc metrics serve --artifacts-root artifacts/runs --host 0.0.0.0 --port 8000
+tc metrics serve --artifacts-root artifacts/runs --evidence-root artifacts/evidence --host 0.0.0.0 --port 8000
 ```
 
 Terminal 2:

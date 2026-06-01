@@ -19,11 +19,14 @@ For the runnable local demo flow, see [Demo Flow](demo-flow.md).
   }
 }}%%
 
-flowchart LR
+flowchart TB
     A["Run Spec"] --> B["Nautilus<br/>Run Mode"]
     B --> C["Journal<br/>Metadata<br/>Artifacts"]
-    C --> D["Reports<br/>Observability"]
-    D --> E["Safety<br/>Reconciliation<br/>Drills"]
+    C --> D["Evidence Compare<br/>tc evidence compare"]
+    D --> E["Evidence artifacts<br/>JSON and Markdown"]
+    C --> F["Reports<br/>Observability"]
+    E --> F
+    F --> G["Safety<br/>Reconciliation<br/>Drills"]
 ```
 
 ## Responsibilities
@@ -66,9 +69,18 @@ flowchart LR
 - Observability hooks expose basic signals for health and run progress
 - Designed for practical inspection, not full production telemetry
 - `tc metrics export` and `tc metrics serve` use the same artifact-backed renderer; `export` is a one-shot inspection path, and `serve` is the HTTP path (`/metrics`) scraped by Prometheus for Grafana
+- `tc metrics serve --evidence-root artifacts/evidence` includes aggregate evidence metrics rendered from evidence artifacts
+- Grafana evidence panels (`Backtest vs Paper Evidence Status`, `Evidence Known Gaps`) visualize those aggregate evidence metrics
 - Readiness metrics are artifact-backed from `connectivity_readiness.json`; they do not perform network probes
 - Probe metrics are artifact-backed from `connectivity_probe.json`; probe execution remains local loopback-only and read-only
 - Static dashboard definition: `dashboards/grafana/tradingchassis-ops-lab-run-observability.json`
+
+### Evidence compare (cross-run artifact)
+
+- Consumes two existing run artifact directories (backtest + paper)
+- Produces one cross-run evidence directory under `artifacts/evidence/<backtest_run_id>__<paper_run_id>/`
+- Writes both machine-readable (`backtest_vs_paper_evidence.json`) and operator-readable (`backtest_vs_paper_evidence.md`) outputs
+- Comparison is operational and artifact-backed, not strategy-performance analysis
 
 ### Safety / Reconciliation / Drills
 

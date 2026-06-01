@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-01
+
+### Added
+
+- Backtest-vs-paper evidence schema v1 and pure operational comparison contract.
+- Evidence compare CLI:
+  - `tc evidence compare --backtest-run-id <id> --paper-run-id <id>`
+- Evidence artifacts under `artifacts/evidence/<backtest_run_id>__<paper_run_id>/`:
+  - `backtest_vs_paper_evidence.json`
+  - `backtest_vs_paper_evidence.md`
+- Path-safety validation for run IDs used in evidence artifact path handling.
+- Aggregate artifact-backed evidence metrics:
+  - `tradingchassis_ops_lab_evidence_backtest_vs_paper_status_total`
+  - `tradingchassis_ops_lab_evidence_backtest_vs_paper_status`
+  - `tradingchassis_ops_lab_evidence_artifacts_present_total`
+  - `tradingchassis_ops_lab_evidence_known_gaps_total`
+  - `tradingchassis_ops_lab_evidence_journal_shared_events_total`
+  - `tradingchassis_ops_lab_evidence_compared_fields_total`
+- Grafana evidence panels:
+  - `Backtest vs Paper Evidence Status`
+  - `Evidence Known Gaps`
+
+### Changed
+
+- README, quickstart, demo flow, run model, and architecture docs now include the backtest-vs-paper evidence workflow and evidence metrics visibility path.
+- Scope/limitations/index/roadmap docs now mark `0.7.0` as implemented and emphasize operational evidence boundaries.
+- `tc metrics serve` guidance now consistently includes `--evidence-root artifacts/evidence` when demonstrating evidence panel visibility.
+
+### Notes
+
+- `0.7.0` demonstrates operational evidence and expected mode differences between backtest and synthetic paper runs.
+- `0.7.0` does not include PnL/performance analytics (no Sharpe/returns/profitability claims).
+- `0.7.0` does not include real orders/fills, live/testnet/exchange evidence, or equivalence claims.
+- `0.7.0` does not include a generic run diff framework.
+- `0.7.0` does not include strategy plugin framework work.
+- `0.7.0` does not include external state reconciliation across venues.
+- `0.7.0` does not include Kubernetes/GitOps work.
+
 ## [0.6.0] - 2026-05-28
 
 ### Added

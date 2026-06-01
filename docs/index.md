@@ -23,6 +23,7 @@
 - Nautilus smoke backtest and bounded synthetic paper lifecycle skeleton runs
 - Metrics export, kill switch controls, reconciliation checks, and failure drills
 - Local loopback connectivity readiness/probe workflows with artifact-backed metrics and dashboard panels
+- Backtest vs paper operational evidence workflow with JSON/markdown evidence artifacts
 - Consistent run artifacts under `artifacts/runs/<run_id>/`
 
 ## Where to go next
@@ -30,15 +31,19 @@
 <div class="ops-grid">
   <a class="ops-card" href="quickstart/">
     <strong>Quickstart</strong>
-    Short first-run path for install, checks, data prep, backtest smoke run, and metrics export.
+    Short first-run path for install, checks, data prep, backtest+paper runs, evidence compare, and metrics serve.
   </a>
   <a class="ops-card" href="demo-flow/">
     <strong>Full demo flow</strong>
-    End-to-end operational walkthrough including paper lifecycle, kill switch, reconciliation, and drills.
+    End-to-end operational walkthrough including evidence compare, paper lifecycle, kill switch, reconciliation, and drills.
+  </a>
+  <a class="ops-card" href="backtest-vs-paper/">
+    <strong>Backtest vs paper evidence</strong>
+    Operational evidence semantics, expected mode differences, and known gaps.
   </a>
   <a class="ops-card" href="roadmap/">
     <strong>Roadmap</strong>
-    Completed milestones (0.1.0 through 0.6.0), gaps, and deferred future work.
+    Completed milestones (0.1.0 through 0.7.0), gaps, and deferred future work.
   </a>
   <a class="ops-card" href="run-model/">
     <strong>Run model</strong>
