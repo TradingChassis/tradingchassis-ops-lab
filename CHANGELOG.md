@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.6.0]
+## [0.6.0] - 2026-05-28
 
 ### Added
 
@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - No adapter framework is included.
 - No Kubernetes/GitOps work is included.
 
-## [0.5.0]
+## [0.5.0] - 2026-05-28
 
 ### Added
 
@@ -87,7 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - No dashboard/alerting expansion is included.
 - No Kubernetes/GitOps work is included.
 
-## [0.4.0]
+## [0.4.0] - 2026-05-26
 
 ### Added
 
@@ -116,7 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - No orderbook/L2 support is included.
 - No exchange/testnet/live connectivity is included.
 
-## [0.3.0]
+## [0.3.0] - 2026-05-22
 
 ### Added
 
@@ -138,7 +138,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - No production safety guarantees are implied.
 - No exchange/testnet/live connectivity is included.
 
-## [0.2.0]
+## [0.2.0] - 2026-05-22
 
 ### Added
 
@@ -161,7 +161,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - No production monitoring guarantees are implied.
 - No profitability or strategy-performance claims are made.
 
-## [0.1.0]
+## [0.1.0] - 2026-05-21
 
 ### Added
 
