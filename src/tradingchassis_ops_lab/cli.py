@@ -37,6 +37,13 @@ from tradingchassis_ops_lab.drills import (
     execute_restart_recovery_drill,
     execute_stale_market_data_drill,
 )
+from tradingchassis_ops_lab.evidence import (
+    EvidenceArtifactsParseError,
+    EvidenceWriteError,
+    compare_backtest_paper,
+    validate_artifact_id,
+    write_backtest_paper_evidence_artifacts,
+)
 from tradingchassis_ops_lab.observability.metrics import (
     RunObservabilityError,
     export_run_metrics,
@@ -76,6 +83,7 @@ kill_app = typer.Typer(help="File-based kill switch safety commands.")
 reconcile_app = typer.Typer(help="File-based reconciliation commands.")
 drill_app = typer.Typer(help="Deterministic local failure drills.")
 connectivity_app = typer.Typer(help="Local-only connectivity readiness and probe commands.")
+evidence_app = typer.Typer(help="Backtest-vs-paper operational evidence commands.")
 app.add_typer(spec_app, name="spec")
 app.add_typer(run_app, name="run")
 app.add_typer(data_app, name="data")
@@ -84,6 +92,7 @@ app.add_typer(kill_app, name="kill")
 app.add_typer(reconcile_app, name="reconcile")
 app.add_typer(drill_app, name="drill")
 app.add_typer(connectivity_app, name="connectivity")
+app.add_typer(evidence_app, name="evidence")
 
 
 @app.callback()
@@ -365,6 +374,87 @@ def _resolve_artifacts_root() -> Path:
     if configured:
         return Path(configured)
     return Path("artifacts/runs")
+
+
+def _resolve_evidence_root() -> Path:
+    configured = os.environ.get("TRADINGCHASSIS_OPS_LAB_EVIDENCE_ROOT")
+    if configured:
+        return Path(configured)
+    return Path("artifacts/evidence")
+
+
+def _is_relative_to(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+        return True
+    except ValueError:
+        return False
+
+
+@evidence_app.command("compare")
+def evidence_compare(
+    backtest_run_id: str = typer.Option(
+        ...,
+        "--backtest-run-id",
+        help="Backtest run ID under artifacts root.",
+    ),
+    paper_run_id: str = typer.Option(
+        ...,
+        "--paper-run-id",
+        help="Paper run ID under artifacts root.",
+    ),
+    artifacts_root: Path = typer.Option(
+        Path("artifacts/runs"),
+        "--artifacts-root",
+        help="Root directory containing run artifact subdirectories.",
+    ),
+    evidence_root: Path | None = typer.Option(
+        None,
+        "--evidence-root",
+        help="Root directory for backtest-vs-paper evidence artifacts.",
+    ),
+) -> None:
+    """Compare backtest and paper run artifacts and write evidence JSON/markdown."""
+    try:
+        validated_backtest_run_id = validate_artifact_id(
+            backtest_run_id,
+            field_name="backtest_run_id",
+        )
+        validated_paper_run_id = validate_artifact_id(
+            paper_run_id,
+            field_name="paper_run_id",
+        )
+        resolved_artifacts_root = artifacts_root.resolve()
+        backtest_dir = (resolved_artifacts_root / validated_backtest_run_id).resolve()
+        paper_dir = (resolved_artifacts_root / validated_paper_run_id).resolve()
+        if not _is_relative_to(backtest_dir, resolved_artifacts_root):
+            raise EvidenceWriteError(
+                f"Resolved backtest path escapes artifacts root: {backtest_dir}"
+            )
+        if not _is_relative_to(paper_dir, resolved_artifacts_root):
+            raise EvidenceWriteError(f"Resolved paper path escapes artifacts root: {paper_dir}")
+        effective_evidence_root = (
+            evidence_root if evidence_root is not None else _resolve_evidence_root()
+        )
+        evidence = compare_backtest_paper(backtest_dir=backtest_dir, paper_dir=paper_dir)
+        paths = write_backtest_paper_evidence_artifacts(
+            evidence=evidence,
+            evidence_root=effective_evidence_root,
+        )
+    except (EvidenceArtifactsParseError, EvidenceWriteError) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+    except OSError as exc:
+        typer.secho(f"Failed to write evidence artifacts: {exc}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+    except Exception as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(1) from exc
+
+    typer.echo(f"comparison_status={evidence['comparison_status']}")
+    typer.echo(f"evidence_dir={paths.evidence_dir.resolve()}")
+    typer.echo(f"json={paths.json_path.resolve()}")
+    typer.echo(f"report={paths.report_path.resolve()}")
 
 
 @data_app.command("prepare")
