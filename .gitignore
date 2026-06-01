@@ -105,6 +105,7 @@ db.sqlite3-journal
 .runtime/
 /data/
 /artifacts/runs/
+/artifacts/evidence/
 runtime/
 
 # ==============================
