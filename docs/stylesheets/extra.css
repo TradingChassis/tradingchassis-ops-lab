@@ -175,3 +175,23 @@
   display: block;
   margin-bottom: 0.25rem;
 }
+
+/* Center Mermaid diagrams in the main content column. */
+.md-typeset .mermaid {
+  display: flex;
+  justify-content: center;
+  margin-inline: auto;
+  padding: 1rem 0;
+  background: transparent;
+  border: 0;
+}
+
+.md-typeset pre.mermaid > code {
+  background: transparent;
+}
+
+.md-typeset .mermaid svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
