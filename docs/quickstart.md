@@ -83,6 +83,7 @@ Verification:
 - Evidence panels:
   - `Backtest vs Paper Evidence Status`
   - `Evidence Known Gaps`
+- Failure drill panels (`Reconciliation Status`, `Failure Drill Last Pass`, `Failure Drill Outcome`) are artifact-backed. Empty panels usually mean no drill artifacts exist for the selected `run_id`. Run the existing `tc drill ...` commands first; they write `artifacts/runs/<run_id>/drills/*.json`. Full walkthrough: [Failure drills](demo-flow.md#failure-drills).
 
 Defaults:
 

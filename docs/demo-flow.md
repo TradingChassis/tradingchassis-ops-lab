@@ -346,7 +346,7 @@ Expected artifact location:
 
 - `artifacts/runs/2026-05-20-btcusdt-paper-001/`
 
-## 13) Failure drills and observability (0.8.0)
+<h2 id="failure-drills">13) Failure drills and observability (0.8.0)</h2>
 
 For a complete inventory of local failure modes — including artifact health failures, safety blocks,
 probe outcomes, evidence gaps, and observability issues — see [Failure modes](failure-modes.md).

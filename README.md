@@ -95,6 +95,8 @@ Default verification URLs:
 - Prometheus targets: `http://localhost:9090/targets`
 - Grafana: `http://localhost:3000` — open dashboard **TradingChassis Ops Lab Run Observability** ([how to read panel values](docs/demo-flow.md#reading-the-grafana-dashboard))
 
+Failure drill panels in Grafana are artifact-backed, not live process monitoring. To populate `Reconciliation Status`, `Failure Drill Last Pass`, and `Failure Drill Outcome`, run the existing local `tc drill ...` commands for a run. They write `artifacts/runs/<run_id>/drills/*.json`, which `tc metrics serve` exposes to Prometheus/Grafana. Empty panels usually mean no drill artifacts exist for the selected `run_id`. Use `tc metrics export --run-id <run_id> --artifacts-root artifacts/runs` for one-shot inspection. See [`docs/demo-flow.md#failure-drills`](docs/demo-flow.md#failure-drills) and [`docs/failure-modes.md`](docs/failure-modes.md) for the full walkthrough (including that `tc drill reconciliation-mismatch` may exit non-zero by design).
+
 If you use non-default ports, set `TC_PROMETHEUS_PORT` and/or `TC_GRAFANA_PORT` when starting Compose, then open the same paths on your chosen local ports. `TC_METRICS_TARGET` selects which host:port Prometheus scrapes (defaults to the metrics serve endpoint).
 
 Optional local override example:
