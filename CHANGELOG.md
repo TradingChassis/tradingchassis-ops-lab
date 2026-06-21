@@ -27,6 +27,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/run-model.md` — added cross-link to `failure-modes.md` at end of page.
 - `docs/demo-flow.md` — added forward link to `failure-modes.md` in the failure drills section.
 
+### Added (Unit 3 — Minimal Dashboard Panels)
+
+- Grafana panel `Reconciliation Status` (ID 13): stat panel querying
+  `tradingchassis_ops_lab_reconciliation_status{run_id="$run_id"}` with legend `{{status}}`.
+  Artifact-backed from `reconciliation_result.json`. No external/live/account-state claims.
+- Grafana panel `Failure Drill Last Pass` (ID 14): stat panel querying
+  `tradingchassis_ops_lab_failure_drill_last_pass{run_id="$run_id"}` with legend `{{drill_name}}`.
+  Value mappings: 1=pass, 0=fail, -1=unknown.
+- Grafana panel `Failure Drill Outcome` (ID 15): stat panel querying
+  `tradingchassis_ops_lab_failure_drill_last_outcome{run_id="$run_id"}` with legend `{{drill_name}}`.
+  Value mappings: 1=expected_warning, 2=expected_mismatch, 3=simulated_recovery_ok, -1=unknown.
+- All three panels placed at `y=21` (new row below Evidence row), each `h=4, w=8`.
+- Dashboard config tests in `tests/unit/test_observability_stack_configs.py`:
+  - Assertions for `Reconciliation Status`, `Failure Drill Last Pass`, `Failure Drill Outcome` panels.
+  - Metric name assertions and value-mapping assertions for each new panel.
+  - Panel ID uniqueness assertion.
+  - `tradingchassis_ops_lab_reconciliation_status`, `tradingchassis_ops_lab_failure_drill_last_pass`,
+    `tradingchassis_ops_lab_failure_drill_last_outcome` added to supported metrics set.
+- `docs/failure-modes.md`: unit split table row 3 updated to "implemented"; drill table rows updated.
+
 ### Added (Unit 2 — Failure Drill & Reconciliation Metrics)
 
 - Artifact-backed Prometheus metrics for existing `drills/*.json` artifacts:
