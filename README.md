@@ -40,6 +40,7 @@ Connectivity probe is local-only reachability check: `tc connectivity probe --sp
 | `0.5.0` | Connectivity readiness contract, local evaluation, and artifact-backed readiness metrics |
 | `0.6.0` | Local loopback connectivity probe contract, artifact-backed probe metrics, and dashboard visibility |
 | `0.7.0` | Backtest vs paper operational evidence artifacts, aggregate evidence metrics, and dashboard visibility |
+| `0.8.0` | Expanded failure modes — failure-mode contract, drill metrics, reconciliation/drill dashboard panels, and runbooks for local operational failure states |
 
 ## Quickstart summary
 
