@@ -108,7 +108,7 @@ operational signals derived from file-based artifacts.
 | Failure mode | Trigger | Expected exit | Artifact / signal | Journal event | Metric / dashboard signal | Recovery / verification | 0.8.0 status |
 |---|---|---:|---|---|---|---|---|
 | Missing credentials | `tc connectivity readiness` when required env vars are absent or empty | 0 | `connectivity_readiness.json` with `state=missing_credentials` | `connectivity_readiness_evaluated` | `tradingchassis_ops_lab_connectivity_readiness_state`; Grafana `Connectivity Readiness` panel | Expected local state; set dummy non-empty env vars to reach `configured` state | existing, tested, documented |
-| Invalid readiness config | `tc connectivity readiness` when RunSpec `connectivity_readiness` block has validation errors (duplicate env names, invalid format) | 0 | `connectivity_readiness.json` with `state=invalid_config`; `errors` list in artifact | `connectivity_readiness_evaluated` | `tradingchassis_ops_lab_connectivity_readiness_state=3` | Inspect `connectivity_readiness.json` `errors` field; fix RunSpec and re-run | existing, tested; demo-flow note planned |
+| Invalid readiness config | `tc connectivity readiness` when RunSpec `connectivity_readiness` block has validation errors (duplicate env names, invalid format) | 0 | `connectivity_readiness.json` with `state=invalid_config`; `errors` list in artifact | `connectivity_readiness_evaluated` | `tradingchassis_ops_lab_connectivity_readiness_state=3` | Inspect `connectivity_readiness.json` `errors` field; fix RunSpec and re-run | existing, tested, documented |
 
 ### Connectivity probe
 
@@ -124,7 +124,7 @@ operational signals derived from file-based artifacts.
 
 Reconciliation metrics (`tradingchassis_ops_lab_reconciliation_status`,
 `tradingchassis_ops_lab_reconciliation_checks_total`) render from `reconciliation_result.json`.
-Unit 2 renders pass/outcome metrics from existing `drills/*.json` artifacts; Unit 3 adds dashboard panels.
+Unit 2 renders pass/outcome metrics from existing `drills/*.json` artifacts; Unit 3 exposes these signals through Grafana panels.
 
 | Failure mode | Trigger | Expected exit | Artifact / signal | Journal event | Metric / dashboard signal | Recovery / verification | 0.8.0 status |
 |---|---|---:|---|---|---|---|---|
