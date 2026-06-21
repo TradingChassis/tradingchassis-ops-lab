@@ -7,67 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-06-21
+
 ### Added
 
-- `docs/failure-modes.md` — failure mode contract and inventory: local operational failure behavior
-  mapped to trigger, artifact, journal event, metric, dashboard signal, runbook, and recovery step.
-  Covers artifact health, evidence, safety, connectivity readiness, connectivity probe, reconciliation
-  / drills, and observability failure modes.
-- `docs/failure-modes.md` MkDocs nav entry under Concepts.
+- `docs/failure-modes.md` — authoritative failure mode contract and inventory. Maps all local
+  operational failure modes to trigger, expected exit, artifact/signal, journal event,
+  metric/dashboard signal, recovery/verification steps, and `0.8.0` status.
+  Covers: artifact health, evidence, safety, connectivity readiness, connectivity probe,
+  reconciliation/drills, and observability failure modes. MkDocs nav entry added under Concepts.
+- Artifact-backed Prometheus metrics for existing `drills/*.json` artifacts (Unit 2):
+  - `tradingchassis_ops_lab_failure_drill_executed_total{run_id, drill_name}` — 1 per discovered drill artifact.
+  - `tradingchassis_ops_lab_failure_drill_last_pass{run_id, drill_name}` — `1` (pass), `0` (fail), `-1` (unknown).
+  - `tradingchassis_ops_lab_failure_drill_last_outcome{run_id, drill_name}` — stable integer outcome encoding.
+- Grafana dashboard panels in `tradingchassis-ops-lab-run-observability.json` (Unit 3):
+  - `Reconciliation Status` — queries `tradingchassis_ops_lab_reconciliation_status`; artifact-backed from `reconciliation_result.json`.
+  - `Failure Drill Last Pass` — queries `tradingchassis_ops_lab_failure_drill_last_pass`; value-mapped 1=pass, 0=fail, -1=unknown.
+  - `Failure Drill Outcome` — queries `tradingchassis_ops_lab_failure_drill_last_outcome`; value-mapped 1=expected_warning, 2=expected_mismatch, 3=simulated_recovery_ok, -1=unknown.
+- Four new runbooks (Unit 4):
+  - `docs/runbooks/artifact-health.md` — missing/malformed run artifacts.
+  - `docs/runbooks/evidence-compare.md` — `tc evidence compare` diagnostics.
+  - `docs/runbooks/safety-gate.md` — paper blocked by kill switch.
+  - `docs/runbooks/observability-no-data.md` — Grafana/Prometheus no-data states.
+- MkDocs nav updated to include all four new runbooks.
+- `docs/demo-flow.md` §13 expanded with 0.8.0 drill/metrics/Grafana panel/runbook demo guidance.
 
 ### Changed
 
-- `docs/roadmap.md` — rescoped `0.8.0 — Expanded Failure Modes` to a trimmed plan: failure mode
-  contract, drill/reconciliation metrics, minimal dashboard panels, and runbooks. Deferred
-  `missing-update`, `disconnect`, rate-limit, and stale-orderbook drills explicitly.
-- `docs/limitations.md` — added note on deferred failure mode categories (rate-limit, disconnect,
-  stale-orderbook, external exchange disconnect) and cross-link to `failure-modes.md`.
-- `docs/scope.md` — added forward reference to `0.8.0` failure-mode visibility work and
-  `failure-modes.md`.
-- `docs/run-model.md` — added cross-link to `failure-modes.md` at end of page.
-- `docs/demo-flow.md` — added forward link to `failure-modes.md` in the failure drills section.
-
-### Added (Unit 3 — Minimal Dashboard Panels)
-
-- Grafana panel `Reconciliation Status` (ID 13): stat panel querying
-  `tradingchassis_ops_lab_reconciliation_status{run_id="$run_id"}` with legend `{{status}}`.
-  Artifact-backed from `reconciliation_result.json`. No external/live/account-state claims.
-- Grafana panel `Failure Drill Last Pass` (ID 14): stat panel querying
-  `tradingchassis_ops_lab_failure_drill_last_pass{run_id="$run_id"}` with legend `{{drill_name}}`.
-  Value mappings: 1=pass, 0=fail, -1=unknown.
-- Grafana panel `Failure Drill Outcome` (ID 15): stat panel querying
-  `tradingchassis_ops_lab_failure_drill_last_outcome{run_id="$run_id"}` with legend `{{drill_name}}`.
-  Value mappings: 1=expected_warning, 2=expected_mismatch, 3=simulated_recovery_ok, -1=unknown.
-- All three panels placed at `y=21` (new row below Evidence row), each `h=4, w=8`.
-- Dashboard config tests in `tests/unit/test_observability_stack_configs.py`:
-  - Assertions for `Reconciliation Status`, `Failure Drill Last Pass`, `Failure Drill Outcome` panels.
-  - Metric name assertions and value-mapping assertions for each new panel.
-  - Panel ID uniqueness assertion.
-  - `tradingchassis_ops_lab_reconciliation_status`, `tradingchassis_ops_lab_failure_drill_last_pass`,
-    `tradingchassis_ops_lab_failure_drill_last_outcome` added to supported metrics set.
-- `docs/failure-modes.md`: unit split table row 3 updated to "implemented"; drill table rows updated.
-
-### Added (Unit 2 — Failure Drill & Reconciliation Metrics)
-
-- Artifact-backed Prometheus metrics for existing `drills/*.json` artifacts:
-  - `tradingchassis_ops_lab_failure_drill_executed_total{run_id, drill_name}` — 1 per discovered drill artifact.
-  - `tradingchassis_ops_lab_failure_drill_last_pass{run_id, drill_name}` — `1` (pass), `0` (fail), `-1` (unknown).
-  - `tradingchassis_ops_lab_failure_drill_last_outcome{run_id, drill_name}` — stable integer encoding of drill outcome string.
-- Drill artifact scanning logic in `observability/metrics.py`: missing or empty `drills/` directory
-  produces no metrics (not an error); malformed individual drill files emit a Prometheus `#` comment
-  and continue rendering other runs (lenient pattern matching evidence renderer).
-- Outcome encoding: `expected_warning=1`, `expected_mismatch=2`, `simulated_recovery_ok=3`, unrecognized=`-1`.
-- Unit tests in `tests/unit/test_observability_metrics.py` covering: no drills dir, empty drills dir,
-  valid passing drill, failing pass field, multiple drills, malformed JSON skip, missing `drill_name`
-  skip, mixed valid/malformed, no sensitive labels, outcome encoding, `render_metrics_text` path.
-- `docs/failure-modes.md` updated: "planned Unit 2" rows updated to "implemented (Unit 2)"; Unit 1/2
-  status updated in unit split table.
+- `docs/failure-modes.md` — all "planned Unit N" status entries updated to "implemented" after each
+  unit shipped; runbook cross-links added to all applicable failure mode rows.
+- `docs/roadmap.md` — `0.8.0` moved from near-term to completed milestones; current position table
+  and capability gap analysis updated to reflect `0.8.0` state.
+- `docs/roadmap.md` — failure modes and runbooks row updated to reflect complete `0.8.0` state.
+- `docs/limitations.md` — deferred failure mode categories documented with cross-link to `failure-modes.md`.
+- `docs/scope.md` — forward reference to `0.8.0` failure-mode visibility added.
+- `docs/run-model.md` — cross-link to `failure-modes.md` added.
 
 ### Notes
 
-- Unit 1: docs-only — no runtime code changes.
-- No CLI, metrics, dashboard, or drill changes in Unit 1.
+- No new CLI commands.
+- No new drills.
 - No new artifact types or artifact roots.
+- No metrics behavior changes beyond Unit 2 additions.
+- No dashboard alerts.
+- No Alertmanager integration.
+- No live/testnet/exchange connectivity.
+- No real orders/fills/account/balance/position state.
+- No PnL/performance analytics.
+- No Kubernetes/GitOps.
 
 ## [0.7.0] - 2026-06-01
 

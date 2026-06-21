@@ -75,6 +75,10 @@ nav:
       - Connectivity probe failed: runbooks/connectivity-probe-failed.md
       - Reconciliation mismatch: runbooks/reconciliation-mismatch.md
       - Restart recovery: runbooks/restart-recovery.md
+      - Artifact health: runbooks/artifact-health.md
+      - Evidence compare: runbooks/evidence-compare.md
+      - Safety gate: runbooks/safety-gate.md
+      - Observability no data: runbooks/observability-no-data.md
   - ADRs:
       - NautilusTrader as engine: adr/0001-use-nautilus-as-engine.md
       - Local-first repository: adr/0002-local-first-monorepo.md

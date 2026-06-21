@@ -276,6 +276,7 @@ Verification:
 - Confirm panel `Kill Switch State` shows the selected run's local safety snapshot state
 - Confirm panels `Connectivity Probe State` and `Connectivity Probe Latency` show probe artifact-backed values when probe metrics are present
 - Confirm evidence panels `Backtest vs Paper Evidence Status` and `Evidence Known Gaps` when evidence artifacts exist under `artifacts/evidence/`
+- Confirm failure drill panels `Reconciliation Status`, `Failure Drill Last Pass`, and `Failure Drill Outcome` when drill artifacts exist under `artifacts/runs/<run_id>/drills/` (see section 13)
 
 ### Reading the Grafana dashboard
 
@@ -294,6 +295,9 @@ Use `tc metrics serve` for Prometheus/Grafana. Use `tc metrics export` only for 
 | `Kill Switch State` | Local file-based kill-switch state such as `absent`, `cleared`, or `active`. | Real order cancellation, position flattening, or a production safety guarantee. |
 | Backtest scenario counters (`bars seen`, `orders submitted`, `fills`, deterministic action) | Built-in `ops_smoke_demo` operational counters from artifact-backed metrics. | PnL, alpha, profitability, or custom strategy plugin results. |
 | `Run Info` / `Run Duration` | Selected run metadata and artifact-backed lifecycle timing. | Live process health or real-time runtime monitoring. |
+| `Reconciliation Status` | Artifact-backed reconciliation status from `reconciliation_result.json` (`warning`, `mismatch`, `ok`). Populated after running a drill or `tc reconcile check`. | Live reconciliation, external venue state, or account or balance validation. |
+| `Failure Drill Last Pass` | Encoded pass/fail from `drills/*.json`. `1`=pass, `0`=fail, `-1`=unknown. Populated after running a drill. | Live trading behavior or real operational controls. |
+| `Failure Drill Outcome` | Encoded outcome from `drills/*.json`. `1`=expected_warning, `2`=expected_mismatch, `3`=simulated_recovery_ok, `-1`=unknown. | Live incident state or production alerting. |
 
 This demo flow is local-only and artifact-backed. It is not live production monitoring, and it does not imply exchange/testnet connectivity or strategy-performance tracking.
 
@@ -342,9 +346,12 @@ Expected artifact location:
 
 - `artifacts/runs/2026-05-20-btcusdt-paper-001/`
 
-## 13) Failure drills
+## 13) Failure drills and observability (0.8.0)
 
-For a complete inventory of local failure modes — including artifact health failures, safety blocks, probe outcomes, evidence gaps, and observability issues — see [Failure modes](failure-modes.md).
+For a complete inventory of local failure modes — including artifact health failures, safety blocks,
+probe outcomes, evidence gaps, and observability issues — see [Failure modes](failure-modes.md).
+
+### Run the failure drills
 
 ```bash
 tc drill stale-market-data --run-id 2026-05-20-btcusdt-paper-001
@@ -352,9 +359,101 @@ tc drill reconciliation-mismatch --run-id 2026-05-20-btcusdt-paper-001
 tc drill restart-recovery --run-id 2026-05-20-btcusdt-paper-001
 ```
 
-`tc drill reconciliation-mismatch --run-id 2026-05-20-btcusdt-paper-001` is expected to exit non-zero by design when mismatch is detected.
+`tc drill reconciliation-mismatch` exits non-zero by design when mismatch is detected — this is
+the correct outcome, not a command failure.
+
+### Inspect drill artifacts
+
+```bash
+ls artifacts/runs/2026-05-20-btcusdt-paper-001/drills/
+```
+
+Each drill writes one JSON file:
+
+- `drills/stale_market_data.json` — `outcome=expected_warning`, `pass=true`
+- `drills/reconciliation_mismatch.json` — `outcome=expected_mismatch`, `pass=true`
+- `drills/restart_recovery.json` — `outcome=simulated_recovery_ok`, `pass=true`
+
+Inspect any drill artifact directly:
+
+```bash
+python -m json.tool \
+  artifacts/runs/2026-05-20-btcusdt-paper-001/drills/stale_market_data.json
+```
+
+Also inspect the reconciliation artifact written by drills and `tc reconcile check`:
+
+```bash
+python -m json.tool \
+  artifacts/runs/2026-05-20-btcusdt-paper-001/reconciliation_result.json
+```
+
+### View drill and reconciliation metrics
+
+One-shot inspection (optional):
+
+```bash
+tc metrics export \
+  --run-id 2026-05-20-btcusdt-paper-001 \
+  --artifacts-root artifacts/runs \
+  | grep -E "failure_drill|reconciliation"
+```
+
+Expected metrics from Unit 2:
+
+- `tradingchassis_ops_lab_failure_drill_executed_total{run_id=..., drill_name=...} 1`
+- `tradingchassis_ops_lab_failure_drill_last_pass{run_id=..., drill_name=...} 1`
+- `tradingchassis_ops_lab_failure_drill_last_outcome{run_id=..., drill_name=...} <encoded>`
+
+Existing reconciliation metrics:
+
+- `tradingchassis_ops_lab_reconciliation_status{..., status=warning}` or `{..., status=mismatch}`
+- `tradingchassis_ops_lab_reconciliation_checks_total{...}`
+
+### View Grafana panels (Unit 3)
+
+Start the metrics server (if not already running from section 10):
+
+```bash
+tc metrics serve \
+  --artifacts-root artifacts/runs \
+  --evidence-root artifacts/evidence \
+  --host 0.0.0.0 \
+  --port 8000
+```
+
+Start the observability stack (if not already running):
+
+```bash
+docker compose -f deploy/observability/docker-compose.yml up
+```
+
+In Grafana (`http://localhost:${TC_GRAFANA_PORT:-3000}`), open the
+`TradingChassis Ops Lab Run Observability` dashboard and select
+`2026-05-20-btcusdt-paper-001` from the `run_id` dropdown.
+
+Confirm three new panels from 0.8.0 (Unit 3):
+
+| Panel | What it shows |
+| --- | --- |
+| `Reconciliation Status` | Artifact-backed reconciliation status from `reconciliation_result.json`; shows label `warning` or `mismatch` depending on which drill ran last |
+| `Failure Drill Last Pass` | Encoded pass/fail per drill; `1`=pass, `0`=fail, `-1`=unknown |
+| `Failure Drill Outcome` | Encoded outcome per drill; `1`=expected_warning, `2`=expected_mismatch, `3`=simulated_recovery_ok, `-1`=unknown |
+
+These panels are artifact-backed. They do not stream live trading state.
+
+### When to use runbooks
+
+| Symptom | Runbook |
+| --- | --- |
+| Grafana shows no data | [Observability no data](runbooks/observability-no-data.md) |
+| Evidence compare reports missing or incompatible artifacts | [Evidence compare](runbooks/evidence-compare.md) |
+| Paper blocked by kill switch | [Safety gate](runbooks/safety-gate.md) |
+| Run artifacts missing or malformed | [Artifact health](runbooks/artifact-health.md) |
+| Drill or probe metrics missing | [Observability no data](runbooks/observability-no-data.md) |
 
 Expected artifact locations:
 
 - `artifacts/runs/2026-05-20-btcusdt-paper-001/`
+- `artifacts/runs/2026-05-20-btcusdt-paper-001/drills/`
 - `reports/sample/`

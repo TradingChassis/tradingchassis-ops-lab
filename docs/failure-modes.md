@@ -18,8 +18,16 @@ account access, or production systems.
 
 For the full artifact contract, see [Run model](run-model.md).
 For operational boundaries, see [Scope](scope.md) and [Limitations](limitations.md).
-Step-by-step recovery procedures live in the Runbooks section. Some runbooks already exist;
-additional failure-mode runbooks are planned for Unit 4.
+Step-by-step recovery procedures live in the Runbooks section:
+
+- [Artifact health](runbooks/artifact-health.md) — missing or malformed run artifacts
+- [Evidence compare](runbooks/evidence-compare.md) — `tc evidence compare` diagnostics
+- [Safety gate](runbooks/safety-gate.md) — paper blocked by kill switch
+- [Observability no data](runbooks/observability-no-data.md) — Grafana/Prometheus no-data states
+- [Stale market data](runbooks/stale-market-data.md) — stale market data drill
+- [Reconciliation mismatch](runbooks/reconciliation-mismatch.md) — reconciliation mismatch drill
+- [Restart recovery](runbooks/restart-recovery.md) — restart recovery drill
+- [Connectivity probe failed](runbooks/connectivity-probe-failed.md) — probe failure cases
 
 ---
 
@@ -71,9 +79,9 @@ operational signals derived from file-based artifacts.
 |---|---|---:|---|---|---|---|---|
 | Missing `metrics.json` | `tc metrics export` for a run without `metrics.json` | 1 | stderr `RunArtifactsFileMissingError` | — | `tc metrics serve` emits Prometheus `#` comment; dashboard shows no data for that run | Re-run the lifecycle command that writes `metrics.json` (backtest or paper) | existing, documented (run-model caveat) |
 | Missing `metadata.json` | `tc metrics export`, `tc connectivity readiness/probe`, `tc evidence compare` | 1 (export, connectivity) / 0 (evidence) | stderr or evidence `missing_artifacts` JSON | — | Evidence `comparison_status=missing_artifacts`; serve skips run | Re-initialize run with `tc run init` and repeat lifecycle | existing, partially documented |
-| Malformed `metadata.json` | Any command that parses `metadata.json` (export, kill snapshot update, evidence compare) | 1 | stderr `RunArtifactsParseError` or `KillSwitchReadError` | — | Export fails; serve skips with `#` comment | Inspect with `cat artifacts/runs/<run_id>/metadata.json \| python -m json.tool`; re-run lifecycle to regenerate | existing, tested; runbook planned (Unit 4) |
-| Malformed `metrics.json` | `tc metrics export`, `tc evidence compare` | 1 | stderr `RunArtifactsParseError` or `EvidenceArtifactsParseError` | — | Export fails; serve skips run with `#` comment | Inspect JSON; re-run backtest or paper lifecycle | existing, tested; runbook planned (Unit 4) |
-| Malformed `journal.jsonl` | `tc metrics export` (line parse error), `tc evidence compare` | 1 | stderr with line number; evidence: stderr then no evidence artifact written | — | Export fails; evidence errors before writing artifact | Inspect `journal.jsonl` around reported line number; re-run lifecycle | existing, tested; runbook planned (Unit 4) |
+| Malformed `metadata.json` | Any command that parses `metadata.json` (export, kill snapshot update, evidence compare) | 1 | stderr `RunArtifactsParseError` or `KillSwitchReadError` | — | Export fails; serve skips with `#` comment | Inspect with `cat artifacts/runs/<run_id>/metadata.json \| python -m json.tool`; re-run lifecycle to regenerate; see [Artifact health runbook](runbooks/artifact-health.md) | existing, tested; runbook implemented (Unit 4) |
+| Malformed `metrics.json` | `tc metrics export`, `tc evidence compare` | 1 | stderr `RunArtifactsParseError` or `EvidenceArtifactsParseError` | — | Export fails; serve skips run with `#` comment | Inspect JSON; re-run backtest or paper lifecycle; see [Artifact health runbook](runbooks/artifact-health.md) | existing, tested; runbook implemented (Unit 4) |
+| Malformed `journal.jsonl` | `tc metrics export` (line parse error), `tc evidence compare` | 1 | stderr with line number; evidence: stderr then no evidence artifact written | — | Export fails; evidence errors before writing artifact | Inspect `journal.jsonl` around reported line number; re-run lifecycle; see [Artifact health runbook](runbooks/artifact-health.md) | existing, tested; runbook implemented (Unit 4) |
 | Missing or malformed `run_spec.yaml` | `tc run init/backtest/paper`, `tc connectivity readiness/probe`, `tc spec validate` | 1 | stderr `RunSpecLoadError` | — | — | Re-run with a valid spec; use `tc spec validate --spec <path>` to check before init | existing, tested; restart-recovery drill checks artifact presence |
 
 ### Evidence
@@ -82,8 +90,8 @@ operational signals derived from file-based artifacts.
 |---|---|---:|---|---|---|---|---|
 | Missing evidence artifact | `tc metrics serve --evidence-root` when no evidence pairs exist | 0 | No evidence metrics rendered | — | Evidence panels show no data in Grafana | Run `tc evidence compare` first; then restart `tc metrics serve` | existing, documented |
 | Malformed evidence JSON | `tc metrics serve --evidence-root` over a corrupted evidence file | 0 | Prometheus `# skipped evidence artifact due to malformed JSON <path>` | — | Affected evidence pair skipped; other pairs still rendered | Inspect evidence JSON; re-run `tc evidence compare` for that pair | existing, tested |
-| Missing compared run directories | `tc evidence compare` when one or both run directories are absent | 0 | `backtest_vs_paper_evidence.json` with `comparison_status=missing_artifacts`; evidence MD written | — | `evidence_backtest_vs_paper_status_total{status=missing_artifacts}` incremented | Re-initialize and re-run the missing lifecycle to produce run artifacts | existing, tested; runbook planned (Unit 4) |
-| Incompatible backtest/paper modes | `tc evidence compare` when both runs use the same mode (both backtest or both paper) | 0 | Evidence JSON with `comparison_status=incompatible_runs` | — | `evidence_backtest_vs_paper_status_total{status=incompatible_runs}` incremented | Ensure one run is `mode: backtest` and one is `mode: paper`; re-run compare | existing, tested; runbook planned (Unit 4) |
+| Missing compared run directories | `tc evidence compare` when one or both run directories are absent | 0 | `backtest_vs_paper_evidence.json` with `comparison_status=missing_artifacts`; evidence MD written | — | `evidence_backtest_vs_paper_status_total{status=missing_artifacts}` incremented | Re-initialize and re-run the missing lifecycle to produce run artifacts; see [Evidence compare runbook](runbooks/evidence-compare.md) | existing, tested; runbook implemented (Unit 4) |
+| Incompatible backtest/paper modes | `tc evidence compare` when both runs use the same mode (both backtest or both paper) | 0 | Evidence JSON with `comparison_status=incompatible_runs` | — | `evidence_backtest_vs_paper_status_total{status=incompatible_runs}` incremented | Ensure one run is `mode: backtest` and one is `mode: paper`; re-run compare; see [Evidence compare runbook](runbooks/evidence-compare.md) | existing, tested; runbook implemented (Unit 4) |
 | Invalid evidence run IDs / path traversal | `tc evidence compare` with run IDs containing `..`, `/`, or other unsafe patterns | 1 | stderr `EvidenceWriteError` | — | No evidence artifact written | Use valid run IDs matching the pattern used at `tc run init` | existing, tested |
 | Evidence known gaps are high but expected | `tc metrics serve` with accumulated evidence artifacts | 0 | `evidence_known_gaps_total` reflects expected design gaps | — | `Evidence Known Gaps` panel shows non-zero count | High count is expected by design (no PnL, no fill quality, candle-only data, synthetic paper); not an error | existing, by design; documented in demo-flow |
 
@@ -91,9 +99,9 @@ operational signals derived from file-based artifacts.
 
 | Failure mode | Trigger | Expected exit | Artifact / signal | Journal event | Metric / dashboard signal | Recovery / verification | 0.8.0 status |
 |---|---|---:|---|---|---|---|---|
-| Kill switch active | `tc kill activate --run-id <id> --reason <text>` | 0 | `runtime/kill_switch/<run_id>.state.json` (`state=active`); `runtime/kill_switch/<run_id>.events.jsonl` | `kill_switch_activated` | `tradingchassis_ops_lab_kill_switch_state{run_id}=2`; Grafana `Kill Switch State` panel | Inspect state file; clear with `tc kill clear --run-id <id> --reason <text>` | existing, tested; runbook planned (Unit 4) |
+| Kill switch active | `tc kill activate --run-id <id> --reason <text>` | 0 | `runtime/kill_switch/<run_id>.state.json` (`state=active`); `runtime/kill_switch/<run_id>.events.jsonl` | `kill_switch_activated` | `tradingchassis_ops_lab_kill_switch_state{run_id}=2`; Grafana `Kill Switch State` panel | Inspect state file; clear with `tc kill clear --run-id <id> --reason <text>`; see [Safety gate runbook](runbooks/safety-gate.md) | existing, tested; runbook implemented (Unit 4) |
 | Kill switch cleared / absent | `tc kill clear` or no prior activation | 0 | state=cleared / state file absent | `kill_switch_cleared` / — | `kill_switch_state=1` (cleared) or `kill_switch_state=0` (absent) | Normal state; no action required | existing, tested |
-| Paper blocked by safety gate | `tc run paper` when kill switch is active for that run ID | 0 | Full run artifacts written with `status=safety_blocked`; `paper_safety_blocked` event in `journal.jsonl`; Safety section in `report.md` | `paper_safety_blocked` | `kill_switch_state=2`; paper metrics include `heartbeat_count=0` | Clear kill switch (`tc kill clear`); use a fresh run ID or re-run paper | existing, tested; runbook planned (Unit 4) |
+| Paper blocked by safety gate | `tc run paper` when kill switch is active for that run ID | 0 | Full run artifacts written with `status=safety_blocked`; `paper_safety_blocked` event in `journal.jsonl`; Safety section in `report.md` | `paper_safety_blocked` | `kill_switch_state=2`; paper metrics include `heartbeat_count=0` | Clear kill switch (`tc kill clear`); use a fresh run ID or re-run paper; see [Safety gate runbook](runbooks/safety-gate.md) | existing, tested; runbook implemented (Unit 4) |
 
 ### Connectivity readiness
 
@@ -129,8 +137,8 @@ Unit 2 renders pass/outcome metrics from existing `drills/*.json` artifacts; Uni
 
 | Failure mode | Trigger | Expected exit | Artifact / signal | Journal event | Metric / dashboard signal | Recovery / verification | 0.8.0 status |
 |---|---|---:|---|---|---|---|---|
-| Grafana shows no data | `tc metrics serve` is not running, Prometheus is not scraping, or `metrics.json` prerequisite is missing | — | Grafana panels empty for selected `$run_id` | — | Empty panels; Prometheus targets page shows down state | Verify `tc metrics serve` is running; check Prometheus targets at `/targets`; confirm `metrics.json` exists for selected run | existing behavior; general runbook planned (Unit 4) |
-| Prometheus target down | `tc metrics serve` is stopped or unreachable while Prometheus is running | — | Prometheus targets page shows target state as down | — | Dashboard stale or empty | Restart `tc metrics serve`; refresh Prometheus; wait one scrape interval | existing behavior; runbook planned (Unit 4) |
+| Grafana shows no data | `tc metrics serve` is not running, Prometheus is not scraping, or `metrics.json` prerequisite is missing | — | Grafana panels empty for selected `$run_id` | — | Empty panels; Prometheus targets page shows down state | Verify `tc metrics serve` is running; check Prometheus targets at `/targets`; confirm `metrics.json` exists for selected run; see [Observability no data runbook](runbooks/observability-no-data.md) | existing behavior; runbook implemented (Unit 4) |
+| Prometheus target down | `tc metrics serve` is stopped or unreachable while Prometheus is running | — | Prometheus targets page shows target state as down | — | Dashboard stale or empty | Restart `tc metrics serve`; refresh Prometheus; wait one scrape interval; see [Observability no data runbook](runbooks/observability-no-data.md) | existing behavior; runbook implemented (Unit 4) |
 | Metrics serve vs metrics export confusion | Operator uses `tc metrics export` expecting Grafana to update | — | Export writes Prometheus text to stdout or file; does not feed Grafana | — | Dashboard unchanged | Use `tc metrics serve` for Grafana; use `tc metrics export` only for one-shot inspection | existing, documented in quickstart / demo-flow |
 
 ---
@@ -168,7 +176,7 @@ or new run modes.
 | Unit 1 — Failure Mode Contract / Inventory | This page; `docs/failure-modes.md`; MkDocs nav; cross-links; roadmap alignment | implemented |
 | Unit 2 — Failure Drill & Reconciliation Metrics | Extend `observability/metrics.py` to render existing drill artifacts as Prometheus metrics | implemented |
 | Unit 3 — Minimal Dashboard Panels | Add `Reconciliation Status`, `Failure Drill Last Pass`, and `Failure Drill Outcome` panels to Grafana dashboard | implemented |
-| Unit 4 — Runbooks / Demo Flow / Changelog | Add runbooks for artifact health, evidence, safety gate, and observability no-data; update demo flow and release docs | planned |
+| Unit 4 — Runbooks / Demo Flow / Changelog | Add runbooks for artifact health, evidence, safety gate, and observability no-data; update demo flow and release docs | implemented |
 
 ### Deferred from 0.8.0
 
@@ -195,5 +203,11 @@ The following were evaluated and explicitly deferred:
 - [Limitations](limitations.md) — explicit implementation constraints
 - [Demo flow](demo-flow.md) — end-to-end walkthrough including safety, reconciliation, and drill steps
 - [Backtest vs paper](backtest-vs-paper.md) — evidence workflow and known gaps
-- [Runbooks](runbooks/stale-market-data.md) — recovery procedures for drills
+- [Artifact health runbook](runbooks/artifact-health.md) — missing or malformed run artifacts
+- [Evidence compare runbook](runbooks/evidence-compare.md) — `tc evidence compare` diagnostics
+- [Safety gate runbook](runbooks/safety-gate.md) — paper blocked by kill switch
+- [Observability no data runbook](runbooks/observability-no-data.md) — Grafana/Prometheus no-data states
+- [Stale market data runbook](runbooks/stale-market-data.md) — stale data drill recovery
+- [Reconciliation mismatch runbook](runbooks/reconciliation-mismatch.md) — mismatch drill recovery
+- [Restart recovery runbook](runbooks/restart-recovery.md) — restart recovery drill
 - [Connectivity probe runbook](runbooks/connectivity-probe-failed.md) — probe failure cases
