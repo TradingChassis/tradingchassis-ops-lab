@@ -537,6 +537,161 @@
       ],
       "title": "Journal Events by Type",
       "type": "timeseries"
+    },
+    {
+      "datasource": null,
+      "description": "Artifact-backed local reconciliation status from reconciliation_result.json. Does not imply external venue state, account or balance validation, or live reconciliation.",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 21
+      },
+      "id": 13,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "tradingchassis_ops_lab_reconciliation_status{run_id=\"$run_id\"}",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Reconciliation Status",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "description": "Artifact-backed drill pass/fail state from drills/*.json. 1=pass, 0=fail, -1=unknown or pass field absent. Does not imply live trading behavior or real operational controls.",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "options": {
+                "-1": {
+                  "text": "unknown"
+                },
+                "0": {
+                  "text": "fail"
+                },
+                "1": {
+                  "text": "pass"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 21
+      },
+      "id": 14,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "tradingchassis_ops_lab_failure_drill_last_pass{run_id=\"$run_id\"}",
+          "legendFormat": "{{drill_name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Failure Drill Last Pass",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "description": "Artifact-backed drill outcome encoding from drills/*.json. 1=expected_warning, 2=expected_mismatch, 3=simulated_recovery_ok, -1=unknown.",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "options": {
+                "-1": {
+                  "text": "unknown"
+                },
+                "1": {
+                  "text": "expected_warning"
+                },
+                "2": {
+                  "text": "expected_mismatch"
+                },
+                "3": {
+                  "text": "simulated_recovery_ok"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 21
+      },
+      "id": 15,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "tradingchassis_ops_lab_failure_drill_last_outcome{run_id=\"$run_id\"}",
+          "legendFormat": "{{drill_name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Failure Drill Outcome",
+      "type": "stat"
     }
   ],
   "refresh": "",

@@ -1437,3 +1437,340 @@ def test_render_metrics_text_includes_run_and_evidence_metrics_together(tmp_path
     assert "tradingchassis_ops_lab_run_info{" in rendered
     assert "tradingchassis_ops_lab_backtest_input_candles_total" in rendered
     assert "tradingchassis_ops_lab_evidence_backtest_vs_paper_status_total" in rendered
+
+
+# ---------------------------------------------------------------------------
+# Failure drill artifact metrics
+# ---------------------------------------------------------------------------
+
+
+def _make_run(tmp_path: Path, run_id: str) -> Path:
+    """Write minimal valid run artifacts and return the run dir."""
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_dir = _write_run_artifacts(
+        artifacts_root=artifacts_root,
+        run_id=run_id,
+        metadata={
+            "run_id": run_id,
+            "mode": "paper",
+            "engine": "nautilus",
+            "venue": "binance_testnet",
+            "instrument": "BTCUSDT",
+            "status": "completed",
+            "created_at_utc": "2026-05-20T19:00:00Z",
+        },
+        metrics={"is_placeholder": True, "engine_executed": False},
+    )
+    return run_dir
+
+
+def _write_drill_artifact(run_dir: Path, drill_name: str, payload: dict) -> Path:
+    drills_dir = run_dir / "drills"
+    drills_dir.mkdir(parents=True, exist_ok=True)
+    path = drills_dir / f"{drill_name}.json"
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return path
+
+
+def test_drill_metrics_emitted_for_passing_drill(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "drill-metrics-pass"
+    run_dir = _make_run(tmp_path, run_id)
+    _write_drill_artifact(
+        run_dir,
+        "stale_market_data",
+        {
+            "schema_version": "v1",
+            "run_id": run_id,
+            "drill_name": "stale_market_data",
+            "ts_utc": "2026-05-21T10:00:00Z",
+            "status": "completed",
+            "outcome": "expected_warning",
+            "pass": True,
+        },
+    )
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+
+    assert (
+        f'tradingchassis_ops_lab_failure_drill_executed_total{{run_id="{run_id}",'
+        'drill_name="stale_market_data"} 1' in rendered
+    )
+    assert (
+        f'tradingchassis_ops_lab_failure_drill_last_pass{{run_id="{run_id}",'
+        'drill_name="stale_market_data"} 1' in rendered
+    )
+    assert (
+        f'tradingchassis_ops_lab_failure_drill_last_outcome{{run_id="{run_id}",'
+        'drill_name="stale_market_data"} 1' in rendered
+    )
+
+
+def test_drill_metrics_emitted_for_failing_pass_field(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "drill-metrics-fail"
+    run_dir = _make_run(tmp_path, run_id)
+    _write_drill_artifact(
+        run_dir,
+        "reconciliation_mismatch",
+        {
+            "schema_version": "v1",
+            "run_id": run_id,
+            "drill_name": "reconciliation_mismatch",
+            "ts_utc": "2026-05-21T10:00:00Z",
+            "status": "completed",
+            "outcome": "expected_mismatch",
+            "pass": False,
+        },
+    )
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+
+    assert (
+        f'tradingchassis_ops_lab_failure_drill_last_pass{{run_id="{run_id}",'
+        'drill_name="reconciliation_mismatch"} 0' in rendered
+    )
+    assert (
+        f'tradingchassis_ops_lab_failure_drill_last_outcome{{run_id="{run_id}",'
+        'drill_name="reconciliation_mismatch"} 2' in rendered
+    )
+
+
+def test_drill_metrics_no_drills_dir_produces_no_drill_metrics(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "drill-metrics-no-dir"
+    _make_run(tmp_path, run_id)
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+
+    assert "tradingchassis_ops_lab_failure_drill_executed_total" not in rendered
+    assert "tradingchassis_ops_lab_failure_drill_last_pass" not in rendered
+    assert "tradingchassis_ops_lab_failure_drill_last_outcome" not in rendered
+
+
+def test_drill_metrics_empty_drills_dir_produces_no_drill_metrics(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "drill-metrics-empty-dir"
+    run_dir = _make_run(tmp_path, run_id)
+    (run_dir / "drills").mkdir()
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+
+    assert "tradingchassis_ops_lab_failure_drill_executed_total" not in rendered
+
+
+def test_drill_metrics_malformed_drill_json_skipped_with_comment(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "drill-metrics-malformed"
+    run_dir = _make_run(tmp_path, run_id)
+    drills_dir = run_dir / "drills"
+    drills_dir.mkdir()
+    (drills_dir / "bad_drill.json").write_text("{bad-json", encoding="utf-8")
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+
+    assert "skipped drill artifact due to malformed JSON" in rendered
+    assert "tradingchassis_ops_lab_failure_drill_executed_total" not in rendered
+
+
+def test_drill_metrics_non_object_drill_json_skipped_with_comment(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "drill-metrics-non-object"
+    run_dir = _make_run(tmp_path, run_id)
+    drills_dir = run_dir / "drills"
+    drills_dir.mkdir()
+    (drills_dir / "non_object.json").write_text("[]", encoding="utf-8")
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+
+    assert "skipped drill artifact (not a JSON object)" in rendered
+    assert "tradingchassis_ops_lab_failure_drill_executed_total" not in rendered
+    assert "tradingchassis_ops_lab_failure_drill_last_pass" not in rendered
+    assert "tradingchassis_ops_lab_failure_drill_last_outcome" not in rendered
+
+
+def test_drill_metrics_drill_without_drill_name_skipped(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "drill-metrics-no-name"
+    run_dir = _make_run(tmp_path, run_id)
+    _write_drill_artifact(
+        run_dir,
+        "legacy_format",
+        {
+            "run_id": run_id,
+            "drill": "legacy-name",
+            "status": "completed",
+            "outcome": "expected_warning",
+        },
+    )
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+
+    assert "tradingchassis_ops_lab_failure_drill_executed_total" not in rendered
+    assert "tradingchassis_ops_lab_failure_drill_last_pass" not in rendered
+
+
+def test_drill_metrics_multiple_drills_all_rendered(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "drill-metrics-multi"
+    run_dir = _make_run(tmp_path, run_id)
+    _write_drill_artifact(
+        run_dir,
+        "stale_market_data",
+        {
+            "schema_version": "v1",
+            "run_id": run_id,
+            "drill_name": "stale_market_data",
+            "ts_utc": "2026-05-21T10:00:00Z",
+            "status": "completed",
+            "outcome": "expected_warning",
+            "pass": True,
+        },
+    )
+    _write_drill_artifact(
+        run_dir,
+        "restart_recovery",
+        {
+            "schema_version": "v1",
+            "run_id": run_id,
+            "drill_name": "restart_recovery",
+            "ts_utc": "2026-05-21T10:01:00Z",
+            "status": "completed",
+            "outcome": "simulated_recovery_ok",
+            "pass": True,
+        },
+    )
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+
+    assert 'drill_name="stale_market_data"' in rendered
+    assert 'drill_name="restart_recovery"' in rendered
+    assert rendered.count("tradingchassis_ops_lab_failure_drill_executed_total") == 2
+    assert rendered.count("tradingchassis_ops_lab_failure_drill_last_pass") == 2
+
+
+def test_drill_metrics_missing_pass_field_encodes_unknown(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "drill-metrics-no-pass"
+    run_dir = _make_run(tmp_path, run_id)
+    _write_drill_artifact(
+        run_dir,
+        "stale_market_data",
+        {
+            "schema_version": "v1",
+            "run_id": run_id,
+            "drill_name": "stale_market_data",
+            "ts_utc": "2026-05-21T10:00:00Z",
+            "status": "completed",
+            "outcome": "expected_warning",
+        },
+    )
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+
+    assert (
+        f'tradingchassis_ops_lab_failure_drill_last_pass{{run_id="{run_id}",'
+        'drill_name="stale_market_data"} -1' in rendered
+    )
+
+
+@pytest.mark.parametrize(
+    ("outcome", "expected_value"),
+    [
+        ("expected_warning", 1),
+        ("expected_mismatch", 2),
+        ("simulated_recovery_ok", 3),
+        ("unknown_future_outcome", -1),
+        ("", -1),
+    ],
+)
+def test_drill_outcome_encoding_stable(tmp_path: Path, outcome: str, expected_value: int) -> None:
+    from tradingchassis_ops_lab.observability.metrics import _failure_drill_outcome_value
+
+    assert _failure_drill_outcome_value(outcome) == expected_value
+
+
+def test_drill_metrics_mixed_valid_and_malformed_renders_valid(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "drill-metrics-mixed"
+    run_dir = _make_run(tmp_path, run_id)
+    drills_dir = run_dir / "drills"
+    drills_dir.mkdir()
+    (drills_dir / "bad_drill.json").write_text("{bad-json", encoding="utf-8")
+    _write_drill_artifact(
+        run_dir,
+        "stale_market_data",
+        {
+            "schema_version": "v1",
+            "run_id": run_id,
+            "drill_name": "stale_market_data",
+            "ts_utc": "2026-05-21T10:00:00Z",
+            "status": "completed",
+            "outcome": "expected_warning",
+            "pass": True,
+        },
+    )
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+
+    assert "skipped drill artifact due to malformed JSON" in rendered
+    assert "tradingchassis_ops_lab_failure_drill_executed_total" in rendered
+    assert 'drill_name="stale_market_data"' in rendered
+
+
+def test_drill_metrics_no_sensitive_labels(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    run_id = "drill-metrics-labels"
+    run_dir = _make_run(tmp_path, run_id)
+    _write_drill_artifact(
+        run_dir,
+        "stale_market_data",
+        {
+            "schema_version": "v1",
+            "run_id": run_id,
+            "drill_name": "stale_market_data",
+            "ts_utc": "2026-05-21T10:00:00Z",
+            "status": "completed",
+            "outcome": "expected_warning",
+            "pass": True,
+            "inputs": {"fixture_path": "/absolute/path/to/fixture"},
+            "reconciliation_result_path": "/absolute/path/to/result",
+        },
+    )
+
+    rendered = export_run_metrics(run_id=run_id, artifacts_root=artifacts_root)
+
+    assert "/absolute/path" not in rendered
+    assert "fixture_path" not in rendered
+    assert "pnl" not in rendered
+    assert "alpha" not in rendered
+    assert "profitability" not in rendered
+
+
+def test_drill_metrics_render_metrics_text_includes_drill_metrics(tmp_path: Path) -> None:
+    artifacts_root = tmp_path / "artifacts" / "runs"
+    evidence_root = tmp_path / "artifacts" / "evidence"
+    run_id = "drill-metrics-serve"
+    run_dir = _make_run(tmp_path, run_id)
+    _write_drill_artifact(
+        run_dir,
+        "restart_recovery",
+        {
+            "schema_version": "v1",
+            "run_id": run_id,
+            "drill_name": "restart_recovery",
+            "ts_utc": "2026-05-21T10:00:00Z",
+            "status": "completed",
+            "outcome": "simulated_recovery_ok",
+            "pass": True,
+        },
+    )
+
+    rendered = render_metrics_text(artifacts_root=artifacts_root, evidence_root=evidence_root)
+
+    assert "tradingchassis_ops_lab_failure_drill_executed_total" in rendered
+    assert 'drill_name="restart_recovery"' in rendered
+    assert (
+        f'tradingchassis_ops_lab_failure_drill_last_outcome{{run_id="{run_id}",'
+        'drill_name="restart_recovery"} 3' in rendered
+    )

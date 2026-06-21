@@ -166,6 +166,9 @@ def test_grafana_dashboard_queries_use_supported_metric_namespace() -> None:
     assert "tradingchassis_ops_lab_connectivity_probe_latency_seconds" in referenced_metrics
     assert "tradingchassis_ops_lab_evidence_backtest_vs_paper_status_total" in referenced_metrics
     assert "tradingchassis_ops_lab_evidence_known_gaps_total" in referenced_metrics
+    assert "tradingchassis_ops_lab_reconciliation_status" in referenced_metrics
+    assert "tradingchassis_ops_lab_failure_drill_last_pass" in referenced_metrics
+    assert "tradingchassis_ops_lab_failure_drill_last_outcome" in referenced_metrics
     supported_metrics = {
         "tradingchassis_ops_lab_backtest_bars_processed_total",
         "tradingchassis_ops_lab_backtest_engine_duration_seconds",
@@ -175,9 +178,12 @@ def test_grafana_dashboard_queries_use_supported_metric_namespace() -> None:
         "tradingchassis_ops_lab_connectivity_readiness_state",
         "tradingchassis_ops_lab_evidence_backtest_vs_paper_status_total",
         "tradingchassis_ops_lab_evidence_known_gaps_total",
+        "tradingchassis_ops_lab_failure_drill_last_outcome",
+        "tradingchassis_ops_lab_failure_drill_last_pass",
         "tradingchassis_ops_lab_journal_event_total",
         "tradingchassis_ops_lab_kill_switch_state",
         "tradingchassis_ops_lab_paper_heartbeat_total",
+        "tradingchassis_ops_lab_reconciliation_status",
         "tradingchassis_ops_lab_run_duration_seconds",
         "tradingchassis_ops_lab_run_info",
     }
@@ -335,3 +341,100 @@ def test_grafana_dashboard_contains_evidence_known_gaps_panel() -> None:
     assert isinstance(targets, list)
     assert targets and isinstance(targets[0], dict)
     assert targets[0].get("expr") == "tradingchassis_ops_lab_evidence_known_gaps_total"
+
+
+def test_grafana_dashboard_contains_reconciliation_status_panel() -> None:
+    dashboard_path = _repo_root() / _DASHBOARD_DIR / _DASHBOARD_FILENAME
+    dashboard = json.loads(dashboard_path.read_text(encoding="utf-8"))
+    panels = dashboard.get("panels", [])
+    assert isinstance(panels, list)
+
+    panel = next(
+        (p for p in panels if p.get("title") == "Reconciliation Status"),
+        None,
+    )
+    assert panel is not None, "Reconciliation Status panel must exist."
+    assert panel.get("type") == "stat"
+
+    description = panel.get("description", "")
+    assert isinstance(description, str)
+    assert (
+        "reconciliation_result.json" in description.lower()
+        or "reconciliation" in description.lower()
+    )
+    assert "account" not in description.lower() or "account or balance" in description.lower()
+
+    targets = panel.get("targets", [])
+    assert isinstance(targets, list)
+    assert targets and isinstance(targets[0], dict)
+    assert (
+        targets[0].get("expr") == 'tradingchassis_ops_lab_reconciliation_status{run_id="$run_id"}'
+    )
+
+
+def test_grafana_dashboard_contains_failure_drill_last_pass_panel() -> None:
+    dashboard_path = _repo_root() / _DASHBOARD_DIR / _DASHBOARD_FILENAME
+    dashboard = json.loads(dashboard_path.read_text(encoding="utf-8"))
+    panels = dashboard.get("panels", [])
+    assert isinstance(panels, list)
+
+    panel = next(
+        (p for p in panels if p.get("title") == "Failure Drill Last Pass"),
+        None,
+    )
+    assert panel is not None, "Failure Drill Last Pass panel must exist."
+    assert panel.get("type") == "stat"
+
+    targets = panel.get("targets", [])
+    assert isinstance(targets, list)
+    assert targets and isinstance(targets[0], dict)
+    assert (
+        targets[0].get("expr") == 'tradingchassis_ops_lab_failure_drill_last_pass{run_id="$run_id"}'
+    )
+
+    mappings = panel.get("fieldConfig", {}).get("defaults", {}).get("mappings", [])
+    assert isinstance(mappings, list) and mappings
+    mapping_options = mappings[0].get("options", {})
+    assert mapping_options.get("1", {}).get("text") == "pass"
+    assert mapping_options.get("0", {}).get("text") == "fail"
+    assert mapping_options.get("-1", {}).get("text") == "unknown"
+
+
+def test_grafana_dashboard_contains_failure_drill_outcome_panel() -> None:
+    dashboard_path = _repo_root() / _DASHBOARD_DIR / _DASHBOARD_FILENAME
+    dashboard = json.loads(dashboard_path.read_text(encoding="utf-8"))
+    panels = dashboard.get("panels", [])
+    assert isinstance(panels, list)
+
+    panel = next(
+        (p for p in panels if p.get("title") == "Failure Drill Outcome"),
+        None,
+    )
+    assert panel is not None, "Failure Drill Outcome panel must exist."
+    assert panel.get("type") == "stat"
+
+    targets = panel.get("targets", [])
+    assert isinstance(targets, list)
+    assert targets and isinstance(targets[0], dict)
+    assert (
+        targets[0].get("expr")
+        == 'tradingchassis_ops_lab_failure_drill_last_outcome{run_id="$run_id"}'
+    )
+
+    mappings = panel.get("fieldConfig", {}).get("defaults", {}).get("mappings", [])
+    assert isinstance(mappings, list) and mappings
+    mapping_options = mappings[0].get("options", {})
+    assert mapping_options.get("1", {}).get("text") == "expected_warning"
+    assert mapping_options.get("2", {}).get("text") == "expected_mismatch"
+    assert mapping_options.get("3", {}).get("text") == "simulated_recovery_ok"
+    assert mapping_options.get("-1", {}).get("text") == "unknown"
+
+
+def test_grafana_dashboard_panel_ids_are_unique() -> None:
+    dashboard_path = _repo_root() / _DASHBOARD_DIR / _DASHBOARD_FILENAME
+    dashboard = json.loads(dashboard_path.read_text(encoding="utf-8"))
+    panels = dashboard.get("panels", [])
+    assert isinstance(panels, list)
+
+    ids = [panel.get("id") for panel in panels if isinstance(panel.get("id"), int)]
+    assert len(ids) == len(set(ids)), f"Duplicate panel IDs found: {ids}"

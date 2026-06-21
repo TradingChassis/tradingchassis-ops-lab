@@ -60,6 +60,8 @@ Implemented in current repository scope:
 - Generic Kubernetes platform work
 - Full production observability stack hardening
 
+Local failure-mode visibility — making existing operational failure states inspectable through artifacts, metrics, and dashboard signals — is the focus of `0.8.0 — Expanded Failure Modes`. See [Failure modes](failure-modes.md) for the full inventory.
+
 Future work may expand depth, but this repository intentionally keeps the current implementation local, reproducible, and non-production.
 
 ## Definition of Done (current scope)

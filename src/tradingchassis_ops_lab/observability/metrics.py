@@ -39,6 +39,8 @@ class RunObservabilityArtifacts:
     connectivity_readiness: dict[str, Any] | None
     connectivity_probe: dict[str, Any] | None
     include_journal: bool
+    drill_reports: list[dict[str, Any]]
+    drill_report_skip_comments: list[str]
 
 
 def _load_json_required(path: Path, *, field_name: str) -> dict[str, Any]:
@@ -94,6 +96,66 @@ def _load_json_optional(path: Path, *, field_name: str) -> dict[str, Any] | None
     return payload
 
 
+def _load_drill_reports(
+    run_dir: Path,
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """Scan drills/ directory and load valid drill JSON artifacts.
+
+    Missing or empty drills/ directory is not an error — drills are optional artifacts.
+    Malformed individual drill files are skipped with a comment string; other files continue
+    to render. This follows the lenient pattern used by the evidence metrics renderer.
+
+    Returns:
+        (valid_reports, skip_comments): valid parsed drill dicts and Prometheus comment strings
+        for any files that could not be parsed.
+    """
+    drills_dir = run_dir / "drills"
+    if not drills_dir.is_dir():
+        return [], []
+
+    valid_reports: list[dict[str, Any]] = []
+    skip_comments: list[str] = []
+
+    for path in sorted(drills_dir.glob("*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            skip_comments.append(
+                f"tradingchassis_ops_lab: skipped drill artifact due to malformed JSON {path}"
+            )
+            continue
+        if not isinstance(payload, dict):
+            skip_comments.append(
+                f"tradingchassis_ops_lab: skipped drill artifact (not a JSON object) {path}"
+            )
+            continue
+        valid_reports.append(payload)
+
+    return valid_reports, skip_comments
+
+
+def _failure_drill_outcome_value(outcome: Any) -> int:
+    """Encode a drill outcome string as a stable integer gauge value.
+
+    Known outcomes written by the current drill executor:
+        expected_warning      → 1 (stale_market_data drill passes with warning status)
+        expected_mismatch     → 2 (reconciliation_mismatch drill passes with mismatch status)
+        simulated_recovery_ok → 3 (restart_recovery drill artifact check passes)
+
+    Unrecognised or absent outcomes encode as -1 (unknown).
+    """
+    if not isinstance(outcome, str) or not outcome.strip():
+        return -1
+    normalized = outcome.strip()
+    if normalized == "expected_warning":
+        return 1
+    if normalized == "expected_mismatch":
+        return 2
+    if normalized == "simulated_recovery_ok":
+        return 3
+    return -1
+
+
 def load_run_observability_artifacts(
     run_id: str,
     artifacts_root: Path = Path("artifacts/runs"),
@@ -119,6 +181,7 @@ def load_run_observability_artifacts(
         run_dir / "connectivity_probe.json",
         field_name="connectivity_probe.json",
     )
+    drill_reports, drill_report_skip_comments = _load_drill_reports(run_dir)
 
     return RunObservabilityArtifacts(
         run_id=run_id,
@@ -130,6 +193,8 @@ def load_run_observability_artifacts(
         connectivity_readiness=connectivity_readiness,
         connectivity_probe=connectivity_probe,
         include_journal=include_journal,
+        drill_reports=drill_reports,
+        drill_report_skip_comments=drill_report_skip_comments,
     )
 
 
@@ -585,6 +650,49 @@ def render_prometheus_text(artifacts: RunObservabilityArtifacts) -> str:
             labels=core_labels,
             value=ts_seconds,
         )
+
+    for drill in artifacts.drill_reports:
+        # `drill_name` from the artifact field is preferred; fall back to omitting if absent.
+        drill_name = drill.get("drill_name")
+        if not isinstance(drill_name, str) or not drill_name.strip():
+            # Artifacts written by the current executor always include drill_name.
+            # Skip metrics for any artifact without a usable drill_name rather than using
+            # a raw filename or empty label.
+            continue
+        drill_name = drill_name.strip()
+        drill_labels = [("run_id", run_id), ("drill_name", drill_name)]
+
+        # failure_drill_executed_total: 1 for each discovered drill artifact.
+        _append_metric(
+            lines,
+            name="tradingchassis_ops_lab_failure_drill_executed_total",
+            labels=drill_labels,
+            value=1,
+        )
+
+        # failure_drill_last_pass: 1=pass, 0=fail, -1=unknown.
+        drill_pass = drill.get("pass")
+        if isinstance(drill_pass, bool):
+            pass_value = 1 if drill_pass else 0
+        else:
+            pass_value = -1
+        _append_metric(
+            lines,
+            name="tradingchassis_ops_lab_failure_drill_last_pass",
+            labels=drill_labels,
+            value=pass_value,
+        )
+
+        # failure_drill_last_outcome: stable integer encoding of outcome string.
+        _append_metric(
+            lines,
+            name="tradingchassis_ops_lab_failure_drill_last_outcome",
+            labels=drill_labels,
+            value=_failure_drill_outcome_value(drill.get("outcome")),
+        )
+
+    for skip_comment in artifacts.drill_report_skip_comments:
+        lines.append(f"# {skip_comment}")
 
     return "\n".join(lines) + "\n"
 

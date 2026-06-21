@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-06-21
+
+### Added
+
+- `docs/failure-modes.md` — authoritative failure mode contract and inventory. Maps all local
+  operational failure modes to trigger, expected exit, artifact/signal, journal event,
+  metric/dashboard signal, recovery/verification steps, and `0.8.0` status.
+  Covers: artifact health, evidence, safety, connectivity readiness, connectivity probe,
+  reconciliation/drills, and observability failure modes. MkDocs nav entry added under Concepts.
+- Artifact-backed Prometheus metrics for existing `drills/*.json` artifacts (Unit 2):
+  - `tradingchassis_ops_lab_failure_drill_executed_total{run_id, drill_name}` — 1 per discovered drill artifact.
+  - `tradingchassis_ops_lab_failure_drill_last_pass{run_id, drill_name}` — `1` (pass), `0` (fail), `-1` (unknown).
+  - `tradingchassis_ops_lab_failure_drill_last_outcome{run_id, drill_name}` — stable integer outcome encoding.
+- Grafana dashboard panels in `tradingchassis-ops-lab-run-observability.json` (Unit 3):
+  - `Reconciliation Status` — queries `tradingchassis_ops_lab_reconciliation_status`; artifact-backed from `reconciliation_result.json`.
+  - `Failure Drill Last Pass` — queries `tradingchassis_ops_lab_failure_drill_last_pass`; value-mapped 1=pass, 0=fail, -1=unknown.
+  - `Failure Drill Outcome` — queries `tradingchassis_ops_lab_failure_drill_last_outcome`; value-mapped 1=expected_warning, 2=expected_mismatch, 3=simulated_recovery_ok, -1=unknown.
+- Four new runbooks (Unit 4):
+  - `docs/runbooks/artifact-health.md` — missing/malformed run artifacts.
+  - `docs/runbooks/evidence-compare.md` — `tc evidence compare` diagnostics.
+  - `docs/runbooks/safety-gate.md` — paper blocked by kill switch.
+  - `docs/runbooks/observability-no-data.md` — Grafana/Prometheus no-data states.
+- MkDocs nav updated to include all four new runbooks.
+- `docs/demo-flow.md` §13 expanded with 0.8.0 drill/metrics/Grafana panel/runbook demo guidance.
+
+### Changed
+
+- `docs/failure-modes.md` — all "planned Unit N" status entries updated to "implemented" after each
+  unit shipped; runbook cross-links added to all applicable failure mode rows.
+- `docs/roadmap.md` — `0.8.0` moved from near-term to completed milestones; current position table
+  and capability gap analysis updated to reflect `0.8.0` state.
+- `docs/roadmap.md` — failure modes and runbooks row updated to reflect complete `0.8.0` state.
+- `docs/limitations.md` — deferred failure mode categories documented with cross-link to `failure-modes.md`.
+- `docs/scope.md` — forward reference to `0.8.0` failure-mode visibility added.
+- `docs/run-model.md` — cross-link to `failure-modes.md` added.
+
+### Notes
+
+- No new CLI commands.
+- No new drills.
+- No new artifact types or artifact roots.
+- No metrics behavior changes beyond Unit 2 additions.
+- No dashboard alerts.
+- No Alertmanager integration.
+- No live/testnet/exchange connectivity.
+- No real orders/fills/account/balance/position state.
+- No PnL/performance analytics.
+- No Kubernetes/GitOps.
+
 ## [0.7.0] - 2026-06-01
 
 ### Added

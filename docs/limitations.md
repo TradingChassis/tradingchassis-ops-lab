@@ -35,4 +35,13 @@ This project is intentionally constrained in its current implementation.
 - No generic run-diff framework
 - No production-grade safety, reliability, or low-latency claim
 
+The following failure-mode categories are explicitly deferred and do not appear in the current implementation or in `0.8.0`:
+
+- Rate-limit exhaustion simulation — no local rate-limit fixture or model exists
+- Disconnect drill as a standalone command — covered by `probe_unreachable` in the connectivity probe workflow
+- Stale orderbook drill — orderbook / LOB data is not supported (see above)
+- External exchange / testnet disconnect events — no external connectivity in any current command
+
+For the local failure modes that are supported, see [Failure modes](failure-modes.md).
+
 These limitations are deliberate to keep the current implementation focused on operational workflow quality rather than breadth or performance claims.
