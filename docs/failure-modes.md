@@ -18,7 +18,8 @@ account access, or production systems.
 
 For the full artifact contract, see [Run model](run-model.md).
 For operational boundaries, see [Scope](scope.md) and [Limitations](limitations.md).
-For step-by-step recovery procedures, see [Runbooks](runbooks/stale-market-data.md).
+Step-by-step recovery procedures live in the Runbooks section. Some runbooks already exist;
+additional failure-mode runbooks are planned for Unit 4.
 
 ---
 
@@ -113,12 +114,16 @@ operational signals derived from file-based artifacts.
 
 ### Reconciliation / drills
 
+Reconciliation metrics (`tradingchassis_ops_lab_reconciliation_status`,
+`tradingchassis_ops_lab_reconciliation_checks_total`) already render from `reconciliation_result.json`.
+Unit 2 adds pass/outcome metrics from existing `drills/*.json`; Unit 3 adds dashboard panels.
+
 | Failure mode | Trigger | Expected exit | Artifact / signal | Journal event | Metric / dashboard signal | Recovery / verification | 0.8.0 status |
 |---|---|---:|---|---|---|---|---|
-| Reconciliation mismatch | `tc drill reconciliation-mismatch --run-id <id>` (or `tc reconcile check` with mismatch fixture) | **1** (by design) | `drills/reconciliation_mismatch.json` with `outcome=expected_mismatch`; `reconciliation_result.json` with `status=mismatch` | `failure_drill_executed` (if `journal.jsonl` exists) | `tradingchassis_ops_lab_reconciliation_status{status=mismatch}` (planned Unit 2 for drill metrics); `Reconciliation Status` panel (planned Unit 3) | Exit 1 is expected; confirm `pass=true` in drill JSON; review `checks[]` for mismatch details | existing, tested; drill metrics and dashboard panel planned (Units 2–3) |
-| Stale market data drill | `tc drill stale-market-data --run-id <id>` | 0 | `drills/stale_market_data.json` with `outcome=expected_warning`; `reconciliation_result.json` with `status=warning` | `failure_drill_executed` (if `journal.jsonl` exists) | Reconciliation warning metrics (planned Unit 2); `Failure Drill Last Pass` panel (planned Unit 3) | Confirm `pass=true` in drill JSON; review `summary.warning` count; see [runbook](runbooks/stale-market-data.md) | existing, tested; drill metrics and panel planned (Units 2–3) |
-| Restart recovery drill | `tc drill restart-recovery --run-id <id>` | 0 | `drills/restart_recovery.json` with `outcome=simulated_recovery_ok` and artifact presence checklist | `failure_drill_executed` (if `journal.jsonl` exists) | Drill pass metric (planned Unit 2) | Confirm `pass=true` and all required artifacts present in `summary`; see [runbook](runbooks/restart-recovery.md) | existing, tested; drill metrics and panel planned (Units 2–3) |
-| Existing drill artifacts | Inspect `artifacts/runs/<run_id>/drills/*.json` after running any drill | — | `schema_version`, `drill_name`, `outcome`, `pass`, `checks[]`, `summary`, `limitations[]` in each drill JSON | — | No Prometheus metrics yet (planned Unit 2) | Use `cat artifacts/runs/<run_id>/drills/<drill_name>.json` to inspect outcome | existing (artifact-only); metrics planned (Unit 2) |
+| Reconciliation mismatch | `tc drill reconciliation-mismatch --run-id <id>` (or `tc reconcile check` with mismatch fixture) | **1** (by design) | `drills/reconciliation_mismatch.json` with `outcome=expected_mismatch`; `reconciliation_result.json` with `status=mismatch` | `failure_drill_executed` (if `journal.jsonl` exists) | `tradingchassis_ops_lab_reconciliation_status{status=mismatch}`, `tradingchassis_ops_lab_reconciliation_checks_total` (existing, from `reconciliation_result.json`); drill pass/outcome metrics (planned Unit 2); `Reconciliation Status` panel (planned Unit 3) | Exit 1 is expected; confirm `pass=true` in drill JSON; review `checks[]` for mismatch details | existing, tested; drill-artifact metrics and panel planned (Units 2–3) |
+| Stale market data drill | `tc drill stale-market-data --run-id <id>` | 0 | `drills/stale_market_data.json` with `outcome=expected_warning`; `reconciliation_result.json` with `status=warning` | `failure_drill_executed` (if `journal.jsonl` exists) | `tradingchassis_ops_lab_reconciliation_status{status=warning}`, `tradingchassis_ops_lab_reconciliation_checks_total` (existing); drill pass/outcome metrics (planned Unit 2); `Failure Drill Last Pass` panel (planned Unit 3) | Confirm `pass=true` in drill JSON; review `summary.warning` count; see [runbook](runbooks/stale-market-data.md) | existing, tested; drill-artifact metrics and panel planned (Units 2–3) |
+| Restart recovery drill | `tc drill restart-recovery --run-id <id>` | 0 | `drills/restart_recovery.json` with `outcome=simulated_recovery_ok` and artifact presence checklist | `failure_drill_executed` (if `journal.jsonl` exists) | `failure_drill_executed` journal metric (existing); drill pass/outcome metrics from `drills/*.json` (planned Unit 2) | Confirm `pass=true` and all required artifacts present in `summary`; see [runbook](runbooks/restart-recovery.md) | existing, tested; drill-artifact metrics planned (Unit 2) |
+| Existing drill artifacts | Inspect `artifacts/runs/<run_id>/drills/*.json` after running any drill | — | `schema_version`, `drill_name`, `outcome`, `pass`, `checks[]`, `summary`, `limitations[]` in each drill JSON | — | Reconciliation metrics when `reconciliation_result.json` exists; no drill pass/outcome metrics yet (planned Unit 2) | Use `cat artifacts/runs/<run_id>/drills/<drill_name>.json` to inspect outcome | existing (artifact-only); drill-artifact metrics planned (Unit 2) |
 
 ### Observability
 

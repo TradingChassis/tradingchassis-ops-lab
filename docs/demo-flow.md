@@ -346,7 +346,6 @@ Expected artifact location:
 
 For a complete inventory of local failure modes — including artifact health failures, safety blocks, probe outcomes, evidence gaps, and observability issues — see [Failure modes](failure-modes.md).
 
-
 ```bash
 tc drill stale-market-data --run-id 2026-05-20-btcusdt-paper-001
 tc drill reconciliation-mismatch --run-id 2026-05-20-btcusdt-paper-001
