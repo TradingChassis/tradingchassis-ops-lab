@@ -27,10 +27,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/run-model.md` — added cross-link to `failure-modes.md` at end of page.
 - `docs/demo-flow.md` — added forward link to `failure-modes.md` in the failure drills section.
 
+### Added (Unit 2 — Failure Drill & Reconciliation Metrics)
+
+- Artifact-backed Prometheus metrics for existing `drills/*.json` artifacts:
+  - `tradingchassis_ops_lab_failure_drill_executed_total{run_id, drill_name}` — 1 per discovered drill artifact.
+  - `tradingchassis_ops_lab_failure_drill_last_pass{run_id, drill_name}` — `1` (pass), `0` (fail), `-1` (unknown).
+  - `tradingchassis_ops_lab_failure_drill_last_outcome{run_id, drill_name}` — stable integer encoding of drill outcome string.
+- Drill artifact scanning logic in `observability/metrics.py`: missing or empty `drills/` directory
+  produces no metrics (not an error); malformed individual drill files emit a Prometheus `#` comment
+  and continue rendering other runs (lenient pattern matching evidence renderer).
+- Outcome encoding: `expected_warning=1`, `expected_mismatch=2`, `simulated_recovery_ok=3`, unrecognized=`-1`.
+- Unit tests in `tests/unit/test_observability_metrics.py` covering: no drills dir, empty drills dir,
+  valid passing drill, failing pass field, multiple drills, malformed JSON skip, missing `drill_name`
+  skip, mixed valid/malformed, no sensitive labels, outcome encoding, `render_metrics_text` path.
+- `docs/failure-modes.md` updated: "planned Unit 2" rows updated to "implemented (Unit 2)"; Unit 1/2
+  status updated in unit split table.
+
 ### Notes
 
-- No runtime code changes in this unit.
-- No CLI, metrics, dashboard, or drill changes.
+- Unit 1: docs-only — no runtime code changes.
+- No CLI, metrics, dashboard, or drill changes in Unit 1.
 - No new artifact types or artifact roots.
 
 ## [0.7.0] - 2026-06-01
