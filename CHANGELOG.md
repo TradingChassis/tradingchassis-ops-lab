@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `docs/failure-modes.md` — failure mode contract and inventory: local operational failure behavior
+  mapped to trigger, artifact, journal event, metric, dashboard signal, runbook, and recovery step.
+  Covers artifact health, evidence, safety, connectivity readiness, connectivity probe, reconciliation
+  / drills, and observability failure modes.
+- `docs/failure-modes.md` MkDocs nav entry under Concepts.
+
+### Changed
+
+- `docs/roadmap.md` — rescoped `0.8.0 — Expanded Failure Modes` to a trimmed plan: failure mode
+  contract, drill/reconciliation metrics, minimal dashboard panels, and runbooks. Deferred
+  `missing-update`, `disconnect`, rate-limit, and stale-orderbook drills explicitly.
+- `docs/limitations.md` — added note on deferred failure mode categories (rate-limit, disconnect,
+  stale-orderbook, external exchange disconnect) and cross-link to `failure-modes.md`.
+- `docs/scope.md` — added forward reference to `0.8.0` failure-mode visibility work and
+  `failure-modes.md`.
+- `docs/run-model.md` — added cross-link to `failure-modes.md` at end of page.
+- `docs/demo-flow.md` — added forward link to `failure-modes.md` in the failure drills section.
+
+### Notes
+
+- No runtime code changes in this unit.
+- No CLI, metrics, dashboard, or drill changes.
+- No new artifact types or artifact roots.
+
 ## [0.7.0] - 2026-06-01
 
 ### Added

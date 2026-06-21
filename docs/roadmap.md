@@ -37,7 +37,7 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 | Observability | `tc metrics serve` plus local Prometheus/Grafana Compose stack and provisioning are in place (`implemented`) | Alerting and deeper operational rule coverage are not in scope yet | Keep the current local stack stable; add only narrow follow-up hardening post-0.3.0 |
 | Safety and control | File-based kill switch is integrated into paper lifecycle state checks with artifact-backed visibility (`implemented`) | Scope intentionally remains local and file-based with no order cancellation/flattening | Keep the deterministic local safety gate stable while documenting boundaries before connectivity work |
 | Reconciliation | File-based reconciliation, artifact output, and journal event integration are implemented (`implemented`) | Reconciliation is fixture/file-driven only; no paper runtime-state source | Keep deterministic file path; increase coverage; defer runtime-state reconciliation until paper runtime matures |
-| Failure modes and runbooks | Three deterministic drills and runbooks are implemented (`implemented`) | Coverage is limited to current local drill set; no disconnect/missing-update/rate-limit drills | Expand drill catalog incrementally with deterministic local artifacts and runbooks |
+| Failure modes and runbooks | Three deterministic drills and runbooks are implemented (`implemented`) | Drill and reconciliation metrics/panels not yet exposed; runbooks for artifact health, safety gate, and observability no-data not yet written | Expose existing failure behavior through metrics, minimal dashboard panels, and runbooks; defer new drill types until visibility gaps close (`0.8.0`) |
 | Local operations environment | Dev-Container-first and host-Compose workflows are documented and runnable (`implemented`) | Environment-specific Docker/Podman permissions can still vary by host | Keep workflow guidance explicit and local-first; avoid platform abstraction expansion |
 | Kubernetes / infrastructure | No Kubernetes manifests, in-cluster observability, or GitOps (`deferred`) | No cluster operating model yet | Keep deferred until local-first operations patterns are stable and repeatable |
 | Documentation and portfolio presentation | README/docs/runbooks/samples/contribution guidance are present (`implemented`) | Dense roadmap details reduce scanability for external readers | Keep evidence and scope discipline, but present roadmap in clearer milestone-oriented structure |
@@ -82,9 +82,9 @@ For context, see [Architecture](architecture.md), [Run model](run-model.md), [Li
 
 #### Failure modes and runbooks
 
-- Implemented now: stale data, mismatch, and restart/recovery drills plus runbooks.
-- Open gap: additional operational drills are still planned.
-- Direction: add deterministic drills that remain local-first and artifact-driven.
+- Implemented now: stale data, mismatch, and restart/recovery drills plus runbooks; probe failure runbook.
+- Open gap: drill and reconciliation Prometheus metrics not yet exposed; runbooks for artifact health, evidence, safety gate, and observability no-data not yet written.
+- Direction: expose existing failure behavior through artifact-backed metrics, minimal dashboard panels, and targeted runbooks before adding new drill types. See [Failure modes](failure-modes.md) for the full inventory and `0.8.0` unit plan.
 
 #### Local operations environment
 
@@ -275,14 +275,26 @@ Explicitly not included:
 
 Goal:
 
-- Extend deterministic operational drill coverage.
+- Make existing local operational failure behavior visible, documented, and recoverable.
+- Expose failure states through artifacts, metrics, dashboard panels, and runbooks.
 
-Includes:
+Includes (trimmed scope):
 
-- disconnect drill
-- missing update drill
-- rate-limit exhaustion drill
-- stale orderbook drill
+- `docs/failure-modes.md` — failure mode contract and inventory (Unit 1)
+- Drill and reconciliation artifact-backed Prometheus metrics (Unit 2)
+- Minimal Grafana panels: `Reconciliation Status` and `Failure Drill Last Pass` (Unit 3)
+- Runbooks for artifact health, evidence, safety gate, and observability no-data; demo flow and release doc updates (Unit 4)
+
+Explicitly not included in `0.8.0`:
+
+- `missing-update` drill (deferred to a follow-up; fixture exists)
+- `disconnect` drill as a separate command (covered by `probe_unreachable` in existing probe workflow)
+- Rate-limit exhaustion drill (no local fixture or model)
+- Stale orderbook drill (no orderbook / LOB data support)
+- `tc run verify` / artifact linter
+- Alertmanager integration
+- Kubernetes / GitOps
+- External exchange / testnet probes
 
 ### 2. Kubernetes / GitOps Lab
 

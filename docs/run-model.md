@@ -124,3 +124,5 @@ The markdown companion report summarizes those same operational findings in oper
 - Paper example: `examples/configs/btcusdt_paper.yaml`
 
 For the end-to-end runnable sequence, see [Quickstart](quickstart.md) and [Demo Flow](demo-flow.md).
+
+For an inventory of how artifact failures, safety blocks, probe outcomes, and drill results surface through artifacts, metrics, and dashboard signals, see [Failure modes](failure-modes.md).

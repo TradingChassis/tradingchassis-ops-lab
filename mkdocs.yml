@@ -66,6 +66,7 @@ nav:
       - Project scope: scope.md
       - Run model: run-model.md
       - Backtest vs paper: backtest-vs-paper.md
+      - Failure modes: failure-modes.md
       - Architecture: architecture.md
       - Limitations: limitations.md
       - Future work: future-work.md
